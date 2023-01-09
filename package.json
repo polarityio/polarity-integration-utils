@@ -5,6 +5,9 @@
   "main": "index.js",
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "postman-request": "^2.88.1-postman.31"
+  },
   "devDependencies": {
     "jest": "28.1.3"
   }
