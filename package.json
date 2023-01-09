@@ -1,0 +1,11 @@
+{
+  "name": "polarity-integration-utils",
+  "version": "1.0.0",
+  "description": "TODO",
+  "main": "index.js",
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "28.1.3"
+  }
+}
