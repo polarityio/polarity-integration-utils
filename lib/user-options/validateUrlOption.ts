@@ -1,4 +1,4 @@
-const { get } = require('lodash/fp');
+import { get } from 'lodash/fp';
 
 /**
  *
@@ -80,4 +80,4 @@ const validateUrlOption = (options, urlKey = 'url', otherValidationErrors = []) 
   return allValidationErrors;
 };
 
-module.exports = validateUrlOption;
+export default validateUrlOption;
