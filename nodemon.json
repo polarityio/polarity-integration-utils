@@ -1,6 +1,0 @@
-{
-  "watch": ["lib"],
-  "ext": ".ts,.js",
-  "ignore": [],
-  "exec": "npx ts-node ./lib/index.ts"
-}
