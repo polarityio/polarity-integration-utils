@@ -1,6 +1,7 @@
+import { errors, helpers, userOptions } from '../lib/index';
+
+const { parseErrorToReadableJson } = errors;
 const {
-  NotImplementedError,
-  parseErrorToReadableJson,
   decodeBase64,
   encodeBase64,
   filterObjectsContainingString,
@@ -9,13 +10,13 @@ const {
   and,
   or,
   millisecondsToHoursMinutesAndSeconds,
-  sleep,
-  validateUrlOption
-} = require('../index');
+  sleep
+} = helpers;
+
+const { validateUrlOption } = userOptions;
 
 describe('index.js', () => {
   it('should export functions with implementation & sufficient testing', () => {
-    expect(new NotImplementedError()).toBeInstanceOf(Error);
     expect(parseErrorToReadableJson).toBeInstanceOf(Function);
     expect(decodeBase64).toBeInstanceOf(Function);
     expect(encodeBase64).toBeInstanceOf(Function);

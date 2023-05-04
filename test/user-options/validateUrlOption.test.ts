@@ -1,4 +1,4 @@
-const validateUrlOption = require('../../lib/user-options/validateUrlOption');
+import validateUrlOption from '../../lib/user-options/validateUrlOption';
 
 const options = {
   urlEmpty: { value: '' },

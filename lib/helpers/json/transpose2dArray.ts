@@ -1,6 +1,6 @@
-const { reduce } = require('lodash/fp');
+import { reduce } from 'lodash/fp';
 
-const transpose2dArray = (twoDimensionalArray) =>
+const transpose2dArray = (twoDimensionalArray?: [] | Array<[any, any]>) =>
   reduce(
     (agg, [key, value]) => [
       [...agg[0], key],
@@ -10,4 +10,4 @@ const transpose2dArray = (twoDimensionalArray) =>
     twoDimensionalArray
   );
 
-module.exports = transpose2dArray;
+export default transpose2dArray;

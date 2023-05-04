@@ -6,11 +6,15 @@ module.exports = {
   preset: 'ts-jest',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {//the content you'd placed at "global"
-      babel: true,
-      tsconfig: 'tsconfig.json',
-    }]
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        //the content you'd placed at "global"
+        babel: true,
+        tsconfig: 'tsconfig.json'
+      }
+    ]
   },
 
-  verbose: true,
+  verbose: true
 };

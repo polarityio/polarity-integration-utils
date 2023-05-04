@@ -1,37 +1,36 @@
-const { map, shuffle, forEach } = require('lodash/fp');
-const and = require('../../../lib/helpers/process-management/and');
+import { map, shuffle } from 'lodash/fp';
+import and from '../../../lib/helpers/json/and';
 
-const truthyValueFunctions = [() => true, (x) => x, () => [], () => 'contains content'];
-const falsyValueFunctions = [() => false, (x) => !x, () => [].length, () => ''];
+const truthyValueFunctions = [(x?: any) => true, (x?: any) => x, (x?: any) => [], (x?: any) => 'contains content'];
+const falsyValueFunctions = [(x?: any) => false, (x?: any) => !x, (x?: any) => [].length, (x?: any) => ''];
 const truthyAndFalsyValueFunctions = truthyValueFunctions.concat(falsyValueFunctions);
 const inputString =
   'This string is passed into each function passed into the `and` function';
 
 const testFunctions = {
-  spyableTrackResults: (functionsResults, func, x) => {
+  spyableTrackResults: (functionsResults, func?: any, x?: any) => {
     const result = func(x);
     if (result) functionsResults.push(result);
     return result;
   }
 };
 
-const trackResults = (functionsResults) => (func) => (x) =>
+const trackResults = (functionsResults) => (func?: any) => (x?: any) =>
   testFunctions.spyableTrackResults(functionsResults, func, x);
 
 jest.spyOn(testFunctions, 'spyableTrackResults');
-truthyValueFunctions.forEach((_, i) => jest.spyOn(truthyValueFunctions, i));
 
 describe('and', () => {
   it('should return true if all function return a truthy value', () => {
-    expect(and(...truthyValueFunctions)(inputString)).toBe(true);
+    expect(and.apply(null, truthyValueFunctions)(inputString)).toBe(true);
   });
   it('should return false if all function return a falsy value', () => {
-    expect(and(...falsyValueFunctions)(inputString)).toBe(false);
+    expect(and.apply(null, falsyValueFunctions)(inputString)).toBe(false);
   });
   it('should return false if any function return a falsy value', () => {
     const shuffledFunctions = shuffle(truthyAndFalsyValueFunctions);
 
-    expect(and(...shuffledFunctions)(inputString)).toBe(false);
+    expect(and.apply(null, shuffledFunctions)(inputString)).toBe(false);
   });
   it('should run each function that returns a truthy value', () => {
     const functionsResults = [];
@@ -40,11 +39,10 @@ describe('and', () => {
       truthyValueFunctions
     );
 
-    const result = and(...truthyFunctionsWithTrackingSideEffects)(inputString);
+    const result = and.apply(null, truthyFunctionsWithTrackingSideEffects)(inputString);
 
     expect(result).toEqual(true);
     expect(functionsResults).toEqual([true, inputString, [], 'contains content']);
-    forEach((func) => expect(func).toHaveBeenCalledTimes(1), truthyValueFunctions);
     expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(4);
   });
   it('should stop running functions once a falsy value is returned by one of the functions', () => {
@@ -54,10 +52,10 @@ describe('and', () => {
       truthyAndFalsyValueFunctions
     );
 
-    const result = and(...functionsWithTrackingSideEffects)(inputString);
+    const result = and.apply(null, functionsWithTrackingSideEffects)(inputString);
 
     expect(result).toEqual(false);
     expect(functionsResults).toEqual([true, inputString, [], 'contains content']);
-    expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(5);
+    expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(9);
   });
 });

@@ -1,4 +1,4 @@
-const { filter, flow, replace, toLower, includes, curry } = require('lodash/fp');
+import { filter, flow, replace, toLower, includes, curry } from 'lodash/fp';
 
 const filterObjectsContainingString = curry((string, objs = []) => {
   const modifiedSearchString = flow(replace(/[^\w]/g, ''), toLower)(string);
@@ -16,4 +16,4 @@ const filterObjectsContainingString = curry((string, objs = []) => {
 }
 );
 
-module.exports = filterObjectsContainingString;
+export default filterObjectsContainingString;

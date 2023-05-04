@@ -1,9 +1,13 @@
-const transpose2dArray = require('./transpose2dArray');
-const mapOverObject = require('./mapOverObject');
-const filterObjectsContainingString = require('./filterObjectsContainingString');
+import transpose2dArray from './transpose2dArray';
+import mapOverObject from './mapOverObject';
+import filterObjectsContainingString from './filterObjectsContainingString';
+import and from './and';
+import or from './or';
 
-module.exports = {
+export default {
   transpose2dArray,
   mapOverObject,
-  filterObjectsContainingString
+  filterObjectsContainingString,
+  and,
+  or
 };

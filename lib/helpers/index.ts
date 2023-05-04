@@ -1,11 +1,9 @@
-const time = require('./time');
-const json = require('./json');
-const processManagement = require('./process-management');
-const encodings = require('./encodings');
+import time from './time';
+import json from './json';
+import encodings from './encodings';
 
-module.exports = {
-  time,
-  json,
-  processManagement,
-  encodings,
+export default {
+  ...time,
+  ...json,
+  ...encodings,
 };

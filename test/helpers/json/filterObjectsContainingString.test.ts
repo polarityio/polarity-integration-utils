@@ -1,4 +1,4 @@
-const filterObjectsContainingString = require('../../../lib/helpers/json/filterObjectsContainingString');
+import filterObjectsContainingString from '../../../lib/helpers/json/filterObjectsContainingString';
 
 const objects = [
   { a: 'foo', b: 'b', baz: 'c' },

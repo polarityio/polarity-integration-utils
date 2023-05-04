@@ -45,7 +45,8 @@ const validateUrlOption = (options, urlKey = 'url', otherValidationErrors = []) 
 
   if (urlValue === undefined) {
     throw new Error(
-      `User Option key \`${urlKey}\` is not defined in the config.js.  It's also possible you need to change the package.json version for the client to pick up your \`config/config.js\` changes.`
+      `User Option key \`${urlKey}\` is not defined in the config.js.  ` +
+        "It's also possible you need to change the package.json version for the client to pick up your `config/config.js` changes."
     );
   }
 

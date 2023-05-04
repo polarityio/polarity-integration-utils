@@ -1,7 +1,7 @@
 {
-  "name": "polarity-integration-utils",
-  "version": "0.0.0",
-  "description": "",
+  "name": "polarity-integration-utils2",
+  "version": "0.0.1",
+  "description": "A utility library for building polarity integrations",
   "files": [
     "dist"
   ],
@@ -20,7 +20,7 @@
     "type": "git",
     "url": "git+https://github.com/polarity-integration-utils/polarity-integration-utils.git"
   },
-  "author": "Polarity IO",
+  "author": "Polarity IO <support@polarity.io>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/polarity-integration-utils/polarity-integration-utils/issues"
@@ -28,12 +28,12 @@
   "homepage": "https://github.com/polarity-integration-utils/polarity-integration-utils#readme",
   "devDependencies": {
     "@types/jest": "^24.0.14",
+    "nock": "^13.3.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
   },
   "dependencies": {
     "lodash": "^4.17.21",
-    "nock": "^13.3.1",
     "postman-request": "^2.88.1-postman.32"
   },
   "sideEffects": false

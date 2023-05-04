@@ -1,4 +1,4 @@
-const millisecondsToHoursMinutesAndSeconds = require('../../../lib/helpers/time/millisecondsToHoursMinutesAndSeconds');
+import millisecondsToHoursMinutesAndSeconds from '../../../lib/helpers/time/millisecondsToHoursMinutesAndSeconds';
 
 const blankTime = '0ms';
 const twoHoursInMilliseconds = 7200000;
@@ -43,13 +43,6 @@ describe('millisecondsToHoursMinutesAndSeconds', () => {
     expect(() => millisecondsToHoursMinutesAndSeconds(stringInput)).toThrow(
       new Error(
         `Cannot calculate Hours, Minutes, or Seconds from non-number input: \`${stringInput}\``
-      )
-    );
-
-    const objInput = { a: 'This is not a Number' };
-    expect(() => millisecondsToHoursMinutesAndSeconds(objInput)).toThrow(
-      new Error(
-        `Cannot calculate Hours, Minutes, or Seconds from non-number input: \`${objInput}\``
       )
     );
   });

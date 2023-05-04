@@ -1,4 +1,4 @@
-const transpose2dArray = require('../../../lib/helpers/json/transpose2dArray');
+import transpose2dArray from '../../../lib/helpers/json/transpose2dArray';
 
 describe('transpose2dArray', () => {
   // Positive Test Cases

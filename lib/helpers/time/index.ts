@@ -1,9 +1,7 @@
-const sleep = require('./sleep');
-const millisecondsToHoursMinutesAndSeconds = require('./millisecondsToHoursMinutesAndSeconds');
-const getMonthsBackFormattedDatetime = require('./getMonthsBackFormattedDatetime');
+import sleep from './sleep';
+import millisecondsToHoursMinutesAndSeconds from './millisecondsToHoursMinutesAndSeconds';
 
-module.exports = {
+export default {
   sleep,
-  millisecondsToHoursMinutesAndSeconds,
-  getMonthsBackFormattedDatetime
+  millisecondsToHoursMinutesAndSeconds
 };

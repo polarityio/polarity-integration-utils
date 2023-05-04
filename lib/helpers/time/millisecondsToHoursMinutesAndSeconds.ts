@@ -1,4 +1,4 @@
-const millisecondsToHoursMinutesAndSeconds = (milliseconds = 0) => {
+const millisecondsToHoursMinutesAndSeconds = (milliseconds: number | string = 0) => {
   if (typeof milliseconds !== 'number' || isNaN(milliseconds)) {
     throw new Error(
       `Cannot calculate Hours, Minutes, or Seconds from non-number input: \`${milliseconds}\``
@@ -22,4 +22,4 @@ const millisecondsToHoursMinutesAndSeconds = (milliseconds = 0) => {
   );
 };
 
-module.exports = millisecondsToHoursMinutesAndSeconds;
+export default millisecondsToHoursMinutesAndSeconds;

@@ -1,4 +1,4 @@
-const {
+import {
   flow,
   map,
   size,
@@ -8,8 +8,8 @@ const {
   eq,
   isEmpty,
   isPlainObject
-} = require('lodash/fp');
-const { and } = require('../process-management');
+} from 'lodash/fp';
+import and  from './and';
 
 /**
  * Function to map over properties in an object.
@@ -25,7 +25,7 @@ const { and } = require('../process-management');
  *   e.g. { newKey1: newValue1, newKey2: newValue2 }
  */
 const mapOverObject = curry((func, obj) =>
-  obj && isPlainObject(obj) 
+  obj && isPlainObject(obj)
     ? flow(
         Object.entries,
         map(([key, value]) => func(value, key)),
@@ -35,4 +35,4 @@ const mapOverObject = curry((func, obj) =>
     : obj
 );
 
-module.exports = mapOverObject;
+export default mapOverObject;

@@ -1,7 +1,5 @@
-const NotImplementedError = require('./NotImplementedError');
-const parseErrorToReadableJson = require('./parseErrorToReadableJson');
+import parseErrorToReadableJson from './parseErrorToReadableJson';
 
-module.exports = {
-  NotImplementedError,
+export default {
   parseErrorToReadableJson
 };

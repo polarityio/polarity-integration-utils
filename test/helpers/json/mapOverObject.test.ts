@@ -1,5 +1,5 @@
-const { identity } = require('lodash/fp');
-const mapOverObject = require('../../../lib/helpers/json/mapOverObject');
+import { identity } from 'lodash/fp';
+import mapOverObject from '../../../lib/helpers/json/mapOverObject';
 
 const objToMapOver = { a: 1, b: 2, c: 3 };
 const testFunctions = {

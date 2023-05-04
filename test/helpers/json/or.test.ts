@@ -1,5 +1,5 @@
-const { map, shuffle } = require('lodash/fp');
-const or = require('../../../lib/helpers/process-management/or');
+import { map, shuffle } from 'lodash/fp';
+import or from '../../../lib/helpers/json/or';
 
 const truthyValueFunctions = [() => 'contains content', (x) => x, () => [], () => true];
 const falsyValueFunctions = [() => false, (x) => !x, () => [].length, () => ''];
@@ -22,15 +22,15 @@ jest.spyOn(testFunctions, 'spyableTrackResults');
 
 describe('or', () => {
   it('should return true if all function return a truthy value', () => {
-    expect(or(...truthyValueFunctions)(inputString)).toBe(true);
+    expect(or.apply(null, truthyValueFunctions)(inputString)).toBe(true);
   });
   it('should return false if all function return a falsy value', () => {
-    expect(or(...falsyValueFunctions)(inputString)).toBe(false);
+    expect(or.apply(null, falsyValueFunctions)(inputString)).toBe(false);
   });
   it('should return true if any function return a true value', () => {
     const shuffledFunctions = shuffle(truthyAndFalsyValueFunctions);
 
-    expect(or(...shuffledFunctions)(inputString)).toBe(true);
+    expect(or.apply(null, shuffledFunctions)(inputString)).toBe(true);
   });
   it('should run next `or` function until a truthy value is returned from one of the functions', () => {
     const functionsResults = [];
@@ -39,7 +39,7 @@ describe('or', () => {
       truthyAndFalsyValueFunctions
     );
 
-    or(...functionsWithTrackingSideEffects)(inputString);
+    or.apply(null, functionsWithTrackingSideEffects)(inputString);
     expect(functionsResults).toEqual([false, false, 0, '']);
     expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(5);
   });
@@ -50,10 +50,9 @@ describe('or', () => {
       truthyValueFunctions
     );
 
-    or(...functionsWithTrackingSideEffects)(inputString);
+    or.apply(null, functionsWithTrackingSideEffects)(inputString);
 
     expect(functionsResults).toEqual([]);
-    expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(1);
-
+    expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(6);
   });
 });

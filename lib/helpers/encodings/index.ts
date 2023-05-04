@@ -1,7 +1,7 @@
-const encodeBase64 = require('./encodeBase64');
-const decodeBase64 = require('./decodeBase64');
+import encodeBase64 from './encodeBase64';
+import decodeBase64 from './decodeBase64';
 
-module.exports = {
+export default {
   encodeBase64,
   decodeBase64
 };
