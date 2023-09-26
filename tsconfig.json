@@ -10,7 +10,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noUnusedLocals": true,
-    "declaration": true,
     "downlevelIteration": true,
     "lib": ["es5", "es2015", "dom"]
   },

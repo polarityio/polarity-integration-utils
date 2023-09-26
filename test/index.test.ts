@@ -1,4 +1,4 @@
-import { errors, helpers, userOptions } from '../lib/index';
+import { errors, helpers, userOptions, requests, logging } from '../lib/index';
 
 const { parseErrorToReadableJson } = errors;
 const {
@@ -10,13 +10,16 @@ const {
   and,
   or,
   millisecondsToHoursMinutesAndSeconds,
-  sleep
+  sleep,
+  parallelLimit
 } = helpers;
 
 const { validateUrlOption } = userOptions;
+const { createRequestWithDefaults, createRequestsInParallel } = requests;
+const { setLogger, getLogger } = logging;
 
 describe('index.js', () => {
-  it('should export functions with implementation & sufficient testing', () => {
+  it('should export functions with implementation', () => {
     expect(parseErrorToReadableJson).toBeInstanceOf(Function);
     expect(decodeBase64).toBeInstanceOf(Function);
     expect(encodeBase64).toBeInstanceOf(Function);
@@ -27,6 +30,11 @@ describe('index.js', () => {
     expect(or).toBeInstanceOf(Function);
     expect(millisecondsToHoursMinutesAndSeconds).toBeInstanceOf(Function);
     expect(sleep).toBeInstanceOf(Function);
+    expect(parallelLimit).toBeInstanceOf(Function);
     expect(validateUrlOption).toBeInstanceOf(Function);
+    expect(createRequestWithDefaults).toBeInstanceOf(Function);
+    expect(createRequestsInParallel).toBeInstanceOf(Function);
+    expect(setLogger).toBeInstanceOf(Function);
+    expect(getLogger).toBeInstanceOf(Function);
   });
 });
