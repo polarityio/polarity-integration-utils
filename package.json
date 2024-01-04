@@ -15,7 +15,8 @@
     "build:lib": "tsc -p tsconfig.build.json --outDir dist/lib",
     "build": "npm run clean && npm run build:lib && npm run build:es",
     "prepublishOnly": "npm run ci && npm run build",
-    "fullPublish": "npm install && npm run prepublishOnly && npm publish"
+    "fullPublish": "npm install && npm run prepublishOnly && npm publish",
+    "runSchemaGeneration": "npx ts-node ./lib/user-options/jsonSchemaValidationPoc/runSchemaGeneration.ts"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,8 @@
   "homepage": "https://github.com/polarity-integration-utils/polarity-integration-utils#readme",
   "devDependencies": {
     "@types/jest": "^24.0.14",
+    "json-schema-library": "^9.1.2",
+    "copy-paste": "^1.5.3",
     "nock": "^13.3.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"

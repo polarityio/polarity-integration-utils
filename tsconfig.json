@@ -5,12 +5,12 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "sourceMap": true,
-    "jsx": "react",
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noUnusedLocals": true,
     "downlevelIteration": true,
+    "resolveJsonModule": true,
     "lib": ["es5", "es2015", "dom"]
   },
   "exclude": ["dist"]
