@@ -173,7 +173,7 @@ const generateSelectOptionJsonSchema = (
     const errorMessageDetails = getErrorMessageDetails(userOption, optionRequirement);
 
     if (typeof optionRequirement === 'string') {
-      if (!userOption.multiple) return { type: 'object' };
+      if (!userOption.multiple) return { type: 'object', ...errorMessageDetails };
       else {
         return {
           type: 'array',
@@ -187,7 +187,7 @@ const generateSelectOptionJsonSchema = (
       const selectOptionPatternFormatSchema: JsonSchema = !(
         optionRequirement.pattern || optionRequirement.format
       )
-        ? { type: 'object' }
+        ? { type: 'object', ...errorMessageDetails }
         : generateSelectOptionPatternFormatSchema(errorMessageDetails, optionRequirement);
 
       if (!userOption.multiple) {

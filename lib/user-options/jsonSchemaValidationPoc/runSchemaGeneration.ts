@@ -185,6 +185,7 @@ const runSchemaGeneration = (): void => {
     .concat(orOptionsRequirements)
     .concat(ifOptionsRequirements) as OptionRequirements;
 
+  console.time('Schema Generation & Validation');
   const individualOptionsRequirementsSchema: JsonSchema =
     generateOptionRequirementsSchema(userOptions, individualOptionsRequirements);
 
@@ -219,16 +220,26 @@ const runSchemaGeneration = (): void => {
     userOptions,
     allOptionsRequirementsSchema
   );
+  console.timeEnd('Schema Generation & Validation');
 
   cp.copy(
     JSON.stringify(
       {
+        userOptions,
+
+        individualOptionsRequirements,
         individualOptionsRequirementsSchema,
         individualOptionJsonSchemaErrors,
+
+        orOptionsRequirements,
         orOptionsRequirementsSchema,
         orOptionJsonSchemaErrors,
+
+        ifOptionsRequirements,
         ifOptionsRequirementsSchema,
         ifOptionJsonSchemaErrors,
+
+        allOptionsRequirements,
         allOptionsRequirementsSchema,
         allOptionJsonSchemaErrors
       },
@@ -236,6 +247,7 @@ const runSchemaGeneration = (): void => {
       2
     )
   );
+  console.log('\nJSON Schema Results have been copied to clipboard!\n\n');
 };
 
 const processSchema = (
