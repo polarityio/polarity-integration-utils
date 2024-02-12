@@ -3,7 +3,7 @@ import {
   AnyPromiseResponse,
   RequestOptions,
   RequestWithDefaultsFunction
-} from './requestTypes';
+} from './types';
 import helpers from '../helpers';
 
 type RequestsInParallelWithRequestWithDefaultsFunction = (

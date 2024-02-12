@@ -31,7 +31,6 @@
   "devDependencies": {
     "@types/jest": "^24.0.14",
     "json-schema-library": "^9.1.2",
-    "copy-paste": "^1.5.3",
     "nock": "^13.3.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
@@ -39,7 +38,8 @@
   "dependencies": {
     "bottleneck": "^2.19.5",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.32"
+    "postman-request": "^2.88.1-postman.32",
+    "private-ip": "^3.0.2"
   },
   "sideEffects": false
 }
