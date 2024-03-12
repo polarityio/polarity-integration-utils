@@ -29,7 +29,7 @@ interface RequestWithDefaults {
 class PolarityRequestWithDefaults implements RequestWithDefaults {
   private roundedSuccessStatusCodes: number[] = [200];
   private requestOptionsToOmitFromLogsKeyPaths: string[];
-  private userOptions: DoLookupUserOptions;
+  public userOptions: DoLookupUserOptions;
   private bottleneckOptions: Bottleneck.ConstructorOptions;
   private bottleneckLimiter;
 
