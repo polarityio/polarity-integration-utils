@@ -1,5 +1,5 @@
 import parseErrorToReadableJson from './parseErrorToReadableJson';
-import RequestError from './RequestError';
+import RequestError from './requestError';
 
 export default {
   parseErrorToReadableJson,

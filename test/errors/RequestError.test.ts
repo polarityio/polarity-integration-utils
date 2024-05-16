@@ -1,4 +1,4 @@
-import RequestError from '../../lib/errors/RequestError';
+import RequestError from '../../lib/errors/requestError';
 
 describe('RequestError', () => {
   it.skip('should format the error message', () => {

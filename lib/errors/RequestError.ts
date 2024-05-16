@@ -1,3 +1,6 @@
+/**
+ * For backwards compatibility this class must remain until we bump to v1.0.0
+ */
 class RequestError extends Error {
   message: string | undefined;
   status: string | number | undefined;
