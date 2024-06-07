@@ -59,8 +59,6 @@ The regex involved in checking the IPv4 Private IPs (`isPrivateIpv4Regex`) cover
 0.0.0.0 to 0.255.255.255
 10.0.0.0 to 10.255.255.255
 100.64.0.0 to 100.127.255.255
-127.0.0.0 to 127.255.255.255
-169.254.0.0 to 169.254.255.255
 172.16.0.0 to 172.31.255.255
 192.0.0.0 to 192.0.0.255
 192.0.2.0 to 192.0.2.255
@@ -73,6 +71,11 @@ The regex involved in checking the IPv4 Private IPs (`isPrivateIpv4Regex`) cover
 198.51.100.0 to 198.51.100.255
 203.0.113.0 to 203.0.113.255
 240.0.0.0 to 255.255.255.255
+
+We exclude the following ranges to enable them to be toggled on and off is use of the lib
+- 169.254.0.0 to 169.254.255.255 to separate it out into `isLoopBackIp` in `./common.ts`
+- 127.0.0.0 to 127.255.255.255 to separate it out into `isLinkLocalAddress` in `./common.ts`
+
 > Base on: https://github.com/frenchbread/private-ip/blob/master/src/index.ts#L7C1-L32C2
 */
 const ipv4IsPrivate = (ip: string): boolean => isPrivateIpv4Regex.test(ip);
