@@ -2,7 +2,7 @@ import { map } from 'lodash/fp';
 import { DoLookupResponse } from './types';
 import { Entity } from '../../types';
 
-const buildIgnoreResults = (entities: Entity[]): DoLookupResponse[] =>
+const buildIgnoreLookupResults = (entities: Entity[]): DoLookupResponse[] =>
   map(
     (entity: Entity): DoLookupResponse => ({
       entity,
@@ -11,4 +11,4 @@ const buildIgnoreResults = (entities: Entity[]): DoLookupResponse[] =>
     entities
   );
 
-export default buildIgnoreResults;
+export default buildIgnoreLookupResults;

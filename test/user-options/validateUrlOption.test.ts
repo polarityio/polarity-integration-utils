@@ -1,13 +1,20 @@
+import { ValidateOptionsUserOptions } from '../../lib/user-options/types';
 import validateUrlOption from '../../lib/user-options/validateUrlOption';
 
-const options = {
-  urlEmpty: { value: '' },
-  normalUrl: { value: 'https://google.com' },
-  trailingForwardSlashUrl: { value: 'https://google.com/' },
-  doubleTrailingForwardSlashUrl: { value: 'https://google.com//' },
-  domain: { value: 'google.com' },
-  trailingForwardSlashDomain: { value: 'google.com/' },
-  justString: { value: 'google' }
+const options: ValidateOptionsUserOptions = {
+  urlEmpty: { key: 'urlEmpty', value: '' },
+  normalUrl: { key: 'normalUrl', value: 'https://google.com' },
+  trailingForwardSlashUrl: {
+    key: 'trailingForwardSlashUrl',
+    value: 'https://google.com/'
+  },
+  doubleTrailingForwardSlashUrl: {
+    key: 'doubleTrailingForwardSlashUrl',
+    value: 'https://google.com//'
+  },
+  domain: { key: 'domain', value: 'google.com' },
+  trailingForwardSlashDomain: { key: 'trailingForwardSlashDomain', value: 'google.com/' },
+  justString: { key: 'justString', value: 'google' }
 };
 
 describe('validateUrlOption', () => {
@@ -60,8 +67,7 @@ describe('validateUrlOption', () => {
     const domain = () => validateUrlOption(options, 'domain');
     const trailingForwardSlashDomain = () =>
       validateUrlOption(options, 'trailingForwardSlashDomain');
-    const justString = () =>
-      validateUrlOption(options, 'justString');
+    const justString = () => validateUrlOption(options, 'justString');
 
     expect(domain).not.toThrow();
     expect(trailingForwardSlashDomain).not.toThrow();

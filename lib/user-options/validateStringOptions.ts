@@ -2,11 +2,11 @@ import { isEmpty } from 'lodash/fp';
 import _reduce from 'lodash/fp/reduce';
 const reduce = _reduce.convert({ cap: false });
 
-import { ValidationError, ValidationUserOption } from './types';
+import { ValidationError, ValidateOptionsUserOption } from './types';
 
 const validateStringOptions = (
   stringOptionsErrorMessages: { [key: string]: string },
-  options: ValidationUserOption,
+  options: ValidateOptionsUserOption,
   otherErrors: ValidationError[] = []
 ) =>
   reduce((agg: ValidationError[], message: string, optionName: string) => {

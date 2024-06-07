@@ -1,5 +1,5 @@
 import { get } from 'lodash/fp';
-import { ValidationError, ValidationUserOption } from './types';
+import { ValidationError, ValidateOptionsUserOptions } from './types';
 
 
 /**
@@ -43,7 +43,7 @@ import { ValidationError, ValidationUserOption } from './types';
  *   ]
  */
 const validateUrlOption = (
-  options: ValidationUserOption,
+  options: ValidateOptionsUserOptions,
   urlKey: string = 'url',
   otherValidationErrors: ValidationError[] = []
 ) => {
