@@ -1,4 +1,6 @@
 import { get } from 'lodash/fp';
+import { ValidationError, ValidateOptionsUserOptions } from './types';
+
 
 /**
  *
@@ -40,7 +42,11 @@ import { get } from 'lodash/fp';
  *     },
  *   ]
  */
-const validateUrlOption = (options, urlKey = 'url', otherValidationErrors = []) => {
+const validateUrlOption = (
+  options: ValidateOptionsUserOptions,
+  urlKey: string = 'url',
+  otherValidationErrors: ValidationError[] = []
+) => {
   const urlValue = get([urlKey, 'value'], options);
 
   if (urlValue === undefined) {

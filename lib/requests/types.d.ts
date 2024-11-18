@@ -1,11 +1,13 @@
+import { DoLookupUserOptions } from "../user-options/types";
+
 export type ConfigRequestProxyOptions = {
-  ca: undefined | string;
-  cert: undefined | string;
-  key: undefined | string;
-  passphrase: undefined | string;
-  rejectUnauthorized: undefined | boolean;
-  proxy: undefined | string;
-  json: undefined | boolean;
+  ca?: undefined | string;
+  cert?: undefined | string;
+  key?: undefined | string;
+  passphrase?: undefined | string;
+  rejectUnauthorized?: undefined | boolean;
+  proxy?: undefined | string;
+  json?: undefined | boolean;
 };
 
 export type ConfigJs = { request: ConfigRequestProxyOptions };
@@ -19,6 +21,21 @@ export type RequestOptions = {
   form?: object;
   [key: string]: any;
 };
+
+export type PreprocessRequestOptions = (
+  userOptions: DoLookupUserOptions,
+  requestOptions: RequestOptions
+) => Promise<RequestOptions> | never | undefined;
+export type PostprocessRequestSuccess = (
+  response: any,
+  requestOptions: RequestOptions,
+  userOptions: DoLookupUserOptions
+) => Promise<any> | never;
+export type PostprocessRequestFailure = (
+  error: Error,
+  requestOptions: RequestOptions,
+  userOptions: DoLookupUserOptions
+) => Promise<any> | never;
 
 export type PreprocessRequestOptionsFunction = (
   requestOptions: RequestOptions
@@ -34,6 +51,11 @@ export type PostprocessRequestFailureFunction = (
   requestOptions: RequestOptions
 ) => Promise<any> | never;
 
+export interface RequestDefaults {
+  defaults: ConfigRequestProxyOptions;
+  roundedSuccessStatusCodes?: number[];
+  requestOptionsToOmitFromLogsKeyPaths?: string[];
+}
 export interface CreateRequestFunctionArguments {
   config?: ConfigJs;
   roundedSuccessStatusCodes?: number[];

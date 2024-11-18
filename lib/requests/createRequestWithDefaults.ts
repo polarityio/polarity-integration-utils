@@ -13,7 +13,7 @@ import {
   PreprocessRequestOptionsFunction,
   RequestOptions,
   RequestWithDefaultsFunction
-} from './requestTypes';
+} from './types';
 
 const _configFieldIsValid = (field) => typeof field === 'string' && field.length > 0;
 
