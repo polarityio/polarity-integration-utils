@@ -1,4 +1,4 @@
-import type { RequestOptions } from '../requests/requests';
+import type { RequestOptions } from '../requests/types';
 import type IntegrationError from './integrationError';
 
 export interface Error {
