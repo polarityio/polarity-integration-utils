@@ -1,52 +1,91 @@
 import parseErrorToReadableJson from './parseErrorToReadableJson';
+import type { ErrorMeta, IntegrationErrorProperties, SerializedIntegrationError } from './errors';
+import type { RequestOptions } from '../requests/requests';
 
-/**
- * Native errors contain the following properties:
- * cause
- * code
- * message
- * stack
- * https://nodejs.org/dist/latest-v18.x/docs/api/errors.html#class-error
- */
 class IntegrationError extends Error {
   /**
-   * Construct a new IntegrationError object.
-   * @param message {string} - A string description of the error which is used as the `detail` property on the
-   * serialized error.
-   * @param properties {Object} - Optional properties for the error.  There are two special properties which have special
-   * handling:
-   *
-   * {Error | string | Object} cause - The `cause` property is used to specify the `cause` of the error.  Typically,
+   *  a short, human-readable summary of the problem that SHOULD NOT change from occurrence to occurrence of
+   *  the problem except for purposes of localization.
+   */
+  readonly title: string;
+
+  /**
+   * a human-readable explanation specific to this occurrence of the problem. Like title, this field’s value can be
+   * localized
+   */
+  readonly detail: string;
+
+  /**
+   * a meta object containing non-standard meta-information about the error.
+   */
+  readonly meta: ErrorMeta;
+
+  /**
+   * The HTTP status code applicable to this error, expressed as a string value.
+   */
+  readonly status: string;
+
+  /**
+   *  an application-specific error code, expressed as a string value.
+   */
+  readonly code: string;
+
+  /**
+   * The `cause` property is used to specify the `cause` of the error.  Typically,
    * this property is used to pass through a related Error instance.
-   * https://nodejs.org/dist/latest-v18.x/docs/api/errors.html#errorcause
-   *
-   * {Object} requestOptions - Relevant for integration errors involving a network call, the `requestOptions` property
+   */
+  readonly cause: Error;
+  /**
+   * Additional details related to the error that may help the user troubleshoot the issue.  If set by the user
+   * via the Error constructor, the user provided value will override any automated help message set by the
+   * Error class.
+   */
+  readonly help: string;
+  /**
+   * Relevant for integration errors involving a network call, the `requestOptions` property
    * details the request options that resulted in the specified error.  The `requestOptions` property will automatically
    * have sensitive authentication headers stripped.
    */
-  constructor(message = '', properties = {}) {
+  readonly requestOptions?: RequestOptions;
+
+  /**
+   * Construct a new IntegrationError object.
+   *
+   * @param message {string} - A string description of the error which is used as the `detail` property on the
+   * serialized error.
+   * @param properties {IntegrationErrorProperties} - Optional properties for the error.
+   */
+  constructor(message, properties: IntegrationErrorProperties = {}) {
     super(message);
-    // These are enumerable properties which the Polarity server can access
-    // Most important is the `detail` property which is used to display
-    // a user friendly message in the Overlay Window.
+
+    this.title = properties.title || this.constructor.name;
     this.detail = message;
     this.name = this.constructor.name;
-    this.help = '';
 
-    if (typeof properties.statusCode !== undefined) {
-      this.statusCode = properties.statusCode;
+    if (typeof properties.code !== 'undefined') {
+      this.code = properties.code;
     }
 
-    this.meta = {
-      ...properties
-    };
-
-    if (properties.cause instanceof Error) {
-      this.meta.cause = parseErrorToReadableJson(properties.cause);
+    if (typeof properties.status !== 'undefined') {
+      this.status = properties.status;
     }
 
-    if (properties.requestOptions) {
-      this.meta.requestOptions = this.sanitizeRequestOptions(properties.requestOptions);
+    if (properties.cause && properties.cause instanceof Error) {
+      this.cause = properties.cause;
+    }
+
+    if (typeof properties.requestOptions !== 'undefined') {
+      this.requestOptions = this.sanitizeRequestOptions(properties.requestOptions);
+    }
+
+    if (typeof properties.help !== 'undefined') {
+      this.help = properties.help;
+    }
+
+    if (typeof properties.meta !== 'undefined') {
+      this.meta = {
+        ...properties.meta
+      };
     }
   }
 
@@ -64,12 +103,22 @@ class IntegrationError extends Error {
       ...requestOptions
     };
 
-    if (sanitizedOptions.headers && sanitizedOptions.headers.Authorization) {
-      sanitizedOptions.headers.Authorization = '**********';
-    }
+    if (sanitizedOptions.headers) {
+      // case insensitive header lookup
+      // Note that if two headers are set that are the same but with different casing
+      // this method will not sanitize both headers
+      const headerLookup = Object.keys(sanitizedOptions.headers).reduce((accum, header) => {
+        accum[header.toLowerCase()] = header;
+        return accum;
+      }, {});
 
-    if (sanitizedOptions.headers && sanitizedOptions.headers['x-api-key']) {
-      sanitizedOptions.headers['x-api-key'] = '**********';
+      if (headerLookup['authorization']) {
+        sanitizedOptions.headers[headerLookup['authorization']] = '**********';
+      }
+
+      if (headerLookup['x-api-key']) {
+        sanitizedOptions.headers[headerLookup['x-api-key']] = '**********';
+      }
     }
 
     if (sanitizedOptions.auth && sanitizedOptions.auth.password) {
@@ -80,12 +129,12 @@ class IntegrationError extends Error {
       sanitizedOptions.auth.bearer = '**********';
     }
 
-    if (requestOptions.body && requestOptions.body.password) {
-      requestOptions.body.password = '**********';
+    if (sanitizedOptions.body && sanitizedOptions.body.password) {
+      sanitizedOptions.body.password = '**********';
     }
 
-    if (requestOptions.form && requestOptions.form.client_secret) {
-      requestOptions.form.client_secret = '**********';
+    if (sanitizedOptions.form && sanitizedOptions.form.client_secret) {
+      sanitizedOptions.form.client_secret = '**********';
     }
 
     return sanitizedOptions;
@@ -97,54 +146,43 @@ class IntegrationError extends Error {
    *
    * @returns {{name: string, detail: string}}
    */
-  // toJSON() {
-  //   const Logger = getLogger();
-  //
-  //   let props = {
-  //     name: this.name,
-  //     detail: this.detail
-  //   };
-  //
-  //   if (this.help) {
-  //     props.help = this.help;
-  //   }
-  //
-  //   if (this.stack) {
-  //     props.stack = this.stack;
-  //   }
-  //
-  //   if (this.statusCode) {
-  //     props.statusCode = this.statusCode;
-  //   }
-  //
-  //   // if (this.body) {
-  //   //   props.body = this.body;
-  //   // }
-  //
-  //   if (Object.keys(this.meta).length > 0) {
-  //     props.meta = this.meta;
-  //   }
-  //
-  //   Logger.info({ props, body: this.body }, 'toJSON Error');
-  //
-  //   return props;
-  // }
+  toJSON() {
+    let props: SerializedIntegrationError = {
+      name: this.name,
+      detail: this.detail,
+      title: this.title
+    };
+
+    if (this.stack) {
+      props.stack = this.stack;
+    }
+
+    if (this.code) {
+      props.code = this.code;
+    }
+
+    if (this.status) {
+      props.status = this.status;
+    }
+
+    if (this.help) {
+      props.help = this.help;
+    }
+
+    if (this.cause) {
+      props.cause = parseErrorToReadableJson(this.cause);
+    }
+
+    if (this.requestOptions) {
+      props.requestOptions = this.requestOptions;
+    }
+
+    if (this.meta && Object.keys(this.meta).length > 0) {
+      props.meta = this.meta;
+    }
+
+    return props;
+  }
 }
-
-// https://stackoverflow.com/a/18391400/2853094
-if (!('toJSON' in IntegrationError.prototype))
-  Object.defineProperty(IntegrationError.prototype, 'toJSON', {
-    value: function() {
-      var alt = {};
-
-      Object.getOwnPropertyNames(this).forEach(function(key) {
-        alt[key] = this[key];
-      }, this);
-
-      return alt;
-    },
-    configurable: true,
-    writable: true
-  });
 
 export default IntegrationError;

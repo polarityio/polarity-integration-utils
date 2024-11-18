@@ -9,6 +9,7 @@ export type ConfigRequestProxyOptions = {
 };
 
 export type ConfigJs = { request: ConfigRequestProxyOptions };
+
 export type RequestOptions = {
   url?: string;
   headers?: object;
@@ -22,10 +23,12 @@ export type RequestOptions = {
 export type PreprocessRequestOptionsFunction = (
   requestOptions: RequestOptions
 ) => Promise<object> | never | undefined;
+
 export type PostprocessRequestResponseFunction = (
   response: any,
   requestOptions: RequestOptions
 ) => Promise<any> | never;
+
 export type PostprocessRequestFailureFunction = (
   error: Error,
   requestOptions: RequestOptions
@@ -40,5 +43,9 @@ export interface CreateRequestFunctionArguments {
   postprocessRequestResponse?: PostprocessRequestResponseFunction;
   postprocessRequestFailure?: PostprocessRequestFailureFunction;
 }
+
 export type AnyPromiseResponse = Promise<any> | Error | never;
-export type RequestWithDefaultsFunction = (requestOptions: RequestOptions) => AnyPromiseResponse;
+
+export type RequestWithDefaultsFunction = (
+  requestOptions: RequestOptions
+) => AnyPromiseResponse;

@@ -1,4 +1,5 @@
 import IntegrationError from './integrationError';
+import { IntegrationErrorProperties } from './errors';
 
 // The following is a list of NodeJS error codes that are related
 // to TLS/SSL certificate errors.  These can be encountered when attempting to connect
@@ -45,27 +46,31 @@ const NETWORK_CONNECTION_ERROR_CODES = new Set([
   'EHOSTUNREACH'
 ]);
 
-
 /**
  * Generic network error for REST requests.
  * https://betterstack.com/community/guides/scaling-nodejs/nodejs-errors/#4-econnrefused
  */
 class NetworkError extends IntegrationError {
-  constructor(message, properties = {}) {
+  constructor(message, properties: IntegrationErrorProperties = {}) {
     super(message, properties);
 
     // Check if we are wrapping an original error
     if (properties.cause instanceof Error) {
       const originalError = properties.cause;
+      const code = originalError.code?.toString();
 
-      if (SSL_ERROR_CODES.has(originalError.code)) {
+      if (code && SSL_ERROR_CODES.has(code)) {
+        // @ts-ignore work around due to typescript preventing readonly properties from
+        // parent constructor from being modified in subclass constructor
         this.help =
           'SSL errors are typically caused by an untrusted SSL certificate in the HTTPS request chain (e.g., ' +
           'an internal server that is being queried directly, or a web proxy for external requests). You can temporarily ' +
           'ignore SSL validation errors by enabling the integration setting "Allow Insecure TLS/SSL Connections". In most ' +
-          "cases, you will need to add your organization's Certificate Authority to the Polarity Server to resolve the " +
+          'cases, you will need to add your organization\'s Certificate Authority to the Polarity Server to resolve the ' +
           'issue permanently.';
-      } else if (NETWORK_CONNECTION_ERROR_CODES.has(originalError.code)) {
+      } else if (code && NETWORK_CONNECTION_ERROR_CODES.has(code)) {
+        // @ts-ignore work around due to typescript preventing readonly properties from
+        // parent constructor from being modified in subclass constructor
         this.help =
           'Network connection issues are typically caused by a misconfigured proxy or firewall rule. You may ' +
           'need to add a proxy configuration to the integration and/or confirm that connectivity between the Polarity ' +

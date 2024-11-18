@@ -1,11 +1,12 @@
 import IntegrationError from './integrationError';
+import type { IntegrationErrorProperties } from './errors';
 
 /**
  * Thrown by authenticated request method for any HTTP status codes where we want to allow
  * the user to retry their lookup.
  */
 class RetryRequestError extends IntegrationError {
-  constructor(message, properties = {}) {
+  constructor(message, properties: IntegrationErrorProperties = {}) {
     super(message, properties);
   }
 }
