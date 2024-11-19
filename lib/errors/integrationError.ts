@@ -1,6 +1,6 @@
 import parseErrorToReadableJson from './parseErrorToReadableJson';
 import type { ErrorMeta, IntegrationErrorProperties, SerializedIntegrationError } from './types';
-import type { RequestOptions } from '../requests/requests';
+import type { RequestOptions } from '../requests/types';
 
 class IntegrationError extends Error {
   /**

@@ -1,5 +1,5 @@
 import IntegrationError from './integrationError';
-import type { IntegrationErrorProperties } from './errors';
+import type { IntegrationErrorProperties } from './types';
 
 /**
  * API error for REST requests

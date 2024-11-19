@@ -1,5 +1,5 @@
 import IntegrationError from './integrationError';
-import type { IntegrationErrorProperties } from './errors';
+import type { IntegrationErrorProperties } from './types';
 
 /**
  * Thrown by authenticated request method for any HTTP status codes where we want to allow

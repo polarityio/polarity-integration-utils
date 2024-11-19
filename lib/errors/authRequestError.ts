@@ -1,5 +1,5 @@
 import IntegrationError from './integrationError';
-import type { IntegrationErrorProperties } from './errors';
+import type { IntegrationErrorProperties } from './types';
 
 /**
  * Thrown by generateAccessToken method if there is a failure to fetch a token
