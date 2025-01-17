@@ -1,5 +1,4 @@
 import type { RequestOptions } from '../requests/types';
-import type IntegrationError from './integrationError';
 
 export interface Error {
   name: string;
@@ -14,7 +13,7 @@ export type ErrorMeta = {
 
 type MetaObject = {
   // Allows any key-value pairs
-  [key: string]: any; 
+  [key: string]: unknown; 
 };
 
 export interface IntegrationErrorProperties {

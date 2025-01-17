@@ -17,7 +17,8 @@ describe('NetworkError', () => {
 
   it('should set help property for SSL errors', () => {
     const sslError = new Error('ssl error');
-    // @ts-ignore
+    
+    // @ts-expect-error "code" is not a property on Error but is a property on Node.js errors
     sslError.code = 'DEPTH_ZERO_SELF_SIGNED_CERT';
     const intError = new NetworkError('detail', {
       cause: sslError
@@ -30,7 +31,8 @@ describe('NetworkError', () => {
 
   it('should set help property for Network errors', () => {
     const networkError = new Error('ssl error');
-    // @ts-ignore
+
+    // @ts-expect-error "code" is not a property on Error but is a property on Node.js errors
     networkError.code = 'ECONNRESET';
     const intError = new NetworkError('detail', {
       cause: networkError

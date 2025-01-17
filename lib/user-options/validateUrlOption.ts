@@ -1,13 +1,12 @@
 import { get } from 'lodash/fp';
 import { ValidationError, ValidateOptionsUserOptions } from './types';
 
-
 /**
  *
  * @param {object} options - User Options from the inside of validate options
  *   e.g. each user option contains a metadata object including the value
  *   { userOption1: { value: 'user option input' ...moreOptionMetadata } }
- * @param {string} urlKey - [ default='url' ] The key of the url inside of the user options
+ * @param {string} urlKey - [ default='url' ] The key of the url inside the user options
  *   defined via the `./config/config.js(on)` `options.?.key` property value.
  *   Generally if there is only 1 url user option, the `key` property should be set to
  *   `url` so the default option here can be used. If there are more than 1 url in the
@@ -68,14 +67,15 @@ const validateUrlOption = (
   if (urlValue.endsWith('//')) {
     allValidationErrors = allValidationErrors.concat({
       key: urlKey,
-      message: 'Your Url must not end with a //'
+      message: 'Your URL must not end with a //'
     });
   }
 
   if (urlValue) {
     try {
       new URL(urlValue);
-    } catch (_) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (parseError) {
       allValidationErrors = allValidationErrors.concat({
         key: urlKey,
         message:

@@ -6,6 +6,6 @@ export type DoLookupResponse = {
   isVolatile?: boolean,
   data: null | {
     summary?: string[],
-    details: any
+    details: unknown
   }
 };

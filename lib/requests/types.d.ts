@@ -19,40 +19,42 @@ export type RequestOptions = {
   options?: object;
   entity?: object;
   form?: object;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export type PreprocessRequestOptions = (
   userOptions: DoLookupUserOptions,
   requestOptions: RequestOptions
 ) => Promise<RequestOptions> | never | undefined;
+
 export type PostprocessRequestSuccess = (
-  response: any,
+  response: unknown,
   requestOptions: RequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<any> | never;
+) => Promise<unknown> | never;
+
 export type PostprocessRequestFailure = (
   error: Error,
   requestOptions: RequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<any> | never;
+) => Promise<unknown> | never;
 
 export type PreprocessRequestOptionsFunction = (
   requestOptions: RequestOptions
 ) => Promise<object> | never | undefined;
 
 export type PostprocessRequestResponseFunction = (
-  response: any,
+  response: unknown,
   requestOptions: RequestOptions
-) => Promise<any> | never;
+) => Promise<unknown> | never;
 
 export type PostprocessRequestFailureFunction = (
   error: Error,
   requestOptions: RequestOptions
-) => Promise<any> | never;
+) => Promise<unknown> | never;
 
 export interface RequestDefaults {
-  defaults: ConfigRequestProxyOptions;
+  defaults?: ConfigRequestProxyOptions;
   roundedSuccessStatusCodes?: number[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
 }
@@ -66,7 +68,7 @@ export interface CreateRequestFunctionArguments {
   postprocessRequestFailure?: PostprocessRequestFailureFunction;
 }
 
-export type AnyPromiseResponse = Promise<any> | Error | never;
+export type AnyPromiseResponse = Promise<unknown> | Error | never;
 
 export type RequestWithDefaultsFunction = (
   requestOptions: RequestOptions

@@ -16,7 +16,11 @@
     "build": "npm run clean && npm run build:lib && npm run build:es",
     "prepublishOnly": "npm run ci && npm run build",
     "fullPublish": "npm install && npm run prepublishOnly && npm publish",
-    "runSchemaGeneration": "npx ts-node ./lib/user-options/jsonSchemaValidationPoc/runSchemaGeneration.ts"
+    "runSchemaGeneration": "npx ts-node ./lib/user-options/jsonSchemaValidationPoc/runSchemaGeneration.ts",
+    "lint": "tsc --noEmit && eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:ts": "tsc --noEmit",
+    "lint:es": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -29,13 +33,19 @@
   },
   "homepage": "https://github.com/polarity-integration-utils/polarity-integration-utils#readme",
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@types/jest": "^24.0.14",
-    "json-schema-library": "^9.1.2",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
     "copy-paste": "^1.5.3",
+    "eslint": "^9.18.0",
+    "globals": "^15.14.0",
+    "jest": "^29.7.0",
+    "json-schema-library": "^9.1.2",
     "nock": "^13.3.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4",
-    "jest": "^29.7.0"
+    "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
     "bottleneck": "^2.19.5",

@@ -1,5 +1,5 @@
 const parallelLimit = async (
-  tasksQueue: Array<() => Promise<any>>,
+  tasksQueue: Array<() => Promise<unknown>>,
   simultaneousTaskRunningLimit: number,
   returnErrors: boolean = false
 ) => {

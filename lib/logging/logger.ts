@@ -16,12 +16,12 @@ let logger: LoggingLevels = flow(
 )(loggingLevels);
 
 type LoggingLevels = {
-  info(...args: any[]): void;
-  debug(...args: any[]): void;
-  trace(...args: any[]): void;
-  warn(...args: any[]): void;
-  error(...args: any[]): void;
-  fatal(...args: any[]): void;
+  info(...args: unknown[]): void;
+  debug(...args: unknown[]): void;
+  trace(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+  fatal(...args: unknown[]): void;
 };
 
 const setLogger = (_logger: LoggingLevels) => {

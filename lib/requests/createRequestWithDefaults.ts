@@ -1,7 +1,7 @@
-import fs = require('fs');
+import fs from 'fs';
 
 import request from 'postman-request';
-import { get, isEmpty, getOr, omit } from 'lodash/fp';
+import { get, getOr, isEmpty, omit } from 'lodash/fp';
 import Bottleneck from 'bottleneck';
 
 import logging from '../logging';
@@ -75,7 +75,7 @@ function _setupLimiter(options) {
  *       form?: object;
  *       [key: string]: any;
  *    }
-};
+ };
  */
 const createRequestWithDefaults = ({
   config: { request: { ca, cert, key, passphrase, rejectUnauthorized, proxy, json } } = {
@@ -92,9 +92,14 @@ const createRequestWithDefaults = ({
   roundedSuccessStatusCodes = [200],
   useLimiter = false,
   requestOptionsToOmitFromLogsKeyPaths = ['headers.Authorization'],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   preprocessRequestOptions = async (requestOptions: RequestOptions) => ({}),
-  postprocessRequestResponse = async (response: any, requestOptions: RequestOptions) =>
-    response,
+  postprocessRequestResponse = async (
+    response: unknown,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    requestOptions: RequestOptions
+  ) => response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   postprocessRequestFailure = async (error: Error, requestOptions: RequestOptions) => {
     throw error;
   }
@@ -135,7 +140,7 @@ export const requestWithDefaultsBuilder = (
 
   const _requestWithDefaults = (requestOptions: RequestOptions) =>
     new Promise((resolve, reject) => {
-      defaultsRequest(requestOptions, (err: any, res: any) => {
+      defaultsRequest(requestOptions, (err: unknown, res: unknown) => {
         if (err) return reject(err);
         resolve(res);
       });
@@ -198,7 +203,7 @@ export const requestWithDefaultsBuilder = (
 };
 
 const checkForStatusError = (
-  { statusCode, body }: { statusCode?: number; body?: any },
+  { statusCode, body }: { statusCode?: number; body?: unknown },
   requestOptions: RequestOptions,
   roundedSuccessStatusCodes?: number[],
   requestOptionsToOmitFromLogsKeyPaths?: string[]

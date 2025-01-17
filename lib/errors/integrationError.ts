@@ -147,7 +147,7 @@ class IntegrationError extends Error {
    * @returns {{name: string, detail: string}}
    */
   toJSON() {
-    let props: SerializedIntegrationError = {
+    const props: SerializedIntegrationError = {
       name: this.name,
       detail: this.detail,
       title: this.title

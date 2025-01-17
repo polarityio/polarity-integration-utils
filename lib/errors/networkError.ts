@@ -60,7 +60,7 @@ class NetworkError extends IntegrationError {
       const code = originalError.code?.toString();
 
       if (code && SSL_ERROR_CODES.has(code)) {
-        // @ts-ignore work around due to typescript preventing readonly properties from
+        // @ts-expect-error work around due to typescript preventing readonly properties from
         // parent constructor from being modified in subclass constructor
         this.help =
           'SSL errors are typically caused by an untrusted SSL certificate in the HTTPS request chain (e.g., ' +
@@ -69,7 +69,7 @@ class NetworkError extends IntegrationError {
           'cases, you will need to add your organization\'s Certificate Authority to the Polarity Server to resolve the ' +
           'issue permanently.';
       } else if (code && NETWORK_CONNECTION_ERROR_CODES.has(code)) {
-        // @ts-ignore work around due to typescript preventing readonly properties from
+        // @ts-expect-error work around due to typescript preventing readonly properties from
         // parent constructor from being modified in subclass constructor
         this.help =
           'Network connection issues are typically caused by a misconfigured proxy or firewall rule. You may ' +

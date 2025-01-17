@@ -2,27 +2,30 @@ import Bottleneck from 'bottleneck';
 import fs from 'fs';
 import request from 'postman-request';
 import { isEqual, isEmpty, get, getOr, omit, map } from 'lodash/fp';
+import errors from '../errors';
+import logging from '../logging';
+import helpers from '../helpers';
 
-import { DoLookupUserOptions } from '../user-options/types';
-import {
+import type { DoLookupUserOptions } from '../user-options/types';
+import type {
   PostprocessRequestFailure,
   PostprocessRequestSuccess,
   PreprocessRequestOptions,
   RequestDefaults,
   RequestOptions
 } from './types';
-import errors from '../errors';
-import logging from '../logging';
-import helpers from '../helpers';
 
 interface RequestWithDefaults {
   setPreprocessRequestOptions(preprocessRequestOptions: PreprocessRequestOptions): void;
+
   setPostprocessRequestSuccess(
     postprocessRequestSuccess: PostprocessRequestSuccess
   ): void;
+
   setPostprocessRequestFailure(
     postprocessRequestFailure: PostprocessRequestFailure
   ): void;
+
   setUserOptions(userOptions: DoLookupUserOptions): void;
 }
 
@@ -33,29 +36,40 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   private bottleneckOptions: Bottleneck.ConstructorOptions;
   private bottleneckLimiter;
 
-  private requestWithDefaults: (requestOptions: RequestOptions) => Promise<any>;
+  private readonly requestWithDefaults: (
+    requestOptions: RequestOptions
+  ) => Promise<unknown>;
   private preprocessRequestOptions: PreprocessRequestOptions = async (
     userOptions: DoLookupUserOptions,
     requestOptions: RequestOptions
   ): Promise<RequestOptions> => requestOptions;
   private postprocessRequestSuccess: PostprocessRequestSuccess = async (
-    response: any,
+    response: unknown,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     requestOptions: RequestOptions,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     userOptions: DoLookupUserOptions
-  ): Promise<any> => response;
+  ): Promise<unknown> => response;
   private postprocessRequestFailure: PostprocessRequestFailure = (
     error: Error,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     requestOptions: RequestOptions,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     userOptions: DoLookupUserOptions
   ): never => {
     throw error;
   };
 
+  // REVIEW: I think `defaults` should be optional.  As a result, we should not
+  // destructure in the function declaration and move this into the function body.
+  // roundedSuccessStatusCodes and requestOptionsToOmitFromLogsKeypaths should
+  // also be optional and default to their declared defaults
   constructor({
     defaults: { ca, cert, key, passphrase, proxy, rejectUnauthorized, json },
     roundedSuccessStatusCodes,
     requestOptionsToOmitFromLogsKeyPaths
   }: RequestDefaults) {
+    // REVIEW: This is overriding our defaults even if it's not set
     this.roundedSuccessStatusCodes = roundedSuccessStatusCodes;
     this.requestOptionsToOmitFromLogsKeyPaths = requestOptionsToOmitFromLogsKeyPaths;
 
@@ -72,7 +86,7 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
 
     this.requestWithDefaults = async (requestOptions: RequestOptions) =>
       new Promise((resolve, reject) => {
-        defaultsRequest(requestOptions, (err: any, res: any) => {
+        defaultsRequest(requestOptions, (err: unknown, res: unknown) => {
           if (err) return reject(err);
           resolve(res);
         });
@@ -87,11 +101,13 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   ): void {
     this.preprocessRequestOptions = preprocessRequestOptions;
   }
+
   public setPostprocessRequestSuccess(
     postprocessRequestSuccess: PostprocessRequestSuccess
   ): void {
     this.postprocessRequestSuccess = postprocessRequestSuccess;
   }
+
   public setPostprocessRequestFailure(
     postprocessRequestFailure: PostprocessRequestFailure
   ): void {
@@ -101,15 +117,16 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   public setUserOptions(userOptions: DoLookupUserOptions): void {
     this.userOptions = userOptions;
   }
+
   public setLimiter(bottleneckOptions: Bottleneck.ConstructorOptions): void {
-    if (!isEqual(this.bottleneckOptions, bottleneckOptions)) return;
+    if (isEqual(this.bottleneckOptions, bottleneckOptions)) return;
 
     this.bottleneckLimiter = new Bottleneck({
       ...bottleneckOptions,
       maxConcurrent:
         typeof bottleneckOptions.maxConcurrent === 'string'
           ? Number.parseInt(bottleneckOptions.maxConcurrent, 10)
-          : bottleneckOptions.minTime,
+          : bottleneckOptions.maxConcurrent,
       minTime:
         typeof bottleneckOptions.minTime === 'string'
           ? Number.parseInt(bottleneckOptions.minTime, 10)
@@ -119,7 +136,7 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
     });
   }
 
-  public async run(requestOptions: RequestOptions): Promise<any> | never {
+  public async run(requestOptions: RequestOptions): Promise<unknown> | never {
     const preRequestFunctionResults = await this.preprocessRequestOptions(
       this.userOptions,
       requestOptions
@@ -135,6 +152,7 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
         ? this.bottleneckLimiter.schedule(this.requestWithDefaults, _requestOptions)
         : this.requestWithDefaults(_requestOptions));
 
+      logging.getLogger().trace({ result }, 'Internal Library Result');
       this.checkForStatusError(result, _requestOptions);
 
       postRequestFunctionResults = await this.postprocessRequestSuccess(
@@ -174,13 +192,14 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   }
 
   private checkForStatusError(
-    { statusCode, body }: { statusCode?: number; body?: any },
+    { statusCode, body }: { statusCode?: number; body?: unknown },
     requestOptions: RequestOptions
   ): void {
     //TODO incorporate Eds error handling
 
     const Logger = logging.getLogger();
 
+    // REVIEW: requestOptionsToOmitFromLogsKeyPaths should be optional
     const requestOptionsWithoutSensitiveData = omit(
       this.requestOptionsToOmitFromLogsKeyPaths.concat('options'),
       requestOptions
@@ -216,17 +235,28 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
     }
   }
 
+  // REVIEW: Constructor uses a config object as a single parameter
+  // but this function takes multiple parameters.  Should we be consistent?
+  // Any reason to do one or the other?
   public async runInParallel(
     allRequestsOptions: RequestOptions[],
     responseGetPath: string = 'body',
-    possibleSimultaneousRequests: number = 10,
+    maxConcurrentRequests: number = 10,
     returnErrors: boolean = false
   ) {
+    const Logger = logging.getLogger();
     const unexecutedRequestFunctions = map(
+      // REVIEW: Would it be better to just pass through the entire entity rather
+      // than a resultId?
       ({ resultId, ...requestOptions }) =>
         async () => {
+          Logger.trace({ requestOptions }, 'Parallel request options');
           const response = await this.run(requestOptions);
           const result = responseGetPath ? get(responseGetPath, response) : response;
+          // REVIEW: The shape of the response object should stay the same rather than
+          // change if a resultId is added or removed.  Otherwise, if you have to add a
+          // result object later on, things will break and potentially cause cascading
+          // issues.
           return resultId ? { resultId, result } : result;
         },
       allRequestsOptions
@@ -234,7 +264,7 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
 
     const results = await helpers.parallelLimit(
       unexecutedRequestFunctions,
-      possibleSimultaneousRequests,
+      maxConcurrentRequests,
       returnErrors
     );
 
