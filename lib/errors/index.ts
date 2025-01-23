@@ -1,5 +1,4 @@
 import parseErrorToReadableJson from './parseErrorToReadableJson';
-import RequestError from './requestError';
 import IntegrationError from './integrationError';
 import ApiRequestError from './apiRequestError';
 import AuthRequestError from './authRequestError';
@@ -8,7 +7,6 @@ import RetryRequestError from './retryRequestError';
 
 export default {
   parseErrorToReadableJson,
-  RequestError,
   IntegrationError,
   ApiRequestError,
   AuthRequestError,

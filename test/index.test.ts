@@ -1,4 +1,4 @@
-import { errors, helpers, userOptions, requests, logging } from '../lib/index';
+import { errors, helpers, userOptions, logging } from '../lib/index';
 
 const { parseErrorToReadableJson } = errors;
 const {
@@ -15,7 +15,6 @@ const {
 } = helpers;
 
 const { validateUrlOption } = userOptions;
-const { createRequestWithDefaults, createRequestsInParallel } = requests;
 const { setLogger, getLogger } = logging;
 
 describe('index.js', () => {
@@ -32,8 +31,6 @@ describe('index.js', () => {
     expect(sleep).toBeInstanceOf(Function);
     expect(parallelLimit).toBeInstanceOf(Function);
     expect(validateUrlOption).toBeInstanceOf(Function);
-    expect(createRequestWithDefaults).toBeInstanceOf(Function);
-    expect(createRequestsInParallel).toBeInstanceOf(Function);
     expect(setLogger).toBeInstanceOf(Function);
     expect(getLogger).toBeInstanceOf(Function);
   });

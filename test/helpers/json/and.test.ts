@@ -10,7 +10,12 @@ const truthyValueFunctions: NonEmptyArray<Predicate<string>> = [
   () => [],
   () => 'contains content'
 ];
-const falsyValueFunctions: NonEmptyArray<Predicate<string>> = [() => false, (x?: unknown) => !x, () => [].length, () => ''];
+const falsyValueFunctions: NonEmptyArray<Predicate<string>> = [
+  () => false,
+  (x?: unknown) => !x,
+  () => [].length,
+  () => ''
+];
 const truthyAndFalsyValueFunctions = truthyValueFunctions.concat(falsyValueFunctions);
 const inputString =
   'This string is passed into each function passed into the `and` function';
@@ -35,23 +40,27 @@ jest.spyOn(testFunctions, 'spyableTrackResults');
 
 describe('and', () => {
   it('should return true if all function return a truthy value', () => {
-    //expect(and.apply(null, truthyValueFunctions)(inputString)).toBe(true);
     expect(and(...truthyValueFunctions)(inputString)).toBe(true);
   });
+  
   it('should return false if all function return a falsy value', () => {
     expect(and(...falsyValueFunctions)(inputString)).toBe(false);
   });
+  
   it('should return false if any function return a falsy value', () => {
-    const shuffledFunctions: NonEmptyArray<Predicate<string>> = shuffle(truthyAndFalsyValueFunctions);
+    const shuffledFunctions: NonEmptyArray<Predicate<string>> = shuffle(
+      truthyAndFalsyValueFunctions
+    ) as NonEmptyArray<Predicate<string>>;
 
     expect(and(...shuffledFunctions)(inputString)).toBe(false);
   });
+  
   it('should run each function that returns a truthy value', () => {
     const functionsResults = [];
     const truthyFunctionsWithTrackingSideEffects: NonEmptyArray<Predicate<string>> = map(
       trackResults(functionsResults),
       truthyValueFunctions
-    );
+    ) as NonEmptyArray<Predicate<string>>;
 
     const result = and(...truthyFunctionsWithTrackingSideEffects)(inputString);
 
@@ -59,12 +68,13 @@ describe('and', () => {
     expect(functionsResults).toEqual([true, inputString, [], 'contains content']);
     expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(4);
   });
+  
   it('should stop running functions once a falsy value is returned by one of the functions', () => {
     const functionsResults = [];
     const functionsWithTrackingSideEffects: NonEmptyArray<Predicate<string>> = map(
       trackResults(functionsResults),
       truthyAndFalsyValueFunctions
-    );
+    ) as NonEmptyArray<Predicate<string>>;
 
     const result = and(...functionsWithTrackingSideEffects)(inputString);
 

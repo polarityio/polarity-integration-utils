@@ -9,18 +9,12 @@ import { filter, flow, replace, toLower, includes, curry } from 'lodash/fp';
  */
 const filterObjectsContainingString = curry((string: string, objs = []) => {
   const modifiedSearchString = flow(replace(/\W/g, ''), toLower)(string);
-  if(!modifiedSearchString) return [];
+  if (!modifiedSearchString) return [];
 
   return filter(
-    flow(
-      JSON.stringify,
-      replace(/\W/g, ''),
-      toLower,
-      includes(modifiedSearchString)
-    ),
+    flow(JSON.stringify, replace(/\W/g, ''), toLower, includes(modifiedSearchString)),
     objs
-  )
-}
-);
+  );
+});
 
 export default filterObjectsContainingString;

@@ -36,6 +36,7 @@
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@types/jest": "^24.0.14",
+    "@types/lodash": "^4.17.14",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
     "copy-paste": "^1.5.3",

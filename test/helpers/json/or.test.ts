@@ -37,33 +37,37 @@ describe('or', () => {
   it('should return true if all function return a truthy value', () => {
     expect(or(...truthyValueFunctions)(inputString)).toBe(true);
   });
+  
   it('should return false if all function return a falsy value', () => {
     expect(or(...falsyValueFunctions)(inputString)).toBe(false);
   });
+  
   it('should return true if any function return a true value', () => {
     const shuffledFunctions: NonEmptyArray<Predicate<string>> = shuffle(
       truthyAndFalsyValueFunctions
-    );
+    ) as NonEmptyArray<Predicate<string>>;
 
     expect(or(...shuffledFunctions)(inputString)).toBe(true);
   });
+  
   it('should run next `or` function until a truthy value is returned from one of the functions', () => {
     const functionsResults = [];
     const functionsWithTrackingSideEffects: NonEmptyArray<Predicate<string>> = map(
       trackResults(functionsResults),
       truthyAndFalsyValueFunctions
-    );
+    ) as NonEmptyArray<Predicate<string>>;
 
     or(...functionsWithTrackingSideEffects)(inputString);
     expect(functionsResults).toEqual([false, false, 0, '']);
     expect(testFunctions.spyableTrackResults).toHaveBeenCalledTimes(5);
   });
+  
   it('should only run first function if it returns a truthy value', () => {
     const functionsResults = [];
     const functionsWithTrackingSideEffects: NonEmptyArray<Predicate<string>> = map(
       trackResults(functionsResults),
       truthyValueFunctions
-    );
+    ) as NonEmptyArray<Predicate<string>>;
 
     or(...functionsWithTrackingSideEffects)(inputString);
 

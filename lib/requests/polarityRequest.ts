@@ -1,5 +1,6 @@
-import Bottleneck from 'bottleneck';
 import fs from 'fs';
+import { promisify } from 'util';
+import Bottleneck from 'bottleneck';
 import request from 'postman-request';
 import { isEqual, isEmpty, get, getOr, omit, map } from 'lodash/fp';
 import errors from '../errors';
@@ -7,11 +8,11 @@ import logging from '../logging';
 import helpers from '../helpers';
 
 import type { DoLookupUserOptions } from '../user-options/types';
-import type {
+import {
+  PolarityRequestOptions,
   PostprocessRequestFailure,
   PostprocessRequestSuccess,
   PreprocessRequestOptions,
-  RequestDefaults,
   RequestOptions
 } from './types';
 
@@ -29,13 +30,12 @@ interface RequestWithDefaults {
   setUserOptions(userOptions: DoLookupUserOptions): void;
 }
 
-class PolarityRequestWithDefaults implements RequestWithDefaults {
-  private roundedSuccessStatusCodes: number[] = [200];
-  private requestOptionsToOmitFromLogsKeyPaths: string[];
-  public userOptions: DoLookupUserOptions;
-  private bottleneckOptions: Bottleneck.ConstructorOptions;
+class PolarityRequest implements RequestWithDefaults {
+  public readonly roundedSuccessStatusCodes: number[] = [200];
+  public readonly requestOptionsToOmitFromLogsKeyPaths: string[] = [];
+  public readonly userOptions: DoLookupUserOptions;
+  public readonly bottleneckOptions: Bottleneck.ConstructorOptions;
   private bottleneckLimiter;
-
   private readonly requestWithDefaults: (
     requestOptions: RequestOptions
   ) => Promise<unknown>;
@@ -64,16 +64,28 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   // destructure in the function declaration and move this into the function body.
   // roundedSuccessStatusCodes and requestOptionsToOmitFromLogsKeypaths should
   // also be optional and default to their declared defaults
-  constructor({
-    defaults: { ca, cert, key, passphrase, proxy, rejectUnauthorized, json },
-    roundedSuccessStatusCodes,
-    requestOptionsToOmitFromLogsKeyPaths
-  }: RequestDefaults) {
-    // REVIEW: This is overriding our defaults even if it's not set
-    this.roundedSuccessStatusCodes = roundedSuccessStatusCodes;
-    this.requestOptionsToOmitFromLogsKeyPaths = requestOptionsToOmitFromLogsKeyPaths;
+  constructor(options: PolarityRequestOptions = {}) {
+    const defaults = options.defaults || {};
+    const {
+      ca,
+      cert,
+      key,
+      passphrase,
+      proxy,
+      rejectUnauthorized = true,
+      json = true
+    } = defaults;
 
-    const defaultsProxyOptions = {
+    if (options.roundedSuccessStatusCodes) {
+      this.roundedSuccessStatusCodes = options.roundedSuccessStatusCodes;
+    }
+
+    if (options.requestOptionsToOmitFromLogsKeyPaths) {
+      this.requestOptionsToOmitFromLogsKeyPaths =
+        options.requestOptionsToOmitFromLogsKeyPaths;
+    }
+
+    const defaultRequestOptions = {
       ...(this.configFieldIsValid(ca) && { ca: fs.readFileSync(ca) }),
       ...(this.configFieldIsValid(cert) && { cert: fs.readFileSync(cert) }),
       ...(this.configFieldIsValid(key) && { key: fs.readFileSync(key) }),
@@ -82,15 +94,8 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
       ...(typeof rejectUnauthorized === 'boolean' && { rejectUnauthorized }),
       json
     };
-    const defaultsRequest = request.defaults(defaultsProxyOptions);
 
-    this.requestWithDefaults = async (requestOptions: RequestOptions) =>
-      new Promise((resolve, reject) => {
-        defaultsRequest(requestOptions, (err: unknown, res: unknown) => {
-          if (err) return reject(err);
-          resolve(res);
-        });
-      });
+    this.requestWithDefaults = promisify(request.defaults(defaultRequestOptions));
   }
 
   private configFieldIsValid = (field: string): boolean =>
@@ -141,7 +146,7 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
       this.userOptions,
       requestOptions
     );
-    const _requestOptions = {
+    const mergedRequestOptions = {
       ...requestOptions,
       ...preRequestFunctionResults
     };
@@ -149,22 +154,22 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
     let postRequestFunctionResults, result;
     try {
       result = await (this.bottleneckLimiter
-        ? this.bottleneckLimiter.schedule(this.requestWithDefaults, _requestOptions)
-        : this.requestWithDefaults(_requestOptions));
+        ? this.bottleneckLimiter.schedule(this.requestWithDefaults, mergedRequestOptions)
+        : this.requestWithDefaults(mergedRequestOptions));
 
       logging.getLogger().trace({ result }, 'Internal Library Result');
-      this.checkForStatusError(result, _requestOptions);
+      this.checkForStatusError(result, mergedRequestOptions);
 
       postRequestFunctionResults = await this.postprocessRequestSuccess(
         result,
-        _requestOptions,
+        mergedRequestOptions,
         this.userOptions
       );
     } catch (error) {
       try {
         postRequestFunctionResults = await this.postprocessRequestFailure(
           error,
-          _requestOptions,
+          mergedRequestOptions,
           this.userOptions
         );
       } catch (error) {
@@ -183,7 +188,8 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
             getOr('', 'errors[0].meta.err.code', err) === 'ECONNRESET';
         }
 
-        if (_requestOptions.entity) error.entity = JSON.stringify(_requestOptions.entity);
+        if (mergedRequestOptions.entity)
+          error.entity = JSON.stringify(mergedRequestOptions.entity);
 
         throw error;
       }
@@ -199,7 +205,6 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
 
     const Logger = logging.getLogger();
 
-    // REVIEW: requestOptionsToOmitFromLogsKeyPaths should be optional
     const requestOptionsWithoutSensitiveData = omit(
       this.requestOptionsToOmitFromLogsKeyPaths.concat('options'),
       requestOptions
@@ -272,4 +277,4 @@ class PolarityRequestWithDefaults implements RequestWithDefaults {
   }
 }
 
-export default PolarityRequestWithDefaults;
+export default PolarityRequest;

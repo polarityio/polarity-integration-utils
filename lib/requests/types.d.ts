@@ -53,7 +53,7 @@ export type PostprocessRequestFailureFunction = (
   requestOptions: RequestOptions
 ) => Promise<unknown> | never;
 
-export interface RequestDefaults {
+export interface PolarityRequestOptions {
   defaults?: ConfigRequestProxyOptions;
   roundedSuccessStatusCodes?: number[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
