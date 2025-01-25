@@ -22,6 +22,12 @@ export type RequestOptions = {
   [key: string]: unknown;
 };
 
+export type RunInParallelOptions = {
+  allRequestOptions: RequestOptions[];
+  maxConcurrentRequests?: number;
+  returnErrors?: boolean;
+}
+
 export type PostmanRequestResponse = {
   statusCode: number;
   request: {

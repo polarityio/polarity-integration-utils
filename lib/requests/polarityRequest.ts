@@ -2,6 +2,7 @@ import fs from 'fs';
 import { promisify } from 'util';
 import Bottleneck from 'bottleneck';
 import request from 'postman-request';
+import async from 'async';
 import { isEqual, get, omit, has } from 'lodash/fp';
 import {
   ApiRequestError,
@@ -19,7 +20,8 @@ import {
   PreprocessRequestOptions,
   RequestOptions,
   IsApiErrorFunction,
-  PostmanRequestResponse
+  PostmanRequestResponse,
+  RunInParallelOptions
 } from './types';
 
 class PolarityRequest {
@@ -409,40 +411,22 @@ class PolarityRequest {
     return message;
   }
 
-  // REVIEW: Constructor uses a config object as a single parameter
-  // but this function takes multiple parameters.  Should we be consistent?
-  // Any reason to do one or the other?
-  // public async runInParallel(
-  //   allRequestsOptions: RequestOptions[],
-  //   responseGetPath: string = 'body',
-  //   maxConcurrentRequests: number = 10,
-  //   returnErrors: boolean = false
-  // ) {
-  //   const unexecutedRequestFunctions = map(
-  //     // REVIEW: Would it be better to just pass through the entire entity rather
-  //     // than a resultId?
-  //     ({ resultId, ...requestOptions }) =>
-  //       async () => {
-  //         this.logger.trace({ requestOptions }, 'Parallel request options');
-  //         const response = await this.run(requestOptions);
-  //         const result = responseGetPath ? get(responseGetPath, response) : response;
-  //         // REVIEW: The shape of the response object should stay the same rather than
-  //         // change if a resultId is added or removed.  Otherwise, if you have to add a
-  //         // result object later on, things will break and potentially cause cascading
-  //         // issues.
-  //         return resultId ? { resultId, result } : result;
-  //       },
-  //     allRequestsOptions
-  //   );
-  //
-  //   const results = await helpers.parallelLimit(
-  //     unexecutedRequestFunctions,
-  //     maxConcurrentRequests,
-  //     returnErrors
-  //   );
-  //
-  //   return results;
-  // }
+  public async runInParallel(options: RunInParallelOptions) {
+    const allRequestOptions = options.allRequestOptions;
+    const returnErrors = options.returnErrors || false;
+    const maxConcurrentRequests = options.maxConcurrentRequests || 5;
+
+    const tasks = allRequestOptions.map(async (requestOptions) => {
+      return await this.run(requestOptions);
+    });
+
+    const results = await async.parallelLimit(
+      returnErrors ? async.reflectAll(tasks) : tasks,
+      maxConcurrentRequests
+    );
+
+    return results;
+  }
 }
 
 export default PolarityRequest;

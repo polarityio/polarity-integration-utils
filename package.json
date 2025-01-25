@@ -68,7 +68,8 @@
   "dependencies": {
     "bottleneck": "^2.19.5",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.40"
+    "postman-request": "^2.88.1-postman.40",
+    "async": "^3.2.6"
   },
   "sideEffects": false
 }
