@@ -4,6 +4,7 @@ import PolarityRequest from '../../lib/requests/polarityRequest';
 import postmanRequest from 'postman-request';
 
 const identityLogger = {
+  child: identity,
   trace: identity,
   info: identity,
   error: identity,
