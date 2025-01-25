@@ -66,8 +66,13 @@ class NetworkError extends IntegrationError {
           'SSL errors are typically caused by an untrusted SSL certificate in the HTTPS request chain (e.g., ' +
           'an internal server that is being queried directly, or a web proxy for external requests). You can temporarily ' +
           'ignore SSL validation errors by enabling the integration setting "Allow Insecure TLS/SSL Connections". In most ' +
-          'cases, you will need to add your organization\'s Certificate Authority to the Polarity Server to resolve the ' +
+          "cases, you will need to add your organization's Certificate Authority to the Polarity Server to resolve the " +
           'issue permanently.';
+      } else if (code && code === 'ENOTFOUND') {
+        // @ts-expect-error work around due to typescript preventing readonly properties from
+        // parent constructor from being modified in subclass constructor
+        this.help =
+          'The ENOTFOUND exception arises when the integration is unable to establish a connection to a domain due to a DNS error. It is commonly caused by incorrect host values or a typo in the domain name the integration is attempting to reach.  This error can also be caused by a misconfigured proxy or firewall rule';
       } else if (code && NETWORK_CONNECTION_ERROR_CODES.has(code)) {
         // @ts-expect-error work around due to typescript preventing readonly properties from
         // parent constructor from being modified in subclass constructor

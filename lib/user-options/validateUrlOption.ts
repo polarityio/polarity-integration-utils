@@ -46,7 +46,7 @@ const validateUrlOption = (
   urlKey: string = 'url',
   otherValidationErrors: ValidationError[] = []
 ) => {
-  const urlValue = get([urlKey, 'value'], options);
+  const urlValue = get([urlKey, 'value'], options) as string;
 
   if (urlValue === undefined) {
     throw new Error(

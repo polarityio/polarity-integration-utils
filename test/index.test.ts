@@ -1,6 +1,6 @@
-import { errors, helpers, userOptions, logging } from '../lib/index';
+import { helpers, userOptions } from '../lib/index';
 
-const { parseErrorToReadableJson } = errors;
+import { parseErrorToReadableJson } from '../lib/errors';
 const {
   decodeBase64,
   encodeBase64,
@@ -15,7 +15,7 @@ const {
 } = helpers;
 
 const { validateUrlOption } = userOptions;
-const { setLogger, getLogger } = logging;
+import { setLogger, getLogger } from '../lib/logging';
 
 describe('index.js', () => {
   it('should export functions with implementation', () => {

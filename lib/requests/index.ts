@@ -1,5 +1,5 @@
 import PolarityRequest from './polarityRequest';
 
-export default {
+export {
   PolarityRequest
 };

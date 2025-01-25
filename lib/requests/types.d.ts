@@ -1,4 +1,4 @@
-import { DoLookupUserOptions } from "../user-options/types";
+import { DoLookupUserOptions } from '../user-options/types';
 
 export type ConfigRequestProxyOptions = {
   ca?: undefined | string;
@@ -22,6 +22,30 @@ export type RequestOptions = {
   [key: string]: unknown;
 };
 
+export type PostmanRequestResponse = {
+  statusCode: number;
+  request: {
+    uri: unknown;
+    method: string;
+    headers: unknown;
+    [key: string]: unknown;
+  };
+  body: unknown;
+  [key: string]: unknown;
+};
+
+export type IsApiErrorResult = {
+  isApiError: boolean;
+  message?: string;
+};
+
+export type IsApiErrorFunction = (
+  status: number,
+  body: unknown,
+  response: unknown,
+  requestOptions: RequestOptions
+) => IsApiErrorResult;
+
 export type PreprocessRequestOptions = (
   userOptions: DoLookupUserOptions,
   requestOptions: RequestOptions
@@ -31,7 +55,7 @@ export type PostprocessRequestSuccess = (
   response: unknown,
   requestOptions: RequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<unknown> | never;
+) => Promise<PostmanRequestResponse> | never;
 
 export type PostprocessRequestFailure = (
   error: Error,
@@ -55,9 +79,13 @@ export type PostprocessRequestFailureFunction = (
 
 export interface PolarityRequestOptions {
   defaults?: ConfigRequestProxyOptions;
+  isApiError?: IsApiErrorFunction;
   roundedSuccessStatusCodes?: number[];
+  httpResponseErrorProperties?: string[];
+  httpResponseErrorMessageProperties?: string[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
 }
+
 export interface CreateRequestFunctionArguments {
   config?: ConfigJs;
   roundedSuccessStatusCodes?: number[];

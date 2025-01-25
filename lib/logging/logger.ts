@@ -12,10 +12,11 @@ const writeToDevRunnerResults =
     );
 
 let logger: LoggingLevels = flow(
-  reduce((agg, level) => ({ ...agg, [level]: writeToDevRunnerResults(level) }), {})
+  reduce((agg, level: string) => ({ ...agg, [level]: writeToDevRunnerResults(level) }), {})
 )(loggingLevels);
 
 type LoggingLevels = {
+  child?(arg: unknown): void;
   info(...args: unknown[]): void;
   debug(...args: unknown[]): void;
   trace(...args: unknown[]): void;
