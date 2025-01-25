@@ -119,7 +119,7 @@ class PolarityRequest {
         typeof throttlingOptions.minTime === 'string'
           ? Number.parseInt(throttlingOptions.minTime, 10)
           : throttlingOptions.minTime,
-      highWater: throttlingOptions.minTime || 50,
+      highWater: throttlingOptions.highWater || 50,
       strategy: throttlingOptions.strategy || Bottleneck.strategy.OVERFLOW
     });
 
@@ -143,10 +143,10 @@ class PolarityRequest {
       module: 'PolarityRequest'
     });
 
-    if(options.isApiError){
+    if (options.isApiError) {
       this.isApiError = options.isApiError;
     }
-    
+
     if (options.roundedSuccessStatusCodes) {
       this.roundedSuccessStatusCodes = options.roundedSuccessStatusCodes;
     }
@@ -212,7 +212,11 @@ class PolarityRequest {
         ? this.bottleneckLimiter.schedule(this.requestWithDefaults, mergedRequestOptions)
         : this.requestWithDefaults(mergedRequestOptions));
 
-      this.logger.trace({ httpResponse }, 'HTTP Response');
+      if (this.bottleneckLimiter) {
+        this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
+      } else {
+        this.logger.trace({ httpResponse }, 'HTTP Response');
+      }
 
       this.maybeThrowApiRequestError(httpResponse, mergedRequestOptions);
 
@@ -223,20 +227,26 @@ class PolarityRequest {
       );
     } catch (requestError) {
       let transformedError = requestError;
-      
-      if(requestError instanceof IntegrationError){
+
+      // This is actually a framework usage error
+      // TODO: Add a new error type for this
+      if (requestError instanceof IntegrationError) {
         throw requestError;
       }
 
       if (!(requestError instanceof ApiRequestError)) {
         transformedError = new NetworkError('Network error encountered during request', {
-          cause: requestError
+          cause: requestError,
+          requestOptions: mergedRequestOptions
         });
       }
 
       if (requestError instanceof Bottleneck.BottleneckError) {
         transformedError = new RetryRequestError(
-          'This request has been dropped for going over Integration Configured API Throttling Limits'
+          'This request has been dropped for going over Integration Configured API Throttling Limits',
+          {
+            requestOptions: mergedRequestOptions
+          }
         );
       }
 
