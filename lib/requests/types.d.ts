@@ -10,15 +10,22 @@ export type ConfigRequestProxyOptions = {
   json?: undefined | boolean;
 };
 
-export type ConfigJs = { request: ConfigRequestProxyOptions };
-
 export type RequestOptions = {
   url?: string;
   headers?: object;
   qs?: object;
-  options?: object;
   entity?: object;
   form?: object;
+  auth:
+    | {
+        username: string;
+        password: string;
+        sendImmediately?: boolean;
+      }
+    | {
+        bearer: string;
+        sendImmediately?: boolean;
+      };
   [key: string]: unknown;
 };
 
@@ -26,7 +33,7 @@ export type RunInParallelOptions = {
   allRequestOptions: RequestOptions[];
   maxConcurrentRequests?: number;
   returnErrors?: boolean;
-}
+};
 
 export type PostmanRequestResponse = {
   statusCode: number;
@@ -37,6 +44,7 @@ export type PostmanRequestResponse = {
     [key: string]: unknown;
   };
   body: unknown;
+  error?: Error;
   [key: string]: unknown;
 };
 
@@ -69,20 +77,6 @@ export type PostprocessRequestFailure = (
   userOptions: DoLookupUserOptions
 ) => Promise<unknown> | never;
 
-export type PreprocessRequestOptionsFunction = (
-  requestOptions: RequestOptions
-) => Promise<object> | never | undefined;
-
-export type PostprocessRequestResponseFunction = (
-  response: unknown,
-  requestOptions: RequestOptions
-) => Promise<unknown> | never;
-
-export type PostprocessRequestFailureFunction = (
-  error: Error,
-  requestOptions: RequestOptions
-) => Promise<unknown> | never;
-
 export interface PolarityRequestOptions {
   defaults?: ConfigRequestProxyOptions;
   isApiError?: IsApiErrorFunction;
@@ -91,19 +85,3 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
 }
-
-export interface CreateRequestFunctionArguments {
-  config?: ConfigJs;
-  roundedSuccessStatusCodes?: number[];
-  useLimiter?: boolean;
-  requestOptionsToOmitFromLogsKeyPaths?: string[];
-  preprocessRequestOptions?: PreprocessRequestOptionsFunction;
-  postprocessRequestResponse?: PostprocessRequestResponseFunction;
-  postprocessRequestFailure?: PostprocessRequestFailureFunction;
-}
-
-export type AnyPromiseResponse = Promise<unknown> | Error | never;
-
-export type RequestWithDefaultsFunction = (
-  requestOptions: RequestOptions
-) => AnyPromiseResponse;

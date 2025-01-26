@@ -2,7 +2,6 @@ import { reduce } from 'lodash/fp';
 
 /**
  * Transposes a 2D array, converting rows into columns.
- *
  * @param {([] | Array<[unknown, unknown]>)} [twoDimensionalArray] - The 2D array to transpose.
  * @returns {[Array<unknown>, Array<unknown>]} The transposed 2D array.
  */

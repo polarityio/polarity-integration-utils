@@ -15,7 +15,6 @@ import and  from './and';
  * Function to map over properties in an object.
  * This allows for transformations on both the keys and values of each properties.
  * This function also supports currying
- *
  * @param func - function that takes in `value` & `key' from each object property and
  *   returns a new key and new value in an array of length 2
  *   e.g. (value, key) => [newKey, newValue]

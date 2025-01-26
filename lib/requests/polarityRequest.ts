@@ -20,6 +20,7 @@ import {
   PreprocessRequestOptions,
   RequestOptions,
   IsApiErrorFunction,
+  IsApiErrorResult,
   PostmanRequestResponse,
   RunInParallelOptions
 } from './types';
@@ -68,7 +69,6 @@ class PolarityRequest {
    * If the `isApiError` method is implemented
    * the property `roundedSuccessStatusCodes` and `httpResponseErrorProperties` are not
    * used to determine API errors.
-   *
    * @param {number} status - The HTTP status code of the response.
    * @param {unknown} body - The body of the HTTP response.
    * @param {unknown} response - The full HTTP response object.
@@ -265,7 +265,6 @@ class PolarityRequest {
 
   /**
    * Checks whether the HTTP response is an API error and throws an ApiRequestError if it is.
-   *
    * @param {PostmanRequestResponse} httpResponse - The HTTP response from the Postman request.
    * @param {RequestOptions} requestOptions - The options used for the request.
    * @throws {ApiRequestError} - Throws an error if the response indicates an API error.
@@ -280,7 +279,7 @@ class PolarityRequest {
     const requestOptionsWithoutSensitiveData = omit(
       this.requestOptionsToOmitFromLogsKeyPaths.concat('options'),
       requestOptions
-    );
+    ) as RequestOptions;
 
     this.logger.trace(
       {
@@ -294,7 +293,7 @@ class PolarityRequest {
     let hasApiError: boolean;
     let message: string;
     if (this.isApiError) {
-      const result = this.isApiError(statusCode, body, httpResponse, requestOptions);
+      const result: IsApiErrorResult = this.isApiError(statusCode, body, httpResponse, requestOptions);
       if (!result || typeof result.isApiError !== 'boolean') {
         throw new IntegrationError(
           'PolarityRequest property `isApiError` must return an object containing an `isApiError` property with a boolean value'
@@ -335,9 +334,9 @@ class PolarityRequest {
   /**
    * Returns true if the `httpStatusCode` is not one of the rounded HTTP status codes
    * specified in the PolarityRequest `roundedSuccessStatusCodes` property.
-   *
-   * @param httpStatusCode
    * @private
+   * @param {number} httpStatusCode A numeric HTTP Status Code 
+   * @returns {boolean} true if the provided `httpStatusCode` is an error code
    */
   private isHttpStatusCodeError(httpStatusCode: number): boolean {
     const roundedStatus = Math.round(httpStatusCode / 100) * 100;
@@ -350,9 +349,9 @@ class PolarityRequest {
    * Returns true indicating that the API returned an error  if the `httpBody` contains
    * one of the paths specified by the PolarityRequest `httpResponseErrorProperties`
    * property.
-   *
-   * @param httpBody body property from the PostmanRequestResponse
    * @private
+   * @param {PostmanRequestResponse} httpBody body property from the PostmanRequestResponse
+   * @returns {boolean} true if the httpBody property contains properties specified in `httpResponseErrorProperties` 
    */
   private hasHttpResponseErrorProperty(httpBody: unknown): boolean {
     return this.httpResponseErrorProperties.some((property) => has(property, httpBody));
@@ -361,11 +360,11 @@ class PolarityRequest {
   /**
    * Returns an error message based on the `httpResponseErrorMessageProperties` first.  If no
    * message is found, it then uses the `httpResponseErrorProperties` to attempt to find
-   * a suitable error message.  If no message is still found, the defaultMessage is returned.
-   *
-   * @param httpBody
-   * @param defaultMessage
+   * a suitable error message.  If no message is still found, the `defaultMessage` is returned.
    * @private
+   * @param {unknown} httpBody JSON Object returned by an HTTP Request
+   * @param {string} defaultMessage A default error message to use if no specific error messages are found
+   * @returns {string} An error message
    */
   private getErrorMessageFromHttpResponse(
     httpBody: unknown,
@@ -389,10 +388,10 @@ class PolarityRequest {
    * Given a list of `properties` which are strings representing JSON dot notation, this
    * method returns the first string property found at the given JSON path
    * in the given `object`.
-   *
-   * @param object
-   * @param properties
    * @private
+   * @param {object} object - An object to find properties in
+   * @param {string[]} properties - a list of JSON dot notation properties to look for within `object`
+   * @returns {string|undefined} A string value of the property found within the given object or undefined if no value is found 
    */
   private maybeGetStringPropertyValue(
     object: unknown,
@@ -411,19 +410,36 @@ class PolarityRequest {
     return message;
   }
 
-  public async runInParallel(options: RunInParallelOptions) {
+  /**
+   * Runs multiple requests in parallel with a limit on the maximum number of concurrent requests.
+   * @param {RunInParallelOptions} options - The options for running requests in parallel.
+   * @param {RequestOptions[]} options.allRequestOptions - An array of request options for each request to be run.
+   * @param {boolean} [options.returnErrors=false] - Whether to return errors in the results array.
+   * @param {number} [options.maxConcurrentRequests=5] - The maximum number of concurrent requests to run.
+   * @returns {Promise<PostmanRequestResponse[]>} - A promise that resolves to an array of responses or errors.
+   */
+  public async runInParallel(
+    options: RunInParallelOptions
+  ): Promise<PostmanRequestResponse[]> {
     const allRequestOptions = options.allRequestOptions;
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
 
+    //TODO: Need to figure out how we want to make it easy for someone calling this function to 
+    // match the request to the resule
     const tasks = allRequestOptions.map(async (requestOptions) => {
-      return await this.run(requestOptions);
+      try {
+        return await this.run(requestOptions);
+      } catch (requestError) {
+        if (returnErrors) {
+          return {
+            error: requestError
+          };
+        }
+      }
     });
 
-    const results = await async.parallelLimit(
-      returnErrors ? async.reflectAll(tasks) : tasks,
-      maxConcurrentRequests
-    );
+    const results = await async.parallelLimit(tasks, maxConcurrentRequests);
 
     return results;
   }

@@ -50,10 +50,9 @@ class IntegrationError extends Error {
 
   /**
    * Construct a new IntegrationError object.
-   *
-   * @param message {string} - A string description of the error which is used as the `detail` property on the
+   * @param {string} message - A string description of the error which is used as the `detail` property on the
    * serialized error.
-   * @param properties {IntegrationErrorProperties} - Optional properties for the error.
+   * @param {IntegrationErrorProperties} properties - Optional properties for the error.
    */
   constructor(message, properties: IntegrationErrorProperties = {}) {
     super(message);
@@ -94,11 +93,10 @@ class IntegrationError extends Error {
    * removed.
    *
    * TODO: Come up with a more robust way to detect secrets and obscure them
-   *
-   * @param requestOptions
-   * @returns {*}
+   * @param {RequestOptions} requestOptions - Request options object to sanitize 
+   * @returns {RequestOptions} Sanitized requestOptions
    */
-  sanitizeRequestOptions(requestOptions) {
+  sanitizeRequestOptions(requestOptions: RequestOptions): RequestOptions {
     const sanitizedOptions = {
       ...requestOptions
     };
@@ -143,8 +141,7 @@ class IntegrationError extends Error {
   /**
    * Serializes the error's properties into a POJO.  The order of the
    * properties is preserved when serialized.
-   *
-   * @returns {{name: string, detail: string}}
+   * @returns {{name: string, detail: string}} JSON representation of the error
    */
   toJSON() {
     const props: SerializedIntegrationError = {
