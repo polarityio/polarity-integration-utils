@@ -1,6 +1,8 @@
-import { getLogger, setLogger } from './logger';
-
-export { 
-  getLogger, 
-  setLogger 
-};
+// import { getLogger, setLogger, Logger } from './logger';
+//
+// export { 
+//   getLogger, 
+//   setLogger,
+//   Logger
+// };
+export * from './logger';

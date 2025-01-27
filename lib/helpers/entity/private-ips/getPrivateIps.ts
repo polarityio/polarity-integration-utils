@@ -1,8 +1,16 @@
 import { filter } from 'lodash/fp';
-import { Entity } from '../../../types';
+import type { Entity } from '../../../types';
 import { IpManipulationParameters, isLinkLocalAddress, isLoopBackIp } from './common';
 import isPrivateIp from './isPrivateIp';
 
+/**
+ * @alpha
+ * @param entities - list of entities to return private IPs from
+ * @param dontGetLoopBackIps - true if you don't want loop back IPs returned
+ * @param dontGetLinkLocalAddresses - true if you don't want link local addresses returned
+ * @param dontGetTheseIps - list of IPs to not return 
+ * @param dontGetIpsMatchingThisRegex - regex to match against IPs.  Matched IPs won't be returned
+ */
 const getPrivateIps = (
   entities: Entity[],
   {

@@ -1,7 +1,12 @@
 import { toLower, map, filter, some } from 'lodash/fp';
 
-import { Entity, EntityType } from '../../types';
+import type { Entity, EntityType } from '../../types';
 
+/**
+ * @public
+ * @param typesToGet - a single type of list of types to return from the entities list
+ * @param entities - list of entities to return specific types from
+ */
 const getEntityTypes = (
   typesToGet: EntityType | EntityType[],
   entities: Entity[]

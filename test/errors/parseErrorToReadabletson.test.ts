@@ -1,4 +1,4 @@
-import parseErrorToReadableJson from '../../lib/errors/parseErrorToReadableJson';
+import { parseErrorToReadableJson } from '../../lib/errors';
 
 class NewError extends Error {
   newProperty: string | undefined

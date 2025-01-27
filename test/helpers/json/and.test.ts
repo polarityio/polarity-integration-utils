@@ -1,5 +1,5 @@
 import { map, shuffle } from 'lodash/fp';
-import and from '../../../lib/helpers/json/and';
+import { and } from '../../../lib/helpers/json/and';
 
 type NonEmptyArray<T> = [T, ...T[]];
 type Predicate<T> = (x: T) => unknown;

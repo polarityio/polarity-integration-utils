@@ -1,6 +1,7 @@
 import { helpers, userOptions } from '../lib/index';
 
 import { parseErrorToReadableJson } from '../lib/errors';
+
 const {
   decodeBase64,
   encodeBase64,
@@ -10,8 +11,7 @@ const {
   and,
   or,
   millisecondsToHoursMinutesAndSeconds,
-  sleep,
-  parallelLimit
+  sleep
 } = helpers;
 
 const { validateUrlOption } = userOptions;
@@ -29,7 +29,6 @@ describe('index.js', () => {
     expect(or).toBeInstanceOf(Function);
     expect(millisecondsToHoursMinutesAndSeconds).toBeInstanceOf(Function);
     expect(sleep).toBeInstanceOf(Function);
-    expect(parallelLimit).toBeInstanceOf(Function);
     expect(validateUrlOption).toBeInstanceOf(Function);
     expect(setLogger).toBeInstanceOf(Function);
     expect(getLogger).toBeInstanceOf(Function);

@@ -1,4 +1,4 @@
-import AuthRequestError from '../../lib/errors/authRequestError';
+import { AuthRequestError } from '../../lib/errors'
 
 describe('AuthRequestError', () => {
   it('should be of instance of AuthRequestError', () => {

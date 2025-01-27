@@ -1,8 +1,8 @@
 import * as errors from './errors';
-import helpers from './helpers';
+import * as helpers from './helpers';
 import * as requests from './requests';
 import * as logging from './logging';
-import userOptions from './user-options';
+import * as userOptions from './user-options';
 
 export {
   errors,

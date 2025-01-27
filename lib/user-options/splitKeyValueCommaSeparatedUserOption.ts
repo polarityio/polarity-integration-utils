@@ -1,6 +1,9 @@
 import { get, curry, flow, split, map, trim, uniq, compact, fromPairs } from 'lodash/fp';
 import { DoLookupUserOptions } from './types';
 
+/**
+ * @alpha
+ */
 const splitKeyValueCommaSeparatedUserOption = curry(
   (key: string, options: DoLookupUserOptions): { [key: string]: string } =>
     flow(

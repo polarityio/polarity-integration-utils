@@ -1,4 +1,4 @@
-import ApiRequestError from '../../lib/errors/apiRequestError';
+import { ApiRequestError } from '../../lib/errors';
 
 describe('ApiRequestError', () => {
   it('should be of instance of ApiRequestError', () => {

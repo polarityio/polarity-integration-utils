@@ -1,4 +1,4 @@
-import sleep from '../../../lib/helpers/time/sleep';
+import { sleep } from '../../../lib/helpers/time/sleep';
 
 jest.useFakeTimers();
 jest.spyOn(global, 'setTimeout');

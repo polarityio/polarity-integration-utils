@@ -1,4 +1,4 @@
-import IntegrationError from '../../lib/errors/integrationError';
+import { IntegrationError } from '../../lib/errors';
 
 describe('IntegrationError', () => {
   it('should be of instance of IntegrationError', () => {

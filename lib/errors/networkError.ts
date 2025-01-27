@@ -1,5 +1,4 @@
-import IntegrationError from './integrationError';
-import { IntegrationErrorProperties } from './types';
+import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
 
 // The following is a list of NodeJS error codes that are related
 // to TLS/SSL certificate errors.  These can be encountered when attempting to connect
@@ -49,9 +48,11 @@ const NETWORK_CONNECTION_ERROR_CODES = new Set([
 /**
  * Generic network error for REST requests.
  * https://betterstack.com/community/guides/scaling-nodejs/nodejs-errors/#4-econnrefused
+ *
+ * @public
  */
-class NetworkError extends IntegrationError {
-  constructor(message, properties: IntegrationErrorProperties = {}) {
+export class NetworkError extends IntegrationError {
+  constructor(message: string, properties: IntegrationErrorProperties = {}) {
     super(message, properties);
 
     // Check if we are wrapping an original error
@@ -66,7 +67,7 @@ class NetworkError extends IntegrationError {
           'SSL errors are typically caused by an untrusted SSL certificate in the HTTPS request chain (e.g., ' +
           'an internal server that is being queried directly, or a web proxy for external requests). You can temporarily ' +
           'ignore SSL validation errors by enabling the integration setting "Allow Insecure TLS/SSL Connections". In most ' +
-          "cases, you will need to add your organization's Certificate Authority to the Polarity Server to resolve the " +
+          'cases, you will need to add your organization\'s Certificate Authority to the Polarity Server to resolve the ' +
           'issue permanently.';
       } else if (code && code === 'ENOTFOUND') {
         // @ts-expect-error work around due to typescript preventing readonly properties from
@@ -84,5 +85,3 @@ class NetworkError extends IntegrationError {
     }
   }
 }
-
-export default NetworkError;

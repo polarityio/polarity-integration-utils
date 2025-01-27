@@ -1,4 +1,8 @@
-const millisecondsToHoursMinutesAndSeconds = (milliseconds: number | string = 0) => {
+/**
+ * @public
+ * @param milliseconds - time in milliseconds to convert to hours, minutes, seconds, milliseconds string
+ */
+export const millisecondsToHoursMinutesAndSeconds = (milliseconds: number | string = 0) => {
   if (typeof milliseconds !== 'number' || isNaN(milliseconds)) {
     throw new Error(
       `Cannot calculate Hours, Minutes, or Seconds from non-number input: \`${milliseconds}\``
@@ -21,5 +25,3 @@ const millisecondsToHoursMinutesAndSeconds = (milliseconds: number | string = 0)
     (!hours && !minutes && !seconds ? `${milliseconds}ms` : '')
   );
 };
-
-export default millisecondsToHoursMinutesAndSeconds;

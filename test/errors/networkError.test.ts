@@ -1,4 +1,4 @@
-import NetworkError from '../../lib/errors/networkError';
+import { NetworkError } from '../../lib/errors';
 
 describe('NetworkError', () => {
   it('should be of instance of IntegrationError', () => {

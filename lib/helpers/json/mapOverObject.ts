@@ -9,19 +9,21 @@ import {
   isEmpty,
   isPlainObject
 } from 'lodash/fp';
-import and  from './and';
+import { and }  from './and';
 
 /**
  * Function to map over properties in an object.
- * This allows for transformations on both the keys and values of each properties.
+ * This allows for transformations on both the keys and values of each property.
  * This function also supports currying
- * @param func - function that takes in `value` & `key' from each object property and
+ *
+ * @public
+ * @param func - function that takes in `value` & `key` from each object property and
  *   returns a new key and new value in an array of length 2
- *   e.g. (value, key) => [newKey, newValue]
+ *   e.g. `(value, key) => [newKey, newValue]`
  * @param obj - JSON object which we wish to map over the properties of
- *   e.g. { key1: value1, key2: value2 }
+ *   e.g. `{ key1: value1, key2: value2 \}`
  * @returns - JSON object with the transformed keys and values for each property
- *   e.g. { newKey1: newValue1, newKey2: newValue2 }
+ *   e.g. `{ newKey1: newValue1, newKey2: newValue2 \}`
  */
 const mapOverObject = curry((func, obj) =>
   obj && isPlainObject(obj)

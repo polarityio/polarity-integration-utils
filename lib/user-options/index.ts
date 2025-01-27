@@ -5,7 +5,7 @@ import splitKeyValueCommaSeparatedUserOption from './splitKeyValueCommaSeparated
 import splitCommaSeparatedUserOption from './splitCommaSeparatedUserOption';
 import replaceEntityInQueryString from './replaceEntityInQueryString';
 
-export default {
+export {
   validateUrlOption,
   validateStringOptions,
   validateOptionsToDoLookupOptions,
@@ -13,3 +13,6 @@ export default {
   splitCommaSeparatedUserOption,
   replaceEntityInQueryString
 };
+
+// Exports types for documentation generation
+export * from './types';

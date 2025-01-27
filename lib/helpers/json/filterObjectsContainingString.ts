@@ -1,5 +1,8 @@
 import { filter, flow, replace, toLower, includes, curry } from 'lodash/fp';
 
+/**
+ * @public
+ */
 type FilterObjectsFn = {
   <T>(searchString: string): (objs: T[]) => T[];
   <T>(searchString: string, objs: T[]): T[];
@@ -8,10 +11,11 @@ type FilterObjectsFn = {
 /**
  * Filters an array of objects, returning only those that contain the specified string.
  * The search string is modified to remove non-word characters and converted to lowercase.
- * @template T
- * @param {string} searchString - The string to search for within the objects.
- * @param {T[]} objs - The array of objects to filter.
- * @returns {T[]} - The filtered array of objects.
+ *
+ * @internal
+ * @param searchString - The string to search for within the objects.
+ * @param objs - The array of objects to filter.
+ * @returns The filtered array of objects.
  */
 function filterObjectsContainingStringImpl<T>(searchString: string, objs: T[]): T[] {
   const modifiedSearchString = flow(replace(/\W/g, ''), toLower)(searchString);
@@ -25,11 +29,11 @@ function filterObjectsContainingStringImpl<T>(searchString: string, objs: T[]): 
 
 /**
  * Curried function to filter objects containing a specified string.
- * @function
- * @template T
- * @param {string} searchString - The string to search for within the objects.
- * @param {T[]} [objs] - The array of objects to filter.
- * @returns {(objs: T[]) => T[] | T[]} - A function that takes an array of objects and returns the filtered array, or the filtered array if both parameters are provided.
+ *
+ * @public
+ * @param searchString - The string to search for within the objects.
+ * @param objs - The array of objects to filter.
+ * @returns A function that takes an array of objects and returns the filtered array, or the filtered array if both parameters are provided.
  */
 const filterObjectsContainingString = curry(
   filterObjectsContainingStringImpl

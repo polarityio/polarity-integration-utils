@@ -1,16 +1,28 @@
+/**
+ * @public
+ */
 export type ValidationError = {
   key: string;
   message: string;
 };
 
+/**
+ * @public
+ */
 export type DoLookupUserOptions = {
   [key: string]: PossibleUserOptionValue;
 };
 
+/**
+ * @public
+ */
 export type ValidateOptionsUserOptions = {
   [key: string]: ValidateOptionsUserOption;
 };
 
+/**
+ * @public
+ */
 export type ValidateOptionsUserOption = {
   integration_id?: string;
   key: string;
@@ -19,7 +31,10 @@ export type ValidateOptionsUserOption = {
   admin_only?: boolean;
 };
 
-type PossibleUserOptionValue =
+/**
+ * @public
+ */
+export type PossibleUserOptionValue =
   | undefined
   | string
   | number
@@ -27,7 +42,10 @@ type PossibleUserOptionValue =
   | DropdownUserOptionValue
   | DropdownUserOptionValue[];
 
-type DropdownUserOptionValue = {
+/**
+ * @public
+ */
+export type DropdownUserOptionValue = {
   display: string;
   value: string;
 };

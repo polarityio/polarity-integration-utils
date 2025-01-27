@@ -1,13 +1,12 @@
-import IntegrationError from './integrationError';
-import type { IntegrationErrorProperties } from './types';
+import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
 
 /**
  * API error for REST requests
+ * 
+ * @public
  */
-class ApiRequestError extends IntegrationError {
-  constructor(message, properties: IntegrationErrorProperties = {}) {
+export class ApiRequestError extends IntegrationError {
+  constructor(message: string, properties: IntegrationErrorProperties = {}) {
     super(message, properties);
   }
 }
-
-export default ApiRequestError;

@@ -1,5 +1,7 @@
-import PolarityRequest from './polarityRequest';
+// import { PolarityRequest } from './polarityRequest';
+//
+// export {
+//   PolarityRequest
+// }
 
-export {
-  PolarityRequest
-};
+export * from './polarityRequest';

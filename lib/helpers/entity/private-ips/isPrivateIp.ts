@@ -80,6 +80,10 @@ We exclude the following ranges to enable them to be toggled on and off is use o
 */
 const ipv4IsPrivate = (ip: string): boolean => isPrivateIpv4Regex.test(ip);
 
+/**
+ * @alpha
+ * @param ip -- the ip to check
+ */
 const isPrivateIp = (ip: string): boolean => ipv4IsPrivate(ip) || ipv6IsPrivate(ip);
 
 export default isPrivateIp;

@@ -1,8 +1,24 @@
 import { map } from 'lodash/fp';
-import { DoLookupResponse } from './types';
-import { Entity } from '../../types';
+import type { Entity } from '../../types';
 
-const buildIgnoreLookupResults = (entities: Entity[]): DoLookupResponse[] =>
+/**
+ * @alpha
+ */
+export type DoLookupResponse = {
+  entity: Entity,
+  displayValue?: string,
+  isVolatile?: boolean,
+  data: null | {
+    summary?: string[],
+    details: unknown
+  }
+};
+
+/**
+ * @alpha
+ * @param entities - list of entities to create ignore objects for 
+ */
+export const buildIgnoreLookupResults = (entities: Entity[]): DoLookupResponse[] =>
   map(
     (entity: Entity): DoLookupResponse => ({
       entity,
@@ -10,5 +26,3 @@ const buildIgnoreLookupResults = (entities: Entity[]): DoLookupResponse[] =>
     }),
     entities
   );
-
-export default buildIgnoreLookupResults;

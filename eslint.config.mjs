@@ -7,7 +7,7 @@ import tsdoc from 'eslint-plugin-tsdoc';
 export default [
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   {
-    ignores: ['dist', 'node_modules', 'coverage', 'jest.config.js']
+    ignores: ['dist', 'node_modules', 'coverage', 'jest.config.js', 'temp', 'docs']
   },
   { languageOptions: { globals: globals.browser } },
   pluginJs.configs.recommended,
@@ -20,6 +20,12 @@ export default [
   {
     rules: {
       'tsdoc/syntax': 'warn'
+    }
+  },
+  {
+    files: ['eslint.config.mjs'],
+    rules: {
+      'tsdoc/syntax': 'off'
     }
   }
 ];

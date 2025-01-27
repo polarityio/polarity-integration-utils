@@ -1,14 +1,11 @@
 import removeEntityTypes from './removeEntityTypes';
-import groupEntitiesByType from './groupEntitiesByType';
-import groupCustomEntitiesByType from './groupCustomEntitiesByType';
 import getEntityTypes from './getEntityTypes';
-import { getPrivateIps, removePrivateIps } from './private-ips';
 
-export default {
+export {
   removeEntityTypes,
-  groupEntitiesByType,
-  groupCustomEntitiesByType,
-  getEntityTypes,
-  getPrivateIps,
-  removePrivateIps
+  getEntityTypes
 };
+
+export * from './groupCustomEntitiesByType';
+export * from './groupEntitiesByType';
+export * from './private-ips';

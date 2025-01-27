@@ -1,4 +1,4 @@
-import RetryRequestError from '../../lib/errors/retryRequestError';
+import { RetryRequestError } from '../../lib/errors';
 
 describe('RetryRequestError', () => {
   it('should be of instance of RetryRequestError', () => {

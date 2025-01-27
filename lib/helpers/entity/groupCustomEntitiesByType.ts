@@ -1,8 +1,13 @@
 import { reduce, flow, filter, includes, map, split, last } from 'lodash/fp';
 
-import { Entity } from '../../types';
+import type { Entity } from '../../types';
 
-const groupCustomEntitiesByType = (
+/**
+ * @alpha
+ * @param customEntities - list of custom entities (type=custom) to group
+ * @param customTypesKeys - list of custom type keys to group by
+ */
+export const groupCustomEntitiesByType = (
   customEntities: Entity[],
   customTypesKeys: string[]
 ): CustomEntitiesByCustomTypesKey => {
@@ -76,7 +81,12 @@ const addEntityToGroupsByLabels = (
     customTypeGroupLabelsForThisEntity
   );
 
-type CustomEntitiesByCustomTypesKey = { [key: GroupLabel]: Entity[] };
-type GroupLabel = `${string}Entities`;
+/**
+ * @alpha
+ */
+export type CustomEntitiesByCustomTypesKey = { [key: GroupLabel]: Entity[] };
 
-export default groupCustomEntitiesByType;
+/**
+ * @alpha
+ */
+export type GroupLabel = `${string}Entities`;

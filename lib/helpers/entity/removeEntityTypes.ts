@@ -1,7 +1,12 @@
 import { toLower, map, filter, every } from 'lodash/fp';
 
-import { Entity, EntityType } from '../../types';
+import type { Entity, EntityType } from '../../types';
 
+/**
+ * @alpha
+ * @param typesToRemove - a single type or list of types to remove from the `entities` list
+ * @param entities - list of entities that will have certain entities removed based on type
+ */
 const removeEntityTypes = (
   typesToRemove: EntityType | EntityType[],
   entities: Entity[]

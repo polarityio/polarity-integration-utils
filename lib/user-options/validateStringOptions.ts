@@ -6,6 +6,12 @@ const reduce = _reduce.convert({ cap: false });
 
 import { ValidationError, ValidateOptionsUserOption } from './types';
 
+/**
+ * @alpha 
+ * @param stringOptionsErrorMessages - existing errors to extend
+ * @param options - list of options to validate
+ * @param otherErrors - existing errors to concatenate
+ */
 const validateStringOptions = (
   stringOptionsErrorMessages: { [key: string]: string },
   options: ValidateOptionsUserOption,

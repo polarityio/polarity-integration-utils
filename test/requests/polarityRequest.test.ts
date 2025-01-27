@@ -1,6 +1,6 @@
 import { setLogger } from '../../lib/logging/logger';
 import { identity } from 'lodash/fp';
-import PolarityRequest from '../../lib/requests/polarityRequest';
+import { PolarityRequest } from '../../lib/requests/polarityRequest';
 import postmanRequest from 'postman-request';
 
 const identityLogger = {

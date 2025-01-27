@@ -10,6 +10,10 @@ import {
   ValidateOptionsUserOptions
 } from './types';
 
+/**
+ * @alpha 
+ * @param options - options to validate from `doLookup` method
+ */
 const validateOptionsToDoLookupOptions = (
   options: ValidateOptionsUserOptions
 ): DoLookupUserOptions =>

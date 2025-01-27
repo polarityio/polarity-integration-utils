@@ -11,11 +11,17 @@ const writeToDevRunnerResults =
       '\n' + JSON.stringify({ SOURCE: `Logger.${loggingLevel}`, content }, null, 2)
     );
 
-let logger: LoggingLevels = flow(
-  reduce((agg, level: string) => ({ ...agg, [level]: writeToDevRunnerResults(level) }), {})
+let _logger: Logger = flow(
+  reduce(
+    (agg, level: string) => ({ ...agg, [level]: writeToDevRunnerResults(level) }),
+    {}
+  )
 )(loggingLevels);
 
-type LoggingLevels = {
+/**
+ * @public
+ */
+export type Logger = {
   child?(arg: unknown): void;
   info(...args: unknown[]): void;
   debug(...args: unknown[]): void;
@@ -25,10 +31,18 @@ type LoggingLevels = {
   fatal(...args: unknown[]): void;
 };
 
-const setLogger = (_logger: LoggingLevels) => {
-  logger = _logger;
+/**
+ * @public
+ * @param logger - the integration logger object passed into the `startup` method
+ */
+const setLogger = (logger: Logger) => {
+  _logger = logger;
 };
 
-const getLogger = () => logger;
+/**
+ * @public
+ * @returns the integration's logger object
+ */
+const getLogger = () => _logger;
 
 export { setLogger, getLogger };
