@@ -33,23 +33,23 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           
-deploy-docs:
-  # Run only when pushing to main or develop, not on pull requests
-  # if: github.event_name == 'push'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-
-    - name: Build
-      run: npm run build:docs
-    
-    # Deploy to GitHub Pages (branch=gh-pages) from the docs folder 
-    # (adjust 'folder' if your docs output to a different directory)
-    - name: Deploy docs to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        branch: gh-pages
-        folder: docs
-        clean: true
-        token: ${{ secrets.GITHUB_TOKEN }}          
+  deploy-docs:
+    # Run only when pushing to main or develop, not on pull requests
+    # if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+  
+      - name: Build
+        run: npm run build:docs
+      
+      # Deploy to GitHub Pages (branch=gh-pages) from the docs folder 
+      # (adjust 'folder' if your docs output to a different directory)
+      - name: Deploy docs to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: docs
+          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}          
