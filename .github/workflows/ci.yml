@@ -34,13 +34,22 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           
   deploy-docs:
+    needs: [build]
     # Run only when pushing to main or develop, not on pull requests
     # if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
-  
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install          
+          
       - name: Build
         run: npm run build:docs
       
