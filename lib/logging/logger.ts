@@ -4,8 +4,8 @@ import { flow, reduce } from 'lodash/fp';
 const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'];
 
 const writeToDevRunnerResults =
-  (loggingLevel) =>
-  (...content) =>
+  (loggingLevel: string) =>
+  (...content: unknown[]) =>
     fs.appendFileSync(
       'devRunnerResults.json',
       '\n' + JSON.stringify({ SOURCE: `Logger.${loggingLevel}`, content }, null, 2)
@@ -22,7 +22,7 @@ let _logger: Logger = flow(
  * @public
  */
 export type Logger = {
-  child?(arg: unknown): void;
+  child?(arg: unknown): Logger;
   info(...args: unknown[]): void;
   debug(...args: unknown[]): void;
   trace(...args: unknown[]): void;
