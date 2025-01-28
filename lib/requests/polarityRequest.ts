@@ -39,14 +39,14 @@ export type HttpRequestOptions = {
   body?: object;
   auth?:
     | {
-    username: string;
-    password: string;
-    sendImmediately?: boolean;
-  }
+        username: string;
+        password: string;
+        sendImmediately?: boolean;
+      }
     | {
-    bearer: string;
-    sendImmediately?: boolean;
-  };
+        bearer: string;
+        sendImmediately?: boolean;
+      };
   [key: string]: unknown;
 };
 
@@ -130,8 +130,6 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
 }
-
-
 
 // import {
 //   PolarityRequestOptions,
@@ -307,7 +305,7 @@ export class PolarityRequest {
 
   /**
    * Makes a single HTTP request and returns the response or throws an error
-   * 
+   *
    * @param requestOptions - request options used to make the HTTP request
    * @returns The HTTP response
    */
@@ -396,7 +394,7 @@ export class PolarityRequest {
    *
    * @param httpResponse - The HTTP response from the Postman request.
    * @param requestOptions - The options used for the request.
-   * 
+   *
    * @throws {@link ApiRequestError}
    * Throws an error if the response indicates an API error.
    */
@@ -423,7 +421,12 @@ export class PolarityRequest {
     let hasApiError: boolean;
     let message: string;
     if (this.isApiError) {
-      const result: IsApiErrorResult = this.isApiError(statusCode, body, httpResponse, requestOptions);
+      const result: IsApiErrorResult = this.isApiError(
+        statusCode,
+        body,
+        httpResponse,
+        requestOptions
+      );
       if (!result || typeof result.isApiError !== 'boolean') {
         throw new IntegrationError(
           'PolarityRequest property `isApiError` must return an object containing an `isApiError` property with a boolean value'
@@ -465,7 +468,7 @@ export class PolarityRequest {
    * Returns true if the `httpStatusCode` is not one of the rounded HTTP status codes
    * specified in the PolarityRequest `roundedSuccessStatusCodes` property.
    *
-   * @param httpStatusCode - A numeric HTTP Status Code 
+   * @param httpStatusCode - A numeric HTTP Status Code
    * @returns true if the provided `httpStatusCode` is an error code
    */
   private isHttpStatusCodeError(httpStatusCode: number): boolean {
@@ -481,7 +484,7 @@ export class PolarityRequest {
    * property.
    *
    * @param httpBody - body property from the PostmanRequestResponse
-   * @returns `true` if the httpBody property contains properties specified in `httpResponseErrorProperties` 
+   * @returns `true` if the httpBody property contains properties specified in `httpResponseErrorProperties`
    */
   private hasHttpResponseErrorProperty(httpBody: unknown): boolean {
     return this.httpResponseErrorProperties.some((property) => has(property, httpBody));
@@ -518,10 +521,10 @@ export class PolarityRequest {
    * Given a list of `properties` which are strings representing JSON dot notation, this
    * method returns the first string property found at the given JSON path
    * in the given `object`.
-   * 
+   *
    * @param object - An object to find properties in
    * @param properties - a list of JSON dot notation properties to look for within `object`
-   * @returns A string value of the property found within the given object or undefined if no value is found 
+   * @returns A string value of the property found within the given object or undefined if no value is found
    */
   private maybeGetStringPropertyValue(
     object: unknown,
@@ -542,7 +545,7 @@ export class PolarityRequest {
 
   /**
    * Runs multiple requests in parallel with a limit on the maximum number of concurrent requests.
-   * 
+   *
    * @param options - The options for running requests in parallel.
    * @returns A promise that resolves to an array of responses or errors.
    */
@@ -553,25 +556,33 @@ export class PolarityRequest {
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
 
-    //TODO: Need to figure out how we want to make it easy for someone calling this function to 
+    //TODO: Need to figure out how we want to make it easy for someone calling this function to
     // match the request to the resule
-    const tasks = allRequestOptions.map(async (requestOptions) => {
-      try {
-        return await this.run(requestOptions);
-      } catch (requestError) {
-        if (returnErrors) {
-          return {
-            error: requestError
-          };
+    const tasks = allRequestOptions.map((requestOptions) => {
+      return async () => {
+        try {
+          const response = await this.run(requestOptions);
+          if (requestOptions.entity) {
+            response.entity = requestOptions.entity;
+          }
+          return response;
+        } catch (requestError) {
+          if (returnErrors) {
+            return {
+              error: requestError
+            } as PostmanRequestResponse;
+          } else {
+            throw requestError;
+          }
         }
-      }
+      };
     });
 
+    const results: PostmanRequestResponse[] = await async.parallelLimit(
+      tasks,
+      maxConcurrentRequests
+    );
 
-    // @ts-expect-error aysnc module types not matching for some reason
-    const results = await async.parallelLimit(tasks, maxConcurrentRequests);
-
-    // @ts-expect-error aysnc module types not matching for some reason
     return results;
   }
 }
