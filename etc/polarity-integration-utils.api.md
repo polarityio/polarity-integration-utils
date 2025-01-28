@@ -229,7 +229,7 @@ export const isLoopBackIp: (ip: string) => boolean;
 
 // @public (undocumented)
 export type Logger = {
-    child?(arg: unknown): void;
+    child?(arg: unknown): Logger;
     info(...args: unknown[]): void;
     debug(...args: unknown[]): void;
     trace(...args: unknown[]): void;
