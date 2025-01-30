@@ -31,7 +31,7 @@ describe('polarityRequest', () => {
     expect(request).toBeInstanceOf(PolarityRequest);
   });
 
-  it('should create a PolarityRequest object with values', () => {
+  it('should create a PolarityRequest object with default values', () => {
     const defaultRequestOptions = {
       rejectUnauthorized: true,
       json: true
@@ -45,7 +45,6 @@ describe('polarityRequest', () => {
     
     expect(request.requestOptionsToOmitFromLogsKeyPaths).toEqual([]);
     expect(request.roundedSuccessStatusCodes).toEqual([200]);
-    
   });
 
   // it('should create a PolarityRequest object with values', () => {

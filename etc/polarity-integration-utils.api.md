@@ -160,7 +160,6 @@ export type HttpRequestOptions = {
     url?: string;
     headers?: object;
     qs?: object;
-    entity?: object;
     form?: object;
     body?: object;
     auth?: {
@@ -171,6 +170,39 @@ export type HttpRequestOptions = {
         bearer: string;
         sendImmediately?: boolean;
     };
+    [key: string]: unknown;
+} & ({
+    entity: Entity;
+    entities?: never;
+    requestId?: never;
+} | {
+    entities: Entity[];
+    entity?: never;
+    requestId?: never;
+} | {
+    requestId: string | unknown;
+    entity?: never;
+    entities?: never;
+} | {
+    entity?: never;
+    entities?: never;
+    requestId?: never;
+});
+
+// @public (undocumented)
+export type HttpRequestResponse = {
+    statusCode: number;
+    request: {
+        uri: unknown;
+        method: string;
+        headers: unknown;
+        [key: string]: unknown;
+    };
+    body: unknown;
+    error?: Error;
+    entity?: Entity;
+    entities?: Entity[];
+    requestId?: string | unknown;
     [key: string]: unknown;
 };
 
@@ -227,6 +259,11 @@ export const isLinkLocalAddress: (ip: string) => boolean;
 // @alpha (undocumented)
 export const isLoopBackIp: (ip: string) => boolean;
 
+// @public
+export class LibraryUsageError extends IntegrationError {
+    constructor(message: string, properties?: IntegrationErrorProperties);
+}
+
 // @public (undocumented)
 export type Logger = {
     child?(arg: unknown): Logger;
@@ -278,8 +315,8 @@ export class PolarityRequest {
     readonly requestOptionsToOmitFromLogsKeyPaths: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
-    run(requestOptions: HttpRequestOptions): Promise<PostmanRequestResponse> | never;
-    runInParallel(options: RunInParallelOptions): Promise<PostmanRequestResponse[]>;
+    run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse> | never;
+    runInParallel(options: RunInParallelOptions): Promise<HttpRequestResponse[]>;
     // (undocumented)
     get throttlingOptions(): Bottleneck.ConstructorOptions;
     set throttlingOptions(throttlingOptions: Bottleneck.ConstructorOptions);
@@ -307,24 +344,10 @@ export interface PolarityRequestOptions {
 export type PossibleUserOptionValue = undefined | string | number | boolean | DropdownUserOptionValue | DropdownUserOptionValue[];
 
 // @public (undocumented)
-export type PostmanRequestResponse = {
-    statusCode: number;
-    request: {
-        uri: unknown;
-        method: string;
-        headers: unknown;
-        [key: string]: unknown;
-    };
-    body: unknown;
-    error?: Error;
-    [key: string]: unknown;
-};
-
-// @public (undocumented)
 export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
 
 // @public (undocumented)
-export type PostprocessRequestSuccess = (response: unknown, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<PostmanRequestResponse> | never;
+export type PostprocessRequestSuccess = (response: unknown, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
 
 // @alpha (undocumented)
 export type Predicate<T> = (x: T) => unknown;
