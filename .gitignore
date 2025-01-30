@@ -95,4 +95,4 @@ build/
 tsdoc-metadata.json
 
 # Ignore api-extractor temp build directory
-temp/
+/temp
