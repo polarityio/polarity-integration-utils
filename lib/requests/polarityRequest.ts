@@ -6,13 +6,14 @@ import async from 'async';
 import { isEqual, get, omit, has } from 'lodash/fp';
 import {
   ApiRequestError,
-  IntegrationError,
   NetworkError,
-  RetryRequestError
+  RetryRequestError,
+  LibraryUsageError
 } from '../errors';
 import { getLogger } from '../logging';
 
 import type { DoLookupUserOptions } from '../user-options/types';
+import type { Entity } from '../types';
 
 /**
  * @public
@@ -34,7 +35,6 @@ export type HttpRequestOptions = {
   url?: string;
   headers?: object;
   qs?: object;
-  entity?: object;
   form?: object;
   body?: object;
   auth?:
@@ -48,7 +48,12 @@ export type HttpRequestOptions = {
         sendImmediately?: boolean;
       };
   [key: string]: unknown;
-};
+} & (
+  | { entity: Entity; entities?: never; requestId?: never }
+  | { entities: Entity[]; entity?: never; requestId?: never }
+  | { requestId: string | unknown; entity?: never; entities?: never }
+  | { entity?: never; entities?: never; requestId?: never }
+);
 
 /**
  * @public
@@ -62,7 +67,7 @@ export type RunInParallelOptions = {
 /**
  * @public
  */
-export type PostmanRequestResponse = {
+export type HttpRequestResponse = {
   statusCode: number;
   request: {
     uri: unknown;
@@ -72,6 +77,9 @@ export type PostmanRequestResponse = {
   };
   body: unknown;
   error?: Error;
+  entity?: Entity;
+  entities?: Entity[];
+  requestId?: string | unknown;
   [key: string]: unknown;
 };
 
@@ -108,7 +116,7 @@ export type PostprocessRequestSuccess = (
   response: unknown,
   requestOptions: HttpRequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<PostmanRequestResponse> | never;
+) => Promise<HttpRequestResponse> | never;
 
 /**
  * @public
@@ -130,18 +138,6 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
 }
-
-// import {
-//   PolarityRequestOptions,
-//   PostprocessRequestFailure,
-//   PostprocessRequestSuccess,
-//   PreprocessRequestOptions,
-//   RequestOptions,
-//   IsApiErrorFunction,
-//   IsApiErrorResult,
-//   PostmanRequestResponse,
-//   RunInParallelOptions
-// } from './types';
 
 /**
  * A utility class for making HTTP requests
@@ -205,12 +201,12 @@ export class PolarityRequest {
   ): Promise<HttpRequestOptions> => requestOptions;
 
   public postprocessRequestSuccess: PostprocessRequestSuccess = async (
-    response: PostmanRequestResponse,
+    response: HttpRequestResponse,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     requestOptions: HttpRequestOptions,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     userOptions: DoLookupUserOptions
-  ): Promise<PostmanRequestResponse> => response;
+  ): Promise<HttpRequestResponse> => response;
 
   public postprocessRequestFailure: PostprocessRequestFailure = (
     error: Error,
@@ -311,9 +307,9 @@ export class PolarityRequest {
    */
   public async run(
     requestOptions: HttpRequestOptions
-  ): Promise<PostmanRequestResponse> | never {
+  ): Promise<HttpRequestResponse> | never {
     if (!this.userOptions) {
-      throw new IntegrationError(
+      throw new LibraryUsageError(
         'PolarityRequest property `userOptions` must be set before calling `run` method'
       );
     }
@@ -331,9 +327,9 @@ export class PolarityRequest {
     const mergedRequestOptions = {
       ...requestOptions,
       ...preRequestFunctionResults
-    };
+    } as HttpRequestOptions;
 
-    let postprocessRequestResults: PostmanRequestResponse;
+    let postprocessRequestResults: HttpRequestResponse;
 
     try {
       const httpResponse = await (this.bottleneckLimiter
@@ -356,9 +352,7 @@ export class PolarityRequest {
     } catch (requestError) {
       let transformedError = requestError;
 
-      // This is actually a framework usage error
-      // TODO: Add a new error type for this
-      if (requestError instanceof IntegrationError) {
+      if (requestError instanceof LibraryUsageError) {
         throw requestError;
       }
 
@@ -399,7 +393,7 @@ export class PolarityRequest {
    * Throws an error if the response indicates an API error.
    */
   private maybeThrowApiRequestError(
-    httpResponse: PostmanRequestResponse,
+    httpResponse: HttpRequestResponse,
     requestOptions: HttpRequestOptions
   ): void {
     const { statusCode, body } = httpResponse;
@@ -428,8 +422,8 @@ export class PolarityRequest {
         requestOptions
       );
       if (!result || typeof result.isApiError !== 'boolean') {
-        throw new IntegrationError(
-          'PolarityRequest property `isApiError` must return an object containing an `isApiError` property with a boolean value'
+        throw new LibraryUsageError(
+          'PolarityRequest property `isApiError` must return an object containing an `isApiError` property with a boolean value.  It can also optionally include a `message` property with a custom error message.'
         );
       }
       hasApiError = result.isApiError;
@@ -483,7 +477,7 @@ export class PolarityRequest {
    * one of the paths specified by the PolarityRequest `httpResponseErrorProperties`
    * property.
    *
-   * @param httpBody - body property from the PostmanRequestResponse
+   * @param httpBody - body property from the HttpRequestResponse
    * @returns `true` if the httpBody property contains properties specified in `httpResponseErrorProperties`
    */
   private hasHttpResponseErrorProperty(httpBody: unknown): boolean {
@@ -546,31 +540,49 @@ export class PolarityRequest {
   /**
    * Runs multiple requests in parallel with a limit on the maximum number of concurrent requests.
    *
-   * @param options - The options for running requests in parallel.
+   * When running multiple request at once it is often useful to be able to tie a specific request
+   * back to the entity the request is for.  To support this, the `HttpRequestOptions` object accepts
+   * an optional `entity` property which can be assigned to the Entity the request is being made for.
+   * The `HttpRequestResponse` object returned by this method will include the same `entity` property
+   * making it easy to match the response to the entity.
+   *
+   * Alternatively, for requests that are made for multiple entities at once (e.g., a query that can
+   * search multiple entities at a time), the `HttpRequestOptions` object also has an `entities`
+   * property which accept an array of entity objects.  Similar to the `entity`, the
+   * `entities` property will be set on the `HttpRequestResponse` object.
+   *
+   * Finally, if you are looking to pass through a custom request id you can do that using the
+   * `requestId` property.
+   *
+   *
+   * @param options - An array of request options for running requests in parallel.
    * @returns A promise that resolves to an array of responses or errors.
    */
   public async runInParallel(
     options: RunInParallelOptions
-  ): Promise<PostmanRequestResponse[]> {
+  ): Promise<HttpRequestResponse[]> {
     const allRequestOptions = options.allRequestOptions;
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
 
-    //TODO: Need to figure out how we want to make it easy for someone calling this function to
-    // match the request to the resule
+    // REVIEW: We're currently tying the entity to the request
     const tasks = allRequestOptions.map((requestOptions) => {
       return async () => {
         try {
           const response = await this.run(requestOptions);
           if (requestOptions.entity) {
             response.entity = requestOptions.entity;
+          } else if (requestOptions.entities) {
+            response.entities = requestOptions.entities;
+          } else if (requestOptions.requestId) {
+            response.requestId = requestOptions.requestId;
           }
           return response;
         } catch (requestError) {
           if (returnErrors) {
             return {
               error: requestError
-            } as PostmanRequestResponse;
+            } as HttpRequestResponse;
           } else {
             throw requestError;
           }
@@ -578,7 +590,7 @@ export class PolarityRequest {
       };
     });
 
-    const results: PostmanRequestResponse[] = await async.parallelLimit(
+    const results: HttpRequestResponse[] = await async.parallelLimit(
       tasks,
       maxConcurrentRequests
     );
