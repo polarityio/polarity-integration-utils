@@ -23,7 +23,7 @@ export type Entity = {
   isHex: boolean;
   isHash: boolean;
   isHTMLTag: boolean;
-  isEmail: true;
+  isEmail: boolean;
   isDomain: boolean;
   hashType: string;
   displayValue: string;
