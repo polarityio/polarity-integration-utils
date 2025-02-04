@@ -1,4 +1,4 @@
-import decodeBase64 from '../../../lib/helpers/encodings/decodeBase64';
+import { decodeBase64 } from '../../../lib/helpers/encodings/decodeBase64';
 
 describe('decodeBase64', () => {
   it('should decode base64 strings', () => {

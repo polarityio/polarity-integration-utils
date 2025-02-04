@@ -1,6 +1,11 @@
 import { replace } from 'lodash/fp';
-import { Entity } from '../types';
+import type { Entity } from '../types';
 
+/**
+ * @alpha
+ * @param entity - entity value to be placed into query string
+ * @param queryString - query string to run replacement over
+ */
 const replaceEntityInQueryString = (entity: Entity, queryString: string) =>
   replace(/{{ENTITY}}/gi, escapeQuotes(entity.value), queryString);
 

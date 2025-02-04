@@ -1,9 +1,17 @@
 import { isEmpty } from 'lodash/fp';
 import _reduce from 'lodash/fp/reduce';
+
+// @ts-expect-error typescript definitions for lodash/fp do not include convert (known issue: https://github.com/DefinitelyTyped/DefinitelyTyped/issues/27194)
 const reduce = _reduce.convert({ cap: false });
 
 import { ValidationError, ValidateOptionsUserOption } from './types';
 
+/**
+ * @alpha 
+ * @param stringOptionsErrorMessages - existing errors to extend
+ * @param options - list of options to validate
+ * @param otherErrors - existing errors to concatenate
+ */
 const validateStringOptions = (
   stringOptionsErrorMessages: { [key: string]: string },
   options: ValidateOptionsUserOption,

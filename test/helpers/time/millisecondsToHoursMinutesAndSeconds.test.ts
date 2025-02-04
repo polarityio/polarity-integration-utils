@@ -1,4 +1,4 @@
-import millisecondsToHoursMinutesAndSeconds from '../../../lib/helpers/time/millisecondsToHoursMinutesAndSeconds';
+import { millisecondsToHoursMinutesAndSeconds } from '../../../lib/helpers/time/millisecondsToHoursMinutesAndSeconds';
 
 const blankTime = '0ms';
 const twoHoursInMilliseconds = 7200000;

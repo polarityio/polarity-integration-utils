@@ -1,8 +1,12 @@
 import { reduce, some, flow, get, filter, negate, includes, map } from 'lodash/fp';
 
-import { Entity, EntityType, StandardEntityType } from '../../types';
+import type { Entity, EntityType, StandardEntityType } from '../../types';
 
-const groupEntitiesByType = (entities: Entity[]): EntitiesByType =>
+/**
+ * @alpha
+ * @param entities - list of entities to group by type
+ */
+export const groupEntitiesByType = (entities: Entity[]): EntitiesByType =>
   reduce(
     (entitiesByType: EntitiesByType, entity: Entity): EntitiesByType => {
       const resultWithEntityAddedToStandardTypeGroups: EntitiesByType =
@@ -106,12 +110,28 @@ const standardEntityTypeByGroupLabel: StandardEntityTypeByGroupLabel = {
   string: 'stringEntities',
   url: 'urlEntities'
 };
-type EntitiesByType = { [key in EntityTypeLabel]: Entity[] };
-type EntityTypeLabel = StandardEntityTypeGroupLabel | 'customEntities';
-type StandardEntityTypeByGroupLabel = {
+
+/**
+ * @alpha
+ */
+export type EntitiesByType = { [key in EntityTypeLabel]: Entity[] };
+
+/**
+ * @alpha
+ */
+export type EntityTypeLabel = StandardEntityTypeGroupLabel | 'customEntities';
+
+/**
+ * @alpha
+ */
+export type StandardEntityTypeByGroupLabel = {
   [key in StandardEntityType]: StandardEntityTypeGroupLabel;
 };
-type StandardEntityTypeGroupLabel =
+
+/**
+ * @alpha
+ */
+export type StandardEntityTypeGroupLabel =
   | 'ipEntities'
   | 'ipv4Entities'
   | 'ipv4CidrEntities'
@@ -126,5 +146,3 @@ type StandardEntityTypeGroupLabel =
   | 'hashEntities'
   | 'stringEntities'
   | 'urlEntities';
-
-export default groupEntitiesByType;

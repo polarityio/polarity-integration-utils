@@ -32,13 +32,13 @@ const isPrivateIpv4Regex =
 const createIsPrivateIpv4Regex = (): RegExp => {
   const firstSectionRangesRegex = /((^0\.)|(^10\.)|(^((24[0-9])|(25[0-5]))\.))/;
   const everythingAfterFirstSectionRanges = new RegExp(
-    `${firstSectionRangesRegex.source}(${zeroTo255Range.source}\.){2}${zeroTo255Range.source}`
+    `${firstSectionRangesRegex.source}(${zeroTo255Range.source}.){2}${zeroTo255Range.source}`
   );
 
   const secondSectionRangesRegex =
     /((^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.)|(^192\.168\.)|(^198\.1[89]\.)|(^172\.(1[6-9]|2[0-9]|3[0-1])\.))/;
   const everythingAfterSecondSectionRanges = new RegExp(
-    `${secondSectionRangesRegex.source}(${zeroTo255Range.source}\.)${zeroTo255Range.source}`
+    `${secondSectionRangesRegex.source}(${zeroTo255Range.source}.)${zeroTo255Range.source}`
   );
   const thirdSectionRangesRegex =
     /((^192\.((0\.[02]\.)|(31\.196\.)|(52\.193\.)|(88\.99\.)|(175\.48\.)))|(198\.51\.100\.)|(203\.0\.113\.))/;
@@ -80,6 +80,10 @@ We exclude the following ranges to enable them to be toggled on and off is use o
 */
 const ipv4IsPrivate = (ip: string): boolean => isPrivateIpv4Regex.test(ip);
 
+/**
+ * @alpha
+ * @param ip -- the ip to check
+ */
 const isPrivateIp = (ip: string): boolean => ipv4IsPrivate(ip) || ipv6IsPrivate(ip);
 
 export default isPrivateIp;

@@ -59,7 +59,7 @@ describe('validateUrlOption', () => {
     expect(urlWithDoubleForwardSlashes).not.toThrow();
 
     expect(urlWithDoubleForwardSlashes()).toEqual([
-      { key: 'doubleTrailingForwardSlashUrl', message: 'Your Url must not end with a //' }
+      { key: 'doubleTrailingForwardSlashUrl', message: 'Your URL must not end with a //' }
     ]);
   });
 
@@ -138,7 +138,7 @@ describe('validateUrlOption', () => {
     ]);
     expect(urlWithDoubleForwardSlashes()).toEqual([
       { key: 'otherKey', message: 'something wrong' },
-      { key: 'doubleTrailingForwardSlashUrl', message: 'Your Url must not end with a //' }
+      { key: 'doubleTrailingForwardSlashUrl', message: 'Your URL must not end with a //' }
     ]);
     expect(domain()).toEqual([
       { key: 'otherKey', message: 'something wrong' },

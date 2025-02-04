@@ -1,7 +1,7 @@
-import createRequestWithDefaults from './createRequestWithDefaults';
-import createRequestsInParallel from './createRequestsInParallel';
+// import { PolarityRequest } from './polarityRequest';
+//
+// export {
+//   PolarityRequest
+// }
 
-export default { 
-  createRequestWithDefaults,
-  createRequestsInParallel 
-};
+export * from './polarityRequest';

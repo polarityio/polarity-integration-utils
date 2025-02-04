@@ -1,5 +1,9 @@
-import _getPrivateIps from './getPrivateIps';
-import _removePrivateIps from './removePrivateIps';
+import getPrivateIps from './getPrivateIps';
+import removePrivateIps from './removePrivateIps';
 
-export const getPrivateIps = _getPrivateIps;
-export const removePrivateIps = _removePrivateIps;
+export {
+  getPrivateIps,
+  removePrivateIps
+}
+
+export * from './common';

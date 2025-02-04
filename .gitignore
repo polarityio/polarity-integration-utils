@@ -90,3 +90,9 @@ dependency-reduced-pom.xml
 README.html
 
 build/
+
+# Ignore tsdoc metadata file
+tsdoc-metadata.json
+
+# Ignore api-extractor temp build directory
+/temp

@@ -1,7 +1,7 @@
-import sleep from './sleep';
-import millisecondsToHoursMinutesAndSeconds from './millisecondsToHoursMinutesAndSeconds';
+import { sleep } from './sleep';
+import { millisecondsToHoursMinutesAndSeconds } from './millisecondsToHoursMinutesAndSeconds';
 
-export default {
+export {
   sleep,
   millisecondsToHoursMinutesAndSeconds
 };

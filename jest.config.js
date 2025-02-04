@@ -11,10 +11,10 @@ module.exports = {
       {
         //the content you'd placed at "global"
         babel: true,
-        tsconfig: 'tsconfig.json'
+        tsconfig: 'tsconfig.json',
+        diagnostics: false
       }
     ]
   },
-
   verbose: true
 };
