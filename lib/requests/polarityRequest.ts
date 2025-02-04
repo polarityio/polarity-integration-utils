@@ -95,25 +95,24 @@ export type IsApiErrorResult = {
  * @public
  */
 export type IsApiErrorFunction = (
-  status: number,
-  body: unknown,
-  response: unknown,
-  requestOptions: HttpRequestOptions
+  response: HttpRequestResponse,
+  requestOptions: HttpRequestOptions,
+  userOptions: DoLookupUserOptions
 ) => IsApiErrorResult;
 
 /**
  * @public
  */
 export type PreprocessRequestOptions = (
-  userOptions: DoLookupUserOptions,
-  requestOptions: HttpRequestOptions
+  requestOptions: HttpRequestOptions,
+  userOptions: DoLookupUserOptions
 ) => Promise<HttpRequestOptions> | never | undefined;
 
 /**
  * @public
  */
 export type PostprocessRequestSuccess = (
-  response: unknown,
+  response: HttpRequestResponse,
   requestOptions: HttpRequestOptions,
   userOptions: DoLookupUserOptions
 ) => Promise<HttpRequestResponse> | never;
@@ -137,6 +136,10 @@ export interface PolarityRequestOptions {
   httpResponseErrorProperties?: string[];
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToOmitFromLogsKeyPaths?: string[];
+  preprocessRequestOptions?: PreprocessRequestOptions;
+  postprocessRequestSuccess?: PostprocessRequestSuccess;
+  postprocessRequestFailure?: PostprocessRequestFailure;
+  throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
 /**
@@ -156,7 +159,7 @@ export class PolarityRequest {
    */
   private readonly requestWithDefaults: (
     requestOptions: HttpRequestOptions
-  ) => Promise<unknown>;
+  ) => Promise<HttpRequestResponse>;
 
   public readonly roundedSuccessStatusCodes: number[] = [200];
   /**
@@ -195,11 +198,31 @@ export class PolarityRequest {
   public readonly requestOptionsToOmitFromLogsKeyPaths: string[] = [];
   public userOptions: DoLookupUserOptions = null;
 
+  /**
+   * Method that can be implemented to preprocess the HTTP request options before the request is made.
+   * The returned `requestOptions` object will be used for the request. This method is typically used
+   * to add in authentication (e.g., auth headers, or basic auth) to every request.  It can also
+   * be used to add headers that are required on every request or conditionally add headers based
+   * on the passed in `userOptions`.
+   *
+   * @param requestOptions - A copy of the request options used for the request.  This object can be modified
+   * without side effects.
+   * @param userOptions - The user options passed into the `doLookup` method.
+   * @returns The modified request options to use for the request.
+   */
   public preprocessRequestOptions: PreprocessRequestOptions = async (
-    userOptions: DoLookupUserOptions,
-    requestOptions: HttpRequestOptions
+    requestOptions: HttpRequestOptions,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    userOptions: DoLookupUserOptions
   ): Promise<HttpRequestOptions> => requestOptions;
 
+  /**
+   * Method that can be implemented to post-process the HTTP response after a successful request.
+   *
+   * @param response - The HTTP response from the request.
+   * @param requestOptions - The request options used for the request.
+   * @param userOptions - The user options passed into the `doLookup` method.
+   */
   public postprocessRequestSuccess: PostprocessRequestSuccess = async (
     response: HttpRequestResponse,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -208,6 +231,18 @@ export class PolarityRequest {
     userOptions: DoLookupUserOptions
   ): Promise<HttpRequestResponse> => response;
 
+  /**
+   * Method that can be implemented to post-process the HTTP response after a failed request.
+   * This method is typically used to inspect the error thrown and either alter the error
+   * object (e.g., to change the error message property to something more specific), to ignore
+   * the error (by not rethrowing it), or to take a specific action based on the error (e.g.,
+   * in the case of a RetryRequestError you may want to retry the request or return a special
+   * payload to the integration front end).
+   *
+   * @param error - The error thrown during the request.
+   * @param requestOptions - The request options used for the request.
+   * @param userOptions - The user options passed into the `doLookup` method.
+   */
   public postprocessRequestFailure: PostprocessRequestFailure = (
     error: Error,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -256,10 +291,14 @@ export class PolarityRequest {
       json = true
     } = defaults;
 
-    this.logger = getLogger().child({
-      lib: 'polarity-integration-utils',
-      module: 'PolarityRequest'
-    });
+    if (getLogger().child) {
+      this.logger = getLogger().child({
+        lib: 'polarity-integration-utils',
+        module: 'PolarityRequest'
+      });
+    } else {
+      this.logger = getLogger();
+    }
 
     if (options.isApiError) {
       this.isApiError = options.isApiError;
@@ -281,6 +320,22 @@ export class PolarityRequest {
     if (options.requestOptionsToOmitFromLogsKeyPaths) {
       this.requestOptionsToOmitFromLogsKeyPaths =
         options.requestOptionsToOmitFromLogsKeyPaths;
+    }
+
+    if (options.postprocessRequestFailure) {
+      this.postprocessRequestFailure = options.postprocessRequestFailure;
+    }
+
+    if (options.postprocessRequestSuccess) {
+      this.postprocessRequestSuccess = options.postprocessRequestSuccess;
+    }
+
+    if (options.preprocessRequestOptions) {
+      this.preprocessRequestOptions = options.preprocessRequestOptions;
+    }
+
+    if (options.throttlingOptions) {
+      this.throttlingOptions = options.throttlingOptions;
     }
 
     const defaultRequestOptions = {
@@ -314,27 +369,24 @@ export class PolarityRequest {
       );
     }
 
-    const preRequestFunctionResults = await this.preprocessRequestOptions(
-      this.userOptions,
-      requestOptions
+    // Note that we specifically pass a copy of requestOptions to `preprocessRequestOptions`
+    // which lets the user modify the requestOptions object without affecting the original
+    const postprocessedRequestOptions = await this.preprocessRequestOptions(
+      {
+        ...requestOptions
+      },
+      this.userOptions
     );
-
-    // REVIEW: Why do we want to merge here?  What if on a certain preprocess you wanted to remove
-    // requestOptions, this would just put them back in.  Is that a realistic need?
-    //
-    // Would it be more expected if the preprocessRequestOptions was meant to return the
-    // full requestOptions payload?
-    const mergedRequestOptions = {
-      ...requestOptions,
-      ...preRequestFunctionResults
-    } as HttpRequestOptions;
 
     let postprocessRequestResults: HttpRequestResponse;
 
     try {
       const httpResponse = await (this.bottleneckLimiter
-        ? this.bottleneckLimiter.schedule(this.requestWithDefaults, mergedRequestOptions)
-        : this.requestWithDefaults(mergedRequestOptions));
+        ? this.bottleneckLimiter.schedule(
+            this.requestWithDefaults,
+            postprocessedRequestOptions
+          )
+        : this.requestWithDefaults(postprocessedRequestOptions));
 
       if (this.bottleneckLimiter) {
         this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
@@ -342,11 +394,11 @@ export class PolarityRequest {
         this.logger.trace({ httpResponse }, 'HTTP Response');
       }
 
-      this.maybeThrowApiRequestError(httpResponse, mergedRequestOptions);
+      this.maybeThrowApiRequestError(httpResponse, postprocessedRequestOptions);
 
       postprocessRequestResults = await this.postprocessRequestSuccess(
         httpResponse,
-        mergedRequestOptions,
+        postprocessedRequestOptions,
         this.userOptions
       );
     } catch (requestError) {
@@ -359,7 +411,7 @@ export class PolarityRequest {
       if (!(requestError instanceof ApiRequestError)) {
         transformedError = new NetworkError('Network error encountered during request', {
           cause: requestError,
-          requestOptions: mergedRequestOptions
+          requestOptions: postprocessedRequestOptions
         });
       }
 
@@ -367,7 +419,7 @@ export class PolarityRequest {
         transformedError = new RetryRequestError(
           'This request has been dropped for going over Integration Configured API Throttling Limits',
           {
-            requestOptions: mergedRequestOptions
+            requestOptions: postprocessedRequestOptions
           }
         );
       }
@@ -375,7 +427,7 @@ export class PolarityRequest {
       // Possibly throws an error
       await this.postprocessRequestFailure(
         transformedError,
-        mergedRequestOptions,
+        postprocessedRequestOptions,
         this.userOptions
       );
     }
@@ -416,10 +468,9 @@ export class PolarityRequest {
     let message: string;
     if (this.isApiError) {
       const result: IsApiErrorResult = this.isApiError(
-        statusCode,
-        body,
         httpResponse,
-        requestOptions
+        requestOptions,
+        this.userOptions
       );
       if (!result || typeof result.isApiError !== 'boolean') {
         throw new LibraryUsageError(
@@ -554,9 +605,9 @@ export class PolarityRequest {
    * Finally, if you are looking to pass through a custom request id you can do that using the
    * `requestId` property.
    *
-   *
    * @param options - An array of request options for running requests in parallel.
-   * @returns A promise that resolves to an array of responses or errors.
+   * @returns A promise that resolves to an array of responses.  If the `returnErrors` property is set to `true`
+   * then the response objects will have their `error` property set to the thrown error.
    */
   public async runInParallel(
     options: RunInParallelOptions
@@ -565,7 +616,8 @@ export class PolarityRequest {
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
 
-    // REVIEW: We're currently tying the entity to the request
+    // REVIEW: We're currently supporting tying the entity to the request by using
+    // the `entity` property, the `entities` property, or the generic `requestId` property.
     const tasks = allRequestOptions.map((requestOptions) => {
       return async () => {
         try {
