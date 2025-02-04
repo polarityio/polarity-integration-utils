@@ -97,7 +97,7 @@ export type Entity = {
     isHex: boolean;
     isHash: boolean;
     isHTMLTag: boolean;
-    isEmail: true;
+    isEmail: boolean;
     isDomain: boolean;
     hashType: string;
     displayValue: string;
@@ -245,7 +245,7 @@ export type IpManipulationParameters = {
 };
 
 // @public (undocumented)
-export type IsApiErrorFunction = (status: number, body: unknown, response: unknown, requestOptions: HttpRequestOptions) => IsApiErrorResult;
+export type IsApiErrorFunction = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => IsApiErrorResult;
 
 // @public (undocumented)
 export type IsApiErrorResult = {
@@ -305,11 +305,8 @@ export class PolarityRequest {
     readonly httpResponseErrorMessageProperties: string[];
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
-    // (undocumented)
     postprocessRequestFailure: PostprocessRequestFailure;
-    // (undocumented)
     postprocessRequestSuccess: PostprocessRequestSuccess;
-    // (undocumented)
     preprocessRequestOptions: PreprocessRequestOptions;
     // (undocumented)
     readonly requestOptionsToOmitFromLogsKeyPaths: string[];
@@ -335,9 +332,17 @@ export interface PolarityRequestOptions {
     // (undocumented)
     isApiError?: IsApiErrorFunction;
     // (undocumented)
+    postprocessRequestFailure?: PostprocessRequestFailure;
+    // (undocumented)
+    postprocessRequestSuccess?: PostprocessRequestSuccess;
+    // (undocumented)
+    preprocessRequestOptions?: PreprocessRequestOptions;
+    // (undocumented)
     requestOptionsToOmitFromLogsKeyPaths?: string[];
     // (undocumented)
     roundedSuccessStatusCodes?: number[];
+    // (undocumented)
+    throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
 // @public (undocumented)
@@ -347,13 +352,13 @@ export type PossibleUserOptionValue = undefined | string | number | boolean | Dr
 export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
 
 // @public (undocumented)
-export type PostprocessRequestSuccess = (response: unknown, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
+export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
 
 // @alpha (undocumented)
 export type Predicate<T> = (x: T) => unknown;
 
 // @public (undocumented)
-export type PreprocessRequestOptions = (userOptions: DoLookupUserOptions, requestOptions: HttpRequestOptions) => Promise<HttpRequestOptions> | never | undefined;
+export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
 
 // @alpha (undocumented)
 export const removeEntityTypes: (typesToRemove: EntityType | EntityType[], entities: Entity[]) => Entity[];
