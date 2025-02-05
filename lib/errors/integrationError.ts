@@ -1,5 +1,6 @@
 import { parseErrorToReadableJson } from './parseErrorToReadableJson';
 import type { HttpRequestOptions } from '../requests/polarityRequest';
+import { sanitizeRequestOptions } from '../requests/sanitizeRequestOptions';
 
 /**
  * @public
@@ -59,8 +60,22 @@ export interface IntegrationErrorProperties {
    * Relevant for integration errors involving a network call, the `requestOptions` property
    * details the request options that resulted in the specified error.  The `requestOptions` property will automatically
    * have sensitive authentication headers stripped.
+   * By default, the following paths are sanitized:
+   *
+   * - auth.password
+   * - auth.bearer
+   * - body.password
+   * - form.client_secret
+   * - headers.authorization
+   * - headers.x-api-key
+   *
+   * Additional paths can be sanitized by using the `requestOptionsToSanitize` property.
    */
   requestOptions?: HttpRequestOptions;
+  /**
+   * List of paths in JSON dot notation to sanitize in the requestOptions object
+   */
+  requestOptionsToSanitize?: string[];
   /**
    * Any additional properties which will be appended to the Error's meta property
    */
@@ -198,7 +213,10 @@ export class IntegrationError extends Error {
     }
 
     if (typeof properties.requestOptions !== 'undefined') {
-      this.requestOptions = this.sanitizeRequestOptions(properties.requestOptions);
+      this.requestOptions = sanitizeRequestOptions(
+        properties.requestOptions,
+        properties.requestOptionsToSanitize ? properties.requestOptionsToSanitize : []
+      );
     }
 
     if (typeof properties.help !== 'undefined') {
@@ -210,56 +228,6 @@ export class IntegrationError extends Error {
         ...properties.meta
       };
     }
-  }
-
-  /**
-   * Given a postman-request options object, will return a sanitized object with basic auth and Authorization headers
-   * removed.
-   *
-   * TODO: Come up with a more robust way to detect secrets and obscure them
-   * @param requestOptions - Request options object to sanitize 
-   * @returns Sanitized requestOptions
-   */
-  sanitizeRequestOptions(requestOptions: HttpRequestOptions): HttpRequestOptions {
-    const sanitizedOptions = {
-      ...requestOptions
-    };
-
-    if (sanitizedOptions.headers) {
-      // case insensitive header lookup
-      // Note that if two headers are set that are the same but with different casing
-      // this method will not sanitize both headers
-      const headerLookup = Object.keys(sanitizedOptions.headers).reduce((accum, header) => {
-        accum[header.toLowerCase()] = header;
-        return accum;
-      }, {});
-
-      if (headerLookup['authorization']) {
-        sanitizedOptions.headers[headerLookup['authorization']] = '**********';
-      }
-
-      if (headerLookup['x-api-key']) {
-        sanitizedOptions.headers[headerLookup['x-api-key']] = '**********';
-      }
-    }
-
-    if (sanitizedOptions.auth && 'password' in sanitizedOptions.auth) {
-      sanitizedOptions.auth.password = '**********';
-    }
-
-    if (sanitizedOptions.auth && 'bearer' in sanitizedOptions.auth) {
-      sanitizedOptions.auth.bearer = '**********';
-    }
-
-    if (sanitizedOptions.body && 'password' in sanitizedOptions.body) {
-      sanitizedOptions.body.password = '**********';
-    }
-
-    if (sanitizedOptions.form && 'client_secret' in sanitizedOptions.form) {
-      sanitizedOptions.form.client_secret = '**********';
-    }
-
-    return sanitizedOptions;
   }
 
   /**

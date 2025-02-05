@@ -1,7 +1,2 @@
-// import { PolarityRequest } from './polarityRequest';
-//
-// export {
-//   PolarityRequest
-// }
-
 export * from './polarityRequest';
+export * from './sanitizeRequestOptions';

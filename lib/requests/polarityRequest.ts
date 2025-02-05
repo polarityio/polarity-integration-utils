@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import Bottleneck from 'bottleneck';
 import request from 'postman-request';
 import async from 'async';
-import { isEqual, get, omit, has } from 'lodash/fp';
+import { isEqual, get, has } from 'lodash/fp';
 import {
   ApiRequestError,
   NetworkError,
@@ -14,6 +14,7 @@ import { getLogger } from '../logging';
 
 import type { DoLookupUserOptions } from '../user-options/types';
 import type { Entity } from '../types';
+import { sanitizeRequestOptions } from './sanitizeRequestOptions';
 
 /**
  * @public
@@ -28,15 +29,67 @@ export type ConfigRequestProxyOptions = {
   json?: undefined | boolean;
 };
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+
 /**
  * @public
  */
 export type HttpRequestOptions = {
+  /**
+   * The URL to make the request to.
+   */
   url?: string;
+  /**
+   * The HTTP method to use for the request.
+   *
+   * @defaultValue 'GET'
+   */
+  method?: HttpMethod;
+  /**
+   *  If true, sets body to JSON representation of value and adds Content-type: application/json header.
+   *  Additionally, parses the response body as JSON.
+   *
+   *  @defaultValue true
+   */
+  json?: boolean;
+  /**
+   * An object containing the headers to include in the request.
+   * @example
+   * Here is an example of setting the "X-Api-Key" `headers` property:
+   * ```
+   * {
+   *   headers: {
+   *     'X-Api-Key': '1234567890'
+   *   }
+   * }
+   * ```
+   */
   headers?: object;
+  /**
+   * An object containing querystring parameters to include in the request.
+   * @example
+   * Here is an example of setting the `qs` property:
+   * ```
+   * {
+   *   qs: {
+   *     search: 'foo'
+   *   }
+   * }
+   * ```
+   */
   qs?: object;
+  /**
+   * When passed an object or a querystring, this sets body to a querystring representation of value,
+   * and adds Content-type: application/x-www-form-urlencoded header.
+   */
   form?: object;
+  /**
+   * The body of the request.
+   */
   body?: object;
+  /**
+   * The authentication options to use for the request
+   */
   auth?:
     | {
         username: string;
@@ -59,8 +112,24 @@ export type HttpRequestOptions = {
  * @public
  */
 export type RunInParallelOptions = {
+  /**
+   * Array of HttpRequestOptions that will be run in parallel as specified by
+   * the `maxConcurrentRequests` property.
+   */
   allRequestOptions: HttpRequestOptions[];
+  /**
+   * Maximum number of requests to run in parallel
+   *
+   * @defaultValue 5
+   */
   maxConcurrentRequests?: number;
+  /**
+   * If true, any errors thrown during the request will be returned in the response object on the `error` property
+   * of the returned `HttpRequestResponse` object.  If false, any errors thrown will be thrown and should be handled by
+   *
+   *
+   * @defaultValue false
+   */
   returnErrors?: boolean;
 };
 
@@ -68,6 +137,9 @@ export type RunInParallelOptions = {
  * @public
  */
 export type HttpRequestResponse = {
+  /**
+   * The HTTP status code of the response.
+   */
   statusCode: number;
   request: {
     uri: unknown;
@@ -75,10 +147,29 @@ export type HttpRequestResponse = {
     headers: unknown;
     [key: string]: unknown;
   };
+  /**
+   * The body of the response.
+   */
   body: unknown;
-  error?: Error;
+  /**
+   * The error object if an error occurred during the request.
+   */
+  error?: ApiRequestError | NetworkError | RetryRequestError;
+  /**
+   * The entity that the request was made for. The `entity` property matches the
+   * `entity` property set on the {@link HttpRequestOptions} object associated with this HttpRequestResponse.
+   */
   entity?: Entity;
+  /**
+   * An array of entities that the request was made for.  The `entities` property
+   * matches the `entities` property set on the {@link HttpRequestOptions} object associated
+   * with this HttpRequestResponse.
+   */
   entities?: Entity[];
+  /**
+   * A custom request id that can be used to identify the request.  The `requestId` matches
+   * the `requestId` property set on the {@link HttpRequestOptions} object.
+   */
   requestId?: string | unknown;
   [key: string]: unknown;
 };
@@ -87,7 +178,15 @@ export type HttpRequestResponse = {
  * @public
  */
 export type IsApiErrorResult = {
+  /**
+   * Indicates whether the response is an API error.
+   */
   isApiError: boolean;
+  /**
+   * Optional message providing additional information about the API error.  The
+   * returned `message` will be used as the `message` property on the {@link ApiRequestError} object
+   * thrown by the request.
+   */
   message?: string;
 };
 
@@ -101,6 +200,15 @@ export type IsApiErrorFunction = (
 ) => IsApiErrorResult;
 
 /**
+ * Optional middleware method for modifying {@link HttpRequestOptions} before a request is made
+ * via the {@link PolarityRequest.run} method or {@link PolarityRequest.runInParallel} method.
+ * The returned `requestOptions` object will be used for the request.  This method is passed
+ * a copy of the original `requestOptions` object so it can be modified without side effects.
+ *
+ * This method is typically used for adding authentication (e.g., auth headers, or basic auth) to every request.  It can also
+ * be used to add headers that are required on every request or conditionally add headers based
+ * on the passed in `userOptions`.
+ *
  * @public
  */
 export type PreprocessRequestOptions = (
@@ -109,6 +217,10 @@ export type PreprocessRequestOptions = (
 ) => Promise<HttpRequestOptions> | never | undefined;
 
 /**
+ * Optional middleware method for modifying the {@link HttpRequestResponse} after a successful request.
+ * The passed in {@link HttpRequestResponse} object is not a copy but can be safely modified without
+ * side effects.  The returned `HttpRequestResponse` object will be used for the response.
+ *
  * @public
  */
 export type PostprocessRequestSuccess = (
@@ -135,7 +247,7 @@ export interface PolarityRequestOptions {
   roundedSuccessStatusCodes?: number[];
   httpResponseErrorProperties?: string[];
   httpResponseErrorMessageProperties?: string[];
-  requestOptionsToOmitFromLogsKeyPaths?: string[];
+  requestOptionsToSanitize?: string[];
   preprocessRequestOptions?: PreprocessRequestOptions;
   postprocessRequestSuccess?: PostprocessRequestSuccess;
   postprocessRequestFailure?: PostprocessRequestFailure;
@@ -188,22 +300,35 @@ export class PolarityRequest {
    * If the `isApiError` method is implemented
    * the property `roundedSuccessStatusCodes` and `httpResponseErrorProperties` are not
    * used to determine API errors.
-   * @param status - The HTTP status code of the response.
-   * @param body - The body of the HTTP response.
-   * @param response - The full HTTP response object.
-   * @param requestOptions - The options used for the request.
+   *
    * @returns An object indicating whether an API error was encountered and an optional message.
    */
   public readonly isApiError: IsApiErrorFunction = null;
-  public readonly requestOptionsToOmitFromLogsKeyPaths: string[] = [];
+  /**
+   * An array of JSON dot notation paths to omit from the request options when logging.
+   *
+   * This property can be used to sanitize sensitive request properties that should not
+   * appear in logging.
+   *
+   * Note that the `requestOptions` object is automatically sanitized to remove properties that
+   * typically contain sensitive API key and passwords.  For a list of properties that are
+   * automatically sanitized, see the {@link sanitizeRequestOptions} method.
+   */
+  public readonly requestOptionsToSanitize: string[] = [];
   public userOptions: DoLookupUserOptions = null;
 
   /**
-   * Method that can be implemented to preprocess the HTTP request options before the request is made.
-   * The returned `requestOptions` object will be used for the request. This method is typically used
-   * to add in authentication (e.g., auth headers, or basic auth) to every request.  It can also
-   * be used to add headers that are required on every request or conditionally add headers based
+   * Optional middleware method for modifying {@link HttpRequestOptions} before a request is made
+   * via the {@link PolarityRequest.run} method or {@link PolarityRequest.runInParallel} method.
+   * The returned `requestOptions` object will be used for the request.  This method is passed
+   * a copy of the original `requestOptions` object so it can be modified without side effects.
+   *
+   * This method is typically used for adding authentication (e.g., auth headers, or basic auth) to every request.
+   * It can also be used to add headers that are required on every request or conditionally add headers based
    * on the passed in `userOptions`.
+   *
+   * This method can be set as part of the {@link PolarityRequestOptions} when creating a new instance of the
+   * {@link PolarityRequest} class or can be set after the fact.
    *
    * @param requestOptions - A copy of the request options used for the request.  This object can be modified
    * without side effects.
@@ -217,7 +342,9 @@ export class PolarityRequest {
   ): Promise<HttpRequestOptions> => requestOptions;
 
   /**
-   * Method that can be implemented to post-process the HTTP response after a successful request.
+   * Optional middleware method for modifying the {@link HttpRequestResponse} after a successful request.
+   * The passed in {@link HttpRequestResponse} object is not a copy but can be safely modified without
+   * side effects.  The returned `HttpRequestResponse` object will be used for the response.
    *
    * @param response - The HTTP response from the request.
    * @param requestOptions - The request options used for the request.
@@ -317,9 +444,8 @@ export class PolarityRequest {
       this.httpResponseErrorProperties = options.httpResponseErrorProperties;
     }
 
-    if (options.requestOptionsToOmitFromLogsKeyPaths) {
-      this.requestOptionsToOmitFromLogsKeyPaths =
-        options.requestOptionsToOmitFromLogsKeyPaths;
+    if (options.requestOptionsToSanitize) {
+      this.requestOptionsToSanitize = options.requestOptionsToSanitize;
     }
 
     if (options.postprocessRequestFailure) {
@@ -411,7 +537,8 @@ export class PolarityRequest {
       if (!(requestError instanceof ApiRequestError)) {
         transformedError = new NetworkError('Network error encountered during request', {
           cause: requestError,
-          requestOptions: postprocessedRequestOptions
+          requestOptions: postprocessedRequestOptions,
+          requestOptionsToSanitize: this.requestOptionsToSanitize
         });
       }
 
@@ -419,7 +546,8 @@ export class PolarityRequest {
         transformedError = new RetryRequestError(
           'This request has been dropped for going over Integration Configured API Throttling Limits',
           {
-            requestOptions: postprocessedRequestOptions
+            requestOptions: postprocessedRequestOptions,
+            requestOptionsToSanitize: this.requestOptionsToSanitize
           }
         );
       }
@@ -450,10 +578,10 @@ export class PolarityRequest {
   ): void {
     const { statusCode, body } = httpResponse;
 
-    const requestOptionsWithoutSensitiveData = omit(
-      this.requestOptionsToOmitFromLogsKeyPaths.concat('options'),
-      requestOptions
-    ) as HttpRequestOptions;
+    const requestOptionsWithoutSensitiveData = sanitizeRequestOptions(
+      requestOptions,
+      this.requestOptionsToSanitize
+    );
 
     this.logger.trace(
       {
@@ -502,6 +630,7 @@ export class PolarityRequest {
       throw new ApiRequestError(message, {
         status: statusCode.toString(),
         requestOptions: requestOptionsWithoutSensitiveData,
+        requestOptionsToSanitize: this.requestOptionsToSanitize,
         meta: {
           body
         }

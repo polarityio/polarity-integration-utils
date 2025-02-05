@@ -124,7 +124,7 @@ describe('PolarityRequest', () => {
       expect(postmanRequest.defaults).toHaveBeenCalledWith(
         expect.objectContaining(defaultRequestOptions)
       );
-      expect(request.requestOptionsToOmitFromLogsKeyPaths).toEqual([]);
+      expect(request.requestOptionsToSanitize).toEqual([]);
       expect(request.roundedSuccessStatusCodes).toEqual([200]);
       expect(request.httpResponseErrorProperties).toEqual([]);
       expect(request.httpResponseErrorMessageProperties).toEqual([]);
@@ -145,13 +145,13 @@ describe('PolarityRequest', () => {
       expect(request.roundedSuccessStatusCodes).toEqual([200, 400]);
     });
 
-    it('should create a PolarityRequest object with `requestOptionsToOmitFromLogsKeyPaths` set', () => {
+    it('should create a PolarityRequest object with `requestOptionsToSanitize` set', () => {
       expect.assertions(1);
-      const requestOptionsToOmitFromLogsKeyPaths = ['headers.auth'];
+      const requestOptionsToSanitize = ['headers.auth'];
       const request = new PolarityRequest({
-        requestOptionsToOmitFromLogsKeyPaths
+        requestOptionsToSanitize
       });
-      expect(request.requestOptionsToOmitFromLogsKeyPaths).toEqual(['headers.auth']);
+      expect(request.requestOptionsToSanitize).toEqual(['headers.auth']);
     });
 
     it('should create a PolarityRequest object with `httpResponseErrorProperties` set', () => {
@@ -425,6 +425,74 @@ describe('PolarityRequest', () => {
         await request.run(requestOptionsExternal);
       } catch (error) {
         expect(error instanceof ApiRequestError).toBeTruthy();
+      }
+    });
+
+    it('should throw an ApiRequestError and sanitize default sensitive header in requestOptions', async () => {
+      expect.assertions(2);
+      const body = { message: 'Request Failed' };
+      const response = {
+        statusCode: 400,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest();
+      const userOptionsExternal = { customOption: true };
+      const requestOptionsExternal = {
+        url: 'http://example.com',
+        headers: {
+          authorization: 'Basic abc123'
+        }
+      };
+
+      request.userOptions = userOptionsExternal;
+
+      try {
+        await request.run(requestOptionsExternal);
+      } catch (error) {
+        expect(error instanceof ApiRequestError).toBeTruthy();
+        expect(error.requestOptions.headers.authorization).toEqual('**********');
+      }
+    });
+
+    it('should throw an ApiRequestError and sanitize custom paths via the `requestOptionsToSanitize` property', async () => {
+      expect.assertions(2);
+      const body = { message: 'Request Failed' };
+      const response = {
+        statusCode: 400,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest({
+        requestOptionsToSanitize: ['headers.custom']
+      });
+      const userOptionsExternal = { customOption: true };
+      const requestOptionsExternal = {
+        url: 'http://example.com',
+        headers: {
+          custom: 'Basic abc123'
+        }
+      };
+
+      request.userOptions = userOptionsExternal;
+
+      try {
+        await request.run(requestOptionsExternal);
+      } catch (error) {
+        expect(error instanceof ApiRequestError).toBeTruthy();
+        expect(error.requestOptions.headers.custom).toEqual('**********');
       }
     });
 
@@ -705,6 +773,39 @@ describe('PolarityRequest', () => {
       }
     });
 
+    it('should call `isApiError` and throw a `LibraryUsageError` if the return object is not valid', async () => {
+      expect.assertions(1);
+      const body = { message: 'Request Failed' };
+      const response = {
+        statusCode: 200,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest({
+        // @ts-expect-error testing invalid return type
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        isApiError: (httpResponse, requestOptions, userOptions) => {
+          return {};
+        }
+      });
+      const userOptionsExternal = { customOption: true };
+      const requestOptionsExternal = { url: 'http://example.com' };
+
+      request.userOptions = userOptionsExternal;
+
+      try {
+        await request.run(requestOptionsExternal);
+      } catch (error) {
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+      }
+    });
+
     it('should not throw error if `isApiError` returns false', async () => {
       expect.assertions(1);
       const body = { message: 'Request Failed' };
@@ -978,7 +1079,7 @@ describe('PolarityRequest', () => {
       expect(results[0].body).toEqual(bodyIp);
       expect(results[1].body).toEqual(bodyDomain);
     });
-    
+
     it('should throw an error if any API request fails', async () => {
       expect.assertions(3);
       const bodyIp = { message: 'IP Lookup' };
@@ -1027,7 +1128,7 @@ describe('PolarityRequest', () => {
         expect(error.meta.body).toEqual(bodyDomain);
       }
     });
-    
+
     it('should not throw an error if an API request fails and `returnErrors` is true', async () => {
       expect.assertions(3);
       const bodyIp = { message: 'IP Lookup' };
@@ -1075,7 +1176,7 @@ describe('PolarityRequest', () => {
       expect(results[0].body).toEqual(bodyIp);
       expect(results[1].error instanceof ApiRequestError).toBeTruthy();
     });
-    
+
     it('should run requests serially if `maxConcurrentRequests` option is set to 1', async () => {
       expect.assertions(3);
       const taskExecutionTimeInMilliseconds = 100;
@@ -1093,9 +1194,15 @@ describe('PolarityRequest', () => {
       postmanRequest.defaults.mockImplementation(
         () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
           if (requestOptions.entity.isIP) {
-            setTimeout(() => cb(null, responseIp, bodyIp), taskExecutionTimeInMilliseconds);
+            setTimeout(
+              () => cb(null, responseIp, bodyIp),
+              taskExecutionTimeInMilliseconds
+            );
           } else {
-            setTimeout(() => cb(null, responseDomain, bodyDomain), taskExecutionTimeInMilliseconds);
+            setTimeout(
+              () => cb(null, responseDomain, bodyDomain),
+              taskExecutionTimeInMilliseconds
+            );
           }
         }
       );
@@ -1120,7 +1227,9 @@ describe('PolarityRequest', () => {
         allRequestOptions,
         maxConcurrentRequests: 1
       });
-      expect(Date.now() - startTime).toBeGreaterThan(allRequestOptions.length * taskExecutionTimeInMilliseconds);
+      expect(Date.now() - startTime).toBeGreaterThanOrEqual(
+        allRequestOptions.length * taskExecutionTimeInMilliseconds
+      );
       expect(results[0].body).toEqual(bodyIp);
       expect(results[1].body).toEqual(bodyDomain);
     });
@@ -1142,9 +1251,15 @@ describe('PolarityRequest', () => {
       postmanRequest.defaults.mockImplementation(
         () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
           if (requestOptions.entity.isIP) {
-            setTimeout(() => cb(null, responseIp, bodyIp), taskExecutionTimeInMilliseconds);
+            setTimeout(
+              () => cb(null, responseIp, bodyIp),
+              taskExecutionTimeInMilliseconds
+            );
           } else {
-            setTimeout(() => cb(null, responseDomain, bodyDomain), taskExecutionTimeInMilliseconds);
+            setTimeout(
+              () => cb(null, responseDomain, bodyDomain),
+              taskExecutionTimeInMilliseconds
+            );
           }
         }
       );
@@ -1169,7 +1284,10 @@ describe('PolarityRequest', () => {
         allRequestOptions,
         maxConcurrentRequests: 2
       });
-      expect(Date.now() - startTime).toBeLessThan(allRequestOptions.length * taskExecutionTimeInMilliseconds);
+      expect(Date.now() - startTime).toBeLessThan(
+        allRequestOptions.length * taskExecutionTimeInMilliseconds -
+          taskExecutionTimeInMilliseconds / 2
+      );
       expect(results[0].body).toEqual(bodyIp);
       expect(results[1].body).toEqual(bodyDomain);
     });
