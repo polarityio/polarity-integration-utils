@@ -55,7 +55,7 @@ export type DoLookupResponse = {
     };
 };
 
-// @public (undocumented)
+// @public
 export type DoLookupUserOptions = {
     [key: string]: PossibleUserOptionValue;
 };
@@ -137,7 +137,7 @@ export const filterObjectsContainingString: FilterObjectsFn;
 // @public (undocumented)
 export const getEntityTypes: (typesToGet: EntityType | EntityType[], entities: Entity[]) => Entity[];
 
-// @public (undocumented)
+// @public
 export const getLogger: () => Logger;
 
 // @alpha (undocumented)
@@ -156,8 +156,13 @@ export const groupEntitiesByType: (entities: Entity[]) => EntitiesByType;
 export type GroupLabel = `${string}Entities`;
 
 // @public (undocumented)
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+
+// @public (undocumented)
 export type HttpRequestOptions = {
     url?: string;
+    method?: HttpMethod;
+    json?: boolean;
     headers?: object;
     qs?: object;
     form?: object;
@@ -199,7 +204,7 @@ export type HttpRequestResponse = {
         [key: string]: unknown;
     };
     body: unknown;
-    error?: Error;
+    error?: ApiRequestError | NetworkError | RetryRequestError;
     entity?: Entity;
     entities?: Entity[];
     requestId?: string | unknown;
@@ -215,7 +220,6 @@ export class IntegrationError extends Error {
     readonly help: string;
     readonly meta: ErrorMeta;
     readonly requestOptions?: HttpRequestOptions;
-    sanitizeRequestOptions(requestOptions: HttpRequestOptions): HttpRequestOptions;
     readonly status: string;
     readonly title: string;
     toJSON(): SerializedIntegrationError;
@@ -228,6 +232,7 @@ export interface IntegrationErrorProperties {
     help?: string;
     meta?: MetaObject;
     requestOptions?: HttpRequestOptions;
+    requestOptionsToSanitize?: string[];
     status?: string;
     title?: string;
 }
@@ -308,8 +313,7 @@ export class PolarityRequest {
     postprocessRequestFailure: PostprocessRequestFailure;
     postprocessRequestSuccess: PostprocessRequestSuccess;
     preprocessRequestOptions: PreprocessRequestOptions;
-    // (undocumented)
-    readonly requestOptionsToOmitFromLogsKeyPaths: string[];
+    readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
     run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse> | never;
@@ -338,7 +342,7 @@ export interface PolarityRequestOptions {
     // (undocumented)
     preprocessRequestOptions?: PreprocessRequestOptions;
     // (undocumented)
-    requestOptionsToOmitFromLogsKeyPaths?: string[];
+    requestOptionsToSanitize?: string[];
     // (undocumented)
     roundedSuccessStatusCodes?: number[];
     // (undocumented)
@@ -351,13 +355,13 @@ export type PossibleUserOptionValue = undefined | string | number | boolean | Dr
 // @public (undocumented)
 export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
 
-// @public (undocumented)
+// @public
 export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
 
 // @alpha (undocumented)
 export type Predicate<T> = (x: T) => unknown;
 
-// @public (undocumented)
+// @public
 export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
 
 // @alpha (undocumented)
@@ -381,6 +385,12 @@ export type RunInParallelOptions = {
     returnErrors?: boolean;
 };
 
+// @public
+export function sanitizeObject<T extends object>(obj: T | null | undefined, paths?: string[], mask?: string): T | null | undefined;
+
+// @public
+export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
+
 // @public (undocumented)
 export interface SerializedIntegrationError {
     cause?: Error_2;
@@ -395,7 +405,7 @@ export interface SerializedIntegrationError {
     title: string;
 }
 
-// @public (undocumented)
+// @public
 export const setLogger: (logger: Logger) => void;
 
 // @public (undocumented)

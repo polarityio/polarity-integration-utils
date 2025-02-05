@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./lib/index.docs.ts"],
+  "projectDocuments": ["./guides/*.md"],
   "outputs": [
     {
       "name": "html",
