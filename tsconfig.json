@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "target": "es2017",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noUnusedLocals": true,
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "lib": ["es5", "es2015", "dom"],
+    "declaration": true,
+    "declarationMap": true,
+    "declarationDir": "dist/dts"
+  },
+  "exclude": ["dist"]
+}
