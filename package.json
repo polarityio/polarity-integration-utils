@@ -48,7 +48,6 @@
     "build:lib:watch": "tsc --watch -p tsconfig.build.json --outDir dist/lib",
     "prepublishOnly": "npm run ci && npm run build",
     "fullPublish": "npm install && npm run prepublishOnly && npm publish",
-    "runSchemaGeneration": "npx ts-node ./lib/user-options/jsonSchemaValidationPoc/runSchemaGeneration.ts",
     "lint": "tsc --noEmit && eslint .",
     "lint:fix": "eslint . --fix",
     "lint:ts": "tsc --noEmit",
