@@ -2,13 +2,11 @@
 
 This library is intended for use in development of Polarity Integrations.
 
+## Documentation
 
+Documentation for this library can be found at: https://polarityio.github.io/polarity-integration-utils/
 
-## Contribution Instructions
-
-> NOTE: Don't forget to add your implementations to the `./test/index.test.js` to ensure your implementation is accessible from the main index.js
-
-## Developer
+## Building the Library
 
 ### Prerequisites
 | Tool | Version | Notes |
@@ -16,16 +14,16 @@ This library is intended for use in development of Polarity Integrations.
 | Node | 18.x    | `nvm install 18 && nvm use 18` recommended |
 | npm  | 9.x     | Ships with Node 18 |
 
-### Install
+### Install Dependencies
     npm ci
 
 ### Build
     npm run build
 
-### Test
+### Run Tests
     npm test
 
-### Lint / Format
+### Linting / Formatting
     npm run lint
     npm run lint:fix
     npm run format
