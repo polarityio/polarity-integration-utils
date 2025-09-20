@@ -8,6 +8,9 @@ yarn-error.log*
 # Ignore all aider files
 .aider*
 
+# Ignore all locally built docs
+docs/
+
 # Runtime data
 pids
 *.pid
