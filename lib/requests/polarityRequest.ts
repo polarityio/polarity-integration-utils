@@ -152,6 +152,10 @@ export type HttpRequestResponse = {
    */
   body: unknown;
   /**
+   * The response headers
+   */
+  headers: unknown;
+  /**
    * The error object if an error occurred during the request.
    */
   error?: ApiRequestError | NetworkError | RetryRequestError;
