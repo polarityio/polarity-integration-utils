@@ -27,12 +27,16 @@ function startup(logger){
 
 You now have access to the `request` object throughout the `integration.js` file.
 
-Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.
+Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.  You can include the `setLogger` method by requiring it like this: 
+
+```js
+const { setLogger } = require('polarity-integration-utils/logger');
+```
 
 Within your `doLookup` method you will want to pass in the `userOptions` to the `request` instance.  This will ensure that the `userOptions` are passed along with each request.  This step should be done before any requests are made.  
 
 ```js
-function doLookup(entities, options, cb) {
+async function doLookup(entities, options, cb) {
     request.userOptions(options);
 }
 ```
