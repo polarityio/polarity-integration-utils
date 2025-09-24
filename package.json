@@ -69,6 +69,7 @@
     "@types/async": "^3.2.25",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
+    "@types/node": "^20.14.8",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
     "copy-paste": "^2.2.0",
