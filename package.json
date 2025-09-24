@@ -37,6 +37,7 @@
   "scripts": {
     "test": "jest --coverageReporters=\"text-summary\"",
     "coverage": "jest --coverage",
+    "coverage-lcov": "jest --coverage --coverageReporters=lcov",
     "ci": "npm run test",
     "clean": "rm -rf dist/*",
     "build:es": "tsc -p tsconfig.build.es.json --outDir dist/es",
