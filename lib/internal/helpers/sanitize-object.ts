@@ -1,6 +1,5 @@
 /** @internal */
 import { set, has } from 'lodash';
-import { structuredClone } from 'node:util';
 
 /**
  * Sanitizes the specified paths in an object by setting their values to a mask.
