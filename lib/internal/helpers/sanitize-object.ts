@@ -1,5 +1,6 @@
 /** @internal */
-import { set, has, cloneDeep } from 'lodash';
+import { set, has } from 'lodash';
+import { structuredClone } from 'node:util';
 
 /**
  * Sanitizes the specified paths in an object by setting their values to a mask.
@@ -26,7 +27,7 @@ export function sanitizeObject<T extends object>(
   }
 
   // Create a deep clone so we do NOT mutate the original object
-  const clonedObj = cloneDeep(obj);
+  const clonedObj = structuredClone(obj);
 
   // Replace each path's value with `mask`
   for (const path of paths) {
