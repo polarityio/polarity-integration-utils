@@ -12,8 +12,7 @@ import {
 } from '../errors';
 import { getLogger } from '../logging';
 
-import type { DoLookupUserOptions } from '../user-options/types';
-import type { Entity } from '../types';
+import type { Entity, DoLookupUserOptions } from '../types';
 import { sanitizeRequestOptions } from './sanitizeRequestOptions';
 
 /**
@@ -748,6 +747,12 @@ export class PolarityRequest {
     const allRequestOptions = options.allRequestOptions;
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
+
+    if (!Array.isArray(allRequestOptions)) {
+      throw new LibraryUsageError(
+        'Invalid or missing option for PolarityRequest.runInParallel(): `allRequestOptions` is a required option and must be an array of `HttpRequestOptions` with at least one `HttpRequestOptions` object in it.'
+      );
+    }
 
     // REVIEW: We're currently supporting tying the entity to the request by using
     // the `entity` property, the `entities` property, or the generic `requestId` property.
