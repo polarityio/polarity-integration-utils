@@ -1,5 +1,6 @@
 /** @internal */
-import { set, has } from 'lodash';
+import set from 'lodash/set.js';
+import has from 'lodash/has.js';
 
 /**
  * Sanitizes the specified paths in an object by setting their values to a mask.

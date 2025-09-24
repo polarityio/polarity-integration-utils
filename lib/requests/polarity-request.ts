@@ -3,7 +3,9 @@ import { promisify } from 'util';
 import Bottleneck from 'bottleneck';
 import request from 'postman-request';
 import { parallelLimit } from '../internal/helpers/parallel-limit';
-import { isEqual, get, has } from 'lodash/fp';
+import { isDeepStrictEqual } from 'node:util';
+import get from 'lodash/get.js';
+import has from 'lodash/has.js';
 import {
   ApiRequestError,
   NetworkError,
@@ -390,7 +392,7 @@ export class PolarityRequest {
   // REVIEW: Do we want to tie our throttling specifically to Bottleneck or do we want to make
   // it more generic and independent of Bottleneck?
   public set throttlingOptions(throttlingOptions: Bottleneck.ConstructorOptions) {
-    if (isEqual(this.internalThrottlingOptions, throttlingOptions)) return;
+    if (isDeepStrictEqual(this.internalThrottlingOptions, throttlingOptions)) return;
 
     this.bottleneckLimiter = new Bottleneck({
       ...throttlingOptions,
@@ -664,7 +666,7 @@ export class PolarityRequest {
    * @returns `true` if the httpBody property contains properties specified in `httpResponseErrorProperties`
    */
   private hasHttpResponseErrorProperty(httpBody: unknown): boolean {
-    return this.httpResponseErrorProperties.some((property) => has(property, httpBody));
+    return this.httpResponseErrorProperties.some((property) => has(httpBody, property));
   }
 
   /**
@@ -709,8 +711,8 @@ export class PolarityRequest {
   ): string | undefined {
     let message: string | undefined;
     properties.some((property) => {
-      if (has(property, object)) {
-        const propertyValue = get(property, object);
+      if (has(object, property)) {
+        const propertyValue = get(object, property);
         if (typeof propertyValue === 'string') {
           message = propertyValue;
           return true;
