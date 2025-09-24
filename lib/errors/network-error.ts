@@ -1,4 +1,4 @@
-import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
+import { IntegrationError, type IntegrationErrorProperties } from './integration-error';
 
 // The following is a list of NodeJS error codes that are related
 // to TLS/SSL certificate errors.  These can be encountered when attempting to connect

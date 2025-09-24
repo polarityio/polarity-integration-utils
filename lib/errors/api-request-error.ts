@@ -1,4 +1,4 @@
-import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
+import { IntegrationError, type IntegrationErrorProperties } from './integration-error';
 
 /**
  * API error for REST requests

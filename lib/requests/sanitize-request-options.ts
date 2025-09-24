@@ -1,5 +1,5 @@
-import type { HttpRequestOptions } from './polarityRequest';
-import { sanitizeObject } from '../internal/helpers/sanitizeObject';
+import type { HttpRequestOptions } from './polarity-request';
+import { sanitizeObject } from '../internal/helpers/sanitize-object';
 
 const DEFAULT_PATHS_TO_SANITIZE = [
   'auth.password',

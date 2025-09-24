@@ -1,6 +1,6 @@
-import { parseErrorToReadableJson } from './parseErrorToReadableJson';
-import type { HttpRequestOptions } from '../requests/polarityRequest';
-import { sanitizeRequestOptions } from '../requests/sanitizeRequestOptions';
+import { parseErrorToReadableJson } from './parse-error-to-readable-json';
+import type { HttpRequestOptions } from '../requests/polarity-request';
+import { sanitizeRequestOptions } from '../requests/sanitize-request-options';
 
 /**
  * @public

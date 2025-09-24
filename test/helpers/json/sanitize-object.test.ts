@@ -1,6 +1,6 @@
 // sanitizeObject.test.ts
 
-import { sanitizeObject } from '../../../lib/internal/helpers/sanitizeObject';
+import { sanitizeObject } from '../../../lib/internal/helpers/sanitize-object';
 
 describe('sanitizeObject', () => {
   test('returns null if input is null', () => {

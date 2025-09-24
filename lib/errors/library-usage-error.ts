@@ -1,4 +1,4 @@
-import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
+import { IntegrationError, type IntegrationErrorProperties } from './integration-error';
 
 /**
  * Thrown when the polarity-integration-utils library is used incorrectly.  For example,

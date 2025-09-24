@@ -6,7 +6,7 @@ import {
   PolarityRequest,
   PostprocessRequestSuccess,
   PreprocessRequestOptions
-} from '../../lib/requests/polarityRequest';
+} from '../../lib/requests/polarity-request';
 import postmanRequest from 'postman-request';
 import Bottleneck from 'bottleneck';
 import {

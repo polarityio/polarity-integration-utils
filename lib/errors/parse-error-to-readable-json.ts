@@ -1,4 +1,4 @@
-import type { Error } from './integrationError';
+import type { Error } from './integration-error';
 
 /**
  * @public

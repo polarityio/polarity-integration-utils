@@ -13,7 +13,7 @@ import {
 import { getLogger } from '../logging';
 
 import type { Entity, DoLookupUserOptions } from '../types';
-import { sanitizeRequestOptions } from './sanitizeRequestOptions';
+import { sanitizeRequestOptions } from './sanitize-request-options';
 
 /**
  * @public

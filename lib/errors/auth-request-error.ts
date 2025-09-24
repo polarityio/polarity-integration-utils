@@ -1,4 +1,4 @@
-import { IntegrationError, type IntegrationErrorProperties } from './integrationError';
+import { IntegrationError, type IntegrationErrorProperties } from './integration-error';
 
 /**
  * Thrown by generateAccessToken method if there is a failure to fetch a token
