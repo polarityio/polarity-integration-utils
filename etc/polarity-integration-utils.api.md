@@ -284,9 +284,6 @@ export type RunInParallelOptions = {
 };
 
 // @public
-export function sanitizeObject<T extends object>(obj: T | null | undefined, paths?: string[], mask?: string): T | null | undefined;
-
-// @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
 
 // @public (undocumented)
