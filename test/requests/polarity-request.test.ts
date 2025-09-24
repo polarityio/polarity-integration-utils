@@ -1048,6 +1048,23 @@ describe('PolarityRequest', () => {
 
       expect(firstLimiter).not.toBe(secondLimiter);
     });
+
+    it('should NOT create a new Bottleneck limiter when throttlingOptions are unchanged', () => {
+      const request = new PolarityRequest({
+        throttlingOptions: { maxRequestsPerSecond: 5 }
+      });
+
+      const firstLimiter = (request as unknown as { bottleneckLimiter: unknown })
+        .bottleneckLimiter;
+
+      // Re-assign identical throttling options
+      request.throttlingOptions = { maxRequestsPerSecond: 5 };
+
+      const secondLimiter = (request as unknown as { bottleneckLimiter: unknown })
+        .bottleneckLimiter;
+
+      expect(firstLimiter).toBe(secondLimiter);
+    });
   });
 
   describe('runInParallel()', () => {
