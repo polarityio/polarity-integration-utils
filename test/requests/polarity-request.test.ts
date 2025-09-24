@@ -1032,6 +1032,24 @@ describe('PolarityRequest', () => {
     });
   });
 
+  describe('throttlingOptions setter', () => {
+    it('should create a new Bottleneck limiter when throttlingOptions are changed', () => {
+      const request = new PolarityRequest({
+        throttlingOptions: { maxRequestsPerSecond: 5 }
+      });
+
+      const firstLimiter = (request as unknown as { bottleneckLimiter: unknown })
+        .bottleneckLimiter;
+
+      request.throttlingOptions = { maxRequestsPerSecond: 10 };
+
+      const secondLimiter = (request as unknown as { bottleneckLimiter: unknown })
+        .bottleneckLimiter;
+
+      expect(firstLimiter).not.toBe(secondLimiter);
+    });
+  });
+
   describe('runInParallel()', () => {
     it('should return multiple responses from a successful API request', async () => {
       expect.assertions(3);
