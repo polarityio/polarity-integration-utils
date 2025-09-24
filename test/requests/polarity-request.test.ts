@@ -1086,6 +1086,22 @@ describe('PolarityRequest', () => {
       expect(sanitized.body.password).toBe('**********');
       expect(sanitized.body.token).toBe('**********');
     });
+
+    it('masks x-api-key header regardless of case', () => {
+      const options = {
+        url: 'http://example.com',
+        headers: { 'x-api-key': 'SuperSecret' }
+      };
+      const res = sanitizeRequestOptions(options);
+      expect(res.headers?.['x-api-key']).toBe('**********');
+    });
+
+    it('handles requestOptions without headers', () => {
+      const options = { url: 'http://example.com' };
+      const res = sanitizeRequestOptions(options);
+      expect(res).toEqual(options);
+      expect(res).not.toBe(options); // returns a clone
+    });
   });
 
   describe('runInParallel()', () => {

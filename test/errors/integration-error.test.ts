@@ -227,4 +227,20 @@ describe('IntegrationError', () => {
 
     expect(serializedError).toEqual(expectedSerialization);
   });
+
+  it('toJSON omits optional fields when they are not set', () => {
+    const err = new IntegrationError('plain message');
+
+    // remove stack to explore false branch
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    delete (err as { stack?: string }).stack;
+
+    const json = err.toJSON();
+
+    expect(json).toEqual({
+      name: 'IntegrationError',
+      title: 'IntegrationError',
+      detail: 'plain message'
+    });
+  });
 });
