@@ -62,4 +62,9 @@ describe('parallelLimit', () => {
       LibraryUsageError
     );
   });
+
+  it('returns empty array immediately when no tasks', async () => {
+    const result = await parallelLimit([], 3);
+    expect(result).toEqual([]);
+  });
 });

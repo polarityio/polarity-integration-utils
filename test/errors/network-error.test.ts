@@ -42,4 +42,20 @@ describe('NetworkError', () => {
 
     expect(intError.help.substring(0, 7)).toEqual('Network');
   });
+
+  it('should set help property for DNS (ENOTFOUND) errors', () => {
+    const dnsError = new Error('dns lookup failed');
+    // @ts-expect-error inject node-style code property
+    dnsError.code = 'ENOTFOUND';
+    const intError = new NetworkError('detail', { cause: dnsError });
+    expect(intError.help).toMatch(/ENOTFOUND exception arises/i);
+  });
+
+  it('should leave help undefined for unrecognised error codes', () => {
+    const other = new Error('other');
+    // @ts-expect-error inject node-style code property
+    other.code = 'EOTHER';
+    const intError = new NetworkError('detail', { cause: other });
+    expect(intError.help).toBeUndefined();
+  });
 });

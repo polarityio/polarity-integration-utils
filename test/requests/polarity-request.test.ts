@@ -9,6 +9,7 @@ import {
 } from '../../lib/requests/polarity-request';
 import postmanRequest from 'postman-request';
 import Bottleneck from 'bottleneck';
+import { sanitizeRequestOptions } from '../../lib/requests/sanitize-request-options';
 import {
   ApiRequestError,
   LibraryUsageError,
@@ -1064,6 +1065,26 @@ describe('PolarityRequest', () => {
         .bottleneckLimiter;
 
       expect(firstLimiter).toBe(secondLimiter);
+    });
+  });
+
+  describe('sanitizeRequestOptions()', () => {
+    it('masks Authorization header regardless of case', () => {
+      const options = {
+        url: 'http://example.com',
+        headers: { Authorization: 'MyToken' }
+      };
+      const sanitized = sanitizeRequestOptions(options);
+      expect(sanitized.headers?.Authorization).toBe('**********');
+    });
+
+    it('masks additional user-supplied paths', () => {
+      const sanitized = sanitizeRequestOptions(
+        { body: { password: 'p', token: 't' } },
+        ['body.token']
+      );
+      expect(sanitized.body.password).toBe('**********');
+      expect(sanitized.body.token).toBe('**********');
     });
   });
 
