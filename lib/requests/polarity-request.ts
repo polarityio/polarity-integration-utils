@@ -2,7 +2,7 @@ import fs from 'fs';
 import { promisify } from 'util';
 import Bottleneck from 'bottleneck';
 import request from 'postman-request';
-import async from 'async';
+import { parallelLimit } from '../internal/helpers/parallel-limit';
 import { isEqual, get, has } from 'lodash/fp';
 import {
   ApiRequestError,
@@ -780,7 +780,7 @@ export class PolarityRequest {
       };
     });
 
-    const results: HttpRequestResponse[] = await async.parallelLimit(
+    const results: HttpRequestResponse[] = await parallelLimit(
       tasks,
       maxConcurrentRequests
     );
