@@ -54,8 +54,9 @@ describe('getLogger default behaviour (no setLogger)', () => {
 
       const logger = getLogger();
       loggingLevels.forEach((level) => {
-        // @ts-expect-error dynamic access to the logger by level name
-        logger[level](`test message for ${level}`);
+        (logger as Record<string, (...args: unknown[]) => void>)[level](
+          `test message for ${level}`
+        );
       });
 
       expect(appendSpy).toHaveBeenCalledTimes(loggingLevels.length);

@@ -1075,7 +1075,9 @@ describe('PolarityRequest', () => {
         headers: { Authorization: 'MyToken' }
       };
       const sanitized = sanitizeRequestOptions(options);
-      expect(sanitized.headers?.Authorization).toBe('**********');
+      expect(
+        (sanitized.headers as Record<string, unknown>)?.Authorization
+      ).toBe('**********');
     });
 
     it('masks additional user-supplied paths', () => {
@@ -1083,8 +1085,9 @@ describe('PolarityRequest', () => {
         { body: { password: 'p', token: 't' } },
         ['body.token']
       );
-      expect(sanitized.body.password).toBe('**********');
-      expect(sanitized.body.token).toBe('**********');
+      const body = sanitized.body as Record<string, unknown>;
+      expect(body.password).toBe('**********');
+      expect(body.token).toBe('**********');
     });
 
     it('masks x-api-key header regardless of case', () => {

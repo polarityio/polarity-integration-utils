@@ -52,12 +52,11 @@ describe('parallelLimit', () => {
   });
 
   it('invalid arguments throw LibraryUsageError', async () => {
-    // @ts-expect-error
-    await expect(parallelLimit('notArray', 2)).rejects.toBeInstanceOf(
-      LibraryUsageError
-    );
+    await expect(
+      // cast so runtime still gets an invalid value but TS compiles
+      parallelLimit('notArray' as unknown as Array<() => Promise<unknown>>, 2)
+    ).rejects.toBeInstanceOf(LibraryUsageError);
     const tasks = [() => Promise.resolve()];
-    // @ts-expect-error
     await expect(parallelLimit(tasks, 0)).rejects.toBeInstanceOf(
       LibraryUsageError
     );
