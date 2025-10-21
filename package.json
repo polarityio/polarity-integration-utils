@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -56,7 +56,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/polarity-integration-utils/polarity-integration-utils.git"
+    "url": "https://github.com/polarityio/polarity-integration-utils"
   },
   "author": "Polarity IO <support@polarity.io>",
   "license": "MIT",
