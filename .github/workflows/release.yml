@@ -54,6 +54,9 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install dependencies
+        run: npm ci
+
       - id: get_version
         run: |
           VERSION=$(node -p "require('./package.json').version")
