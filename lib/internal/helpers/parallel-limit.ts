@@ -4,8 +4,8 @@ import { LibraryUsageError } from '../../errors';
  * Execute an array of async tasks while ensuring that no more than `limit`
  * tasks are running at the same time.  Results preserve task order.
  *
- * @param tasks  Array of thunked async tasks (`() => Promise<T>`).
- * @param limit  Maximum number of concurrent tasks (positive integer).
+ * @param tasks - Array of thunked async tasks (`() => Promise<T>`).
+ * @param limit - Maximum number of concurrent tasks (positive integer).
  */
 export async function parallelLimit<T>(
   tasks: Array<() => Promise<T>>,

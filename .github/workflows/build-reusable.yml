@@ -2,8 +2,6 @@ name: build
 
 on:
   workflow_call:
-    # forward all repository / organization-level secrets
-    secrets: inherit
 
 jobs:
   build:
