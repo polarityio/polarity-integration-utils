@@ -27,13 +27,17 @@ function startup(logger){
 
 You now have access to the `request` object throughout the `integration.js` file.
 
-Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.
-
-Within your `doLookup` method you will want to pass in the `userOptions` to the `request` instance.  This will ensure that the `userOptions` are passed along with each request.  This step should be done before any requests are made.  
+Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.  You can include the `setLogger` method by requiring it like this: 
 
 ```js
-function doLookup(entities, options, cb) {
-    request.userOptions(options);
+const { setLogger } = require('polarity-integration-utils/logging');
+```
+
+Within your `doLookup` method you will want to set the `userOptions` property on the `request` instance.  This will ensure that the `userOptions` are passed along with each request.  This step should be done before any requests are made.  
+
+```js
+async function doLookup(entities, options, cb) {
+    request.userOptions = options;
 }
 ```
 
@@ -45,7 +49,7 @@ Now that we have the PolarityRequest object created and configured, we'll show a
 
 # Run a single HTTP request
 
-The `run` method runs a single HTTP request based on the provided {@link HttpRequestOptions} object.  The `run` method will return a promise that will resolve to the response from the HTTP request.
+The {@link PolarityRequest.run} method runs a single HTTP request based on the provided {@link HttpRequestOptions} object.  The `run` method will return a promise that will resolve to the response from the HTTP request.
 
 As an example, to make a request to the GitHub API you could do the following:
 
@@ -76,6 +80,44 @@ try {
   }
 }
 ```
+
+# Running Multiple Requests in Parallel
+
+A common requirement is to run multiple requests in parallel.  This can be done with the {@link PolarityRequest.runInParallel} method which takes an options object containing an array of {@link HttpRequestOptions}.  Additionally, you can specify how many requests to run in parallel (defaults to 5), and whether to return errors as part of the return payload or throw an error if any of the requests fail (the default behavior).
+
+The `runInParallel` method will return an array of {@link HttpRequestResponse} objects.
+
+A typical pattern for running multiple requests in parallel is to create an array of requests and then passing those into the `runInParallel` method.
+
+```javascript
+const users = ['octocat', 'polarityio', 'threatconnect-inc'];
+
+const requests = users.map(user => {
+  return {
+    url: `https://api.github.com/users/${user}`,
+  }
+})
+
+try {
+  const responses = await requestInParallel({
+    allRequestOptions: requests
+  });
+  
+  responses.forEach(response => {
+    const body = response.body;
+    // Process response as needed
+  });
+} catch(error){
+  if(error instanceof ApiRequestError) {
+    // handle API request error
+  } else if(error instanceof NetworkError) {
+    // handle network errors
+  } else {
+    // handle other errors
+  }
+}
+```
+
 
 # Modifying Request Behavior
 

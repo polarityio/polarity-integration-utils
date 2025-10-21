@@ -1,0 +1,5 @@
+- always respond in English
+- always use named interfaces when writing typescript code
+- do not use the type `any` when writing typescript code
+- code should be compatible with NodeJS version 24
+- use `@ts-expect-error` instead of `@ts-ignore` when writing typescript code

@@ -5,12 +5,6 @@
 ```ts
 
 import Bottleneck from 'bottleneck';
-import { CurriedFunction2 } from 'lodash';
-
-// Warning: (ae-incompatible-release-tags) The symbol "and" is marked as @public, but its signature references "Predicate" which is marked as @alpha
-//
-// @public
-export function and<T>(func: Predicate<T>, ...funcs: Predicate<T>[]): Predicate<T>;
 
 // @public
 export class ApiRequestError extends IntegrationError {
@@ -21,9 +15,6 @@ export class ApiRequestError extends IntegrationError {
 export class AuthRequestError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
-
-// @alpha (undocumented)
-export const buildIgnoreLookupResults: (entities: Entity[]) => DoLookupResponse[];
 
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
@@ -36,25 +27,6 @@ export type ConfigRequestProxyOptions = {
     json?: undefined | boolean;
 };
 
-// @alpha (undocumented)
-export type CustomEntitiesByCustomTypesKey = {
-    [key: GroupLabel]: Entity[];
-};
-
-// @public (undocumented)
-export const decodeBase64: (str: any) => string;
-
-// @alpha (undocumented)
-export type DoLookupResponse = {
-    entity: Entity;
-    displayValue?: string;
-    isVolatile?: boolean;
-    data: null | {
-        summary?: string[];
-        details: unknown;
-    };
-};
-
 // @public
 export type DoLookupUserOptions = {
     [key: string]: PossibleUserOptionValue;
@@ -64,14 +36,6 @@ export type DoLookupUserOptions = {
 export type DropdownUserOptionValue = {
     display: string;
     value: string;
-};
-
-// @public (undocumented)
-export const encodeBase64: (str: any) => string;
-
-// @alpha (undocumented)
-export type EntitiesByType = {
-    [key in EntityTypeLabel]: Entity[];
 };
 
 // @public
@@ -108,9 +72,6 @@ export type Entity = {
 // @public
 export type EntityType = StandardEntityType | '*' | 'custom' | `custom.${string}`;
 
-// @alpha (undocumented)
-export type EntityTypeLabel = StandardEntityTypeGroupLabel | 'customEntities';
-
 // @public (undocumented)
 interface Error_2 {
     // (undocumented)
@@ -129,31 +90,8 @@ export type ErrorMeta = {
     [otherMetadata: string]: unknown;
 };
 
-// Warning: (ae-forgotten-export) The symbol "FilterObjectsFn" needs to be exported by the entry point index.docs.d.ts
-//
-// @public
-export const filterObjectsContainingString: FilterObjectsFn;
-
-// @public (undocumented)
-export const getEntityTypes: (typesToGet: EntityType | EntityType[], entities: Entity[]) => Entity[];
-
 // @public
 export const getLogger: () => Logger;
-
-// @alpha (undocumented)
-export const getPrivateIps: (entities: Entity[], { dontGetLoopBackIps, dontGetLinkLocalAddresses, dontGetTheseIps, dontGetIpsMatchingThisRegex }: IpManipulationParameters) => Entity[];
-
-// @public (undocumented)
-export const getResultForThisEntity: (entity: Entity, results: unknown[], onlyReturnUniqueResults?: boolean) => unknown;
-
-// @alpha (undocumented)
-export const groupCustomEntitiesByType: (customEntities: Entity[], customTypesKeys: string[]) => CustomEntitiesByCustomTypesKey;
-
-// @alpha (undocumented)
-export const groupEntitiesByType: (entities: Entity[]) => EntitiesByType;
-
-// @alpha (undocumented)
-export type GroupLabel = `${string}Entities`;
 
 // @public (undocumented)
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
@@ -204,6 +142,7 @@ export type HttpRequestResponse = {
         [key: string]: unknown;
     };
     body: unknown;
+    headers: unknown;
     error?: ApiRequestError | NetworkError | RetryRequestError;
     entity?: Entity;
     entities?: Entity[];
@@ -237,18 +176,6 @@ export interface IntegrationErrorProperties {
     title?: string;
 }
 
-// @alpha (undocumented)
-export type IpManipulationParameters = {
-    dontRemoveLoopBackIps?: boolean;
-    dontRemoveLinkLocalAddresses?: boolean;
-    dontRemoveTheseIps?: string[];
-    dontRemoveIpsMatchingThisRegex?: RegExp;
-    dontGetLoopBackIps?: boolean;
-    dontGetLinkLocalAddresses?: boolean;
-    dontGetTheseIps?: string[];
-    dontGetIpsMatchingThisRegex?: RegExp;
-};
-
 // @public (undocumented)
 export type IsApiErrorFunction = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => IsApiErrorResult;
 
@@ -257,12 +184,6 @@ export type IsApiErrorResult = {
     isApiError: boolean;
     message?: string;
 };
-
-// @alpha (undocumented)
-export const isLinkLocalAddress: (ip: string) => boolean;
-
-// @alpha (undocumented)
-export const isLoopBackIp: (ip: string) => boolean;
 
 // @public
 export class LibraryUsageError extends IntegrationError {
@@ -280,26 +201,15 @@ export type Logger = {
     fatal(...args: unknown[]): void;
 };
 
-// @public
-export const mapOverObject: CurriedFunction2<any, any, any>;
-
 // @public (undocumented)
 export type MetaObject = {
     [key: string]: unknown;
 };
 
-// @public (undocumented)
-export const millisecondsToHoursMinutesAndSeconds: (milliseconds?: number | string) => string;
-
 // @public
 export class NetworkError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
-
-// Warning: (ae-incompatible-release-tags) The symbol "or" is marked as @public, but its signature references "Predicate" which is marked as @alpha
-//
-// @public
-export function or<T>(func: Predicate<T>, ...funcs: Predicate<T>[]): Predicate<T>;
 
 // @public (undocumented)
 export const parseErrorToReadableJson: (error: Error_2) => any;
@@ -358,20 +268,8 @@ export type PostprocessRequestFailure = (error: Error, requestOptions: HttpReque
 // @public
 export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
 
-// @alpha (undocumented)
-export type Predicate<T> = (x: T) => unknown;
-
 // @public
 export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
-
-// @alpha (undocumented)
-export const removeEntityTypes: (typesToRemove: EntityType | EntityType[], entities: Entity[]) => Entity[];
-
-// @alpha (undocumented)
-export const removePrivateIps: (entities: Entity[], { dontRemoveLoopBackIps, dontRemoveLinkLocalAddresses, dontRemoveTheseIps, dontRemoveIpsMatchingThisRegex }: IpManipulationParameters) => Entity[];
-
-// @alpha (undocumented)
-export const replaceEntityInQueryString: (entity: Entity, queryString: string) => string;
 
 // @public
 export class RetryRequestError extends IntegrationError {
@@ -384,9 +282,6 @@ export type RunInParallelOptions = {
     maxConcurrentRequests?: number;
     returnErrors?: boolean;
 };
-
-// @public
-export function sanitizeObject<T extends object>(obj: T | null | undefined, paths?: string[], mask?: string): T | null | undefined;
 
 // @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
@@ -408,33 +303,8 @@ export interface SerializedIntegrationError {
 // @public
 export const setLogger: (logger: Logger) => void;
 
-// @public (undocumented)
-export const sleep: (ms?: number) => Promise<unknown>;
-
-// @alpha (undocumented)
-export const splitCommaSeparatedUserOption: CurriedFunction2<string, DoLookupUserOptions, string[]>;
-
-// @alpha (undocumented)
-export const splitKeyValueCommaSeparatedUserOption: CurriedFunction2<string, DoLookupUserOptions, {
-[key: string]: string;
-}>;
-
 // @public
 export type StandardEntityType = 'IP' | 'IPv4' | 'IPv4CIDR' | 'IPv6' | 'MAC' | 'MD5' | 'SHA1' | 'SHA256' | 'cve' | 'domain' | 'email' | 'hash' | 'string' | 'url';
-
-// @alpha (undocumented)
-export type StandardEntityTypeByGroupLabel = {
-    [key in StandardEntityType]: StandardEntityTypeGroupLabel;
-};
-
-// @alpha (undocumented)
-export type StandardEntityTypeGroupLabel = 'ipEntities' | 'ipv4Entities' | 'ipv4CidrEntities' | 'ipv6Entities' | 'macEntities' | 'md5Entities' | 'sha1Entities' | 'sha256Entities' | 'cveEntities' | 'domainEntities' | 'emailEntities' | 'hashEntities' | 'stringEntities' | 'urlEntities';
-
-// @public
-export const transpose2dArray: (twoDimensionalArray?: [] | Array<[unknown, unknown]>) => any[][];
-
-// @alpha (undocumented)
-export const validateOptionsToDoLookupOptions: (options: ValidateOptionsUserOptions) => DoLookupUserOptions;
 
 // @public (undocumented)
 export type ValidateOptionsUserOption = {
@@ -450,22 +320,11 @@ export type ValidateOptionsUserOptions = {
     [key: string]: ValidateOptionsUserOption;
 };
 
-// @alpha (undocumented)
-export const validateStringOptions: (stringOptionsErrorMessages: {
-    [key: string]: string;
-}, options: ValidateOptionsUserOption, otherErrors?: ValidationError[]) => any;
-
-// @alpha (undocumented)
-export const validateUrlOption: (options: ValidateOptionsUserOptions, urlKey?: string, otherValidationErrors?: ValidationError[]) => ValidationError[];
-
 // @public (undocumented)
 export type ValidationError = {
     key: string;
     message: string;
 };
-
-// @alpha (undocumented)
-export const zeroTo255Range: RegExp;
 
 // (No @packageDocumentation comment for this package)
 

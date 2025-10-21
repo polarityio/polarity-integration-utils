@@ -1,2 +1,2 @@
-export * from './polarityRequest';
-export * from './sanitizeRequestOptions';
+export * from './polarity-request';
+export * from './sanitize-request-options';

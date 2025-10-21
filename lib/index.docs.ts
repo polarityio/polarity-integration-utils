@@ -4,7 +4,5 @@
  */
 export * from './errors';
 export * from './requests';
-export * from './user-options';
 export * from './logging';
-export * from './helpers';
 export * from './types';

@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { flow, reduce } from 'lodash/fp';
 
 const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'];
 
@@ -11,12 +10,15 @@ const writeToDevRunnerResults =
       '\n' + JSON.stringify({ SOURCE: `Logger.${loggingLevel}`, content }, null, 2)
     );
 
-let _logger: Logger = flow(
-  reduce(
-    (agg, level: string) => ({ ...agg, [level]: writeToDevRunnerResults(level) }),
-    {}
-  )
-)(loggingLevels);
+const defaultLogger = loggingLevels.reduce<Record<string, (...args: unknown[]) => void>>(
+  (agg, level) => ({
+    ...agg,
+    [level]: writeToDevRunnerResults(level)
+  }),
+  {}
+) as Logger;
+
+let _logger: Logger = defaultLogger;
 
 /**
  * @public
