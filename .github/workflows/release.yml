@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write          # required by the release action
+  id-token: write          # required for npm trusted publishing (OIDC)
 
 jobs:
   # reuse the unchanged build job
@@ -43,6 +44,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    environment: npm-publish
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -64,3 +66,6 @@ jobs:
           name: "v${{ steps.get_version.outputs.version }}"
           draft: false
           prerelease: false
+
+      - name: Publish package to npm (OIDC)
+        run: npm publish --provenance --access public
