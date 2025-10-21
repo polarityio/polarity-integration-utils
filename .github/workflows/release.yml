@@ -76,4 +76,4 @@ jobs:
           prerelease: false
 
       - name: Publish package to npm (OIDC)
-        run: npm publish --provenance --access public
+        run: npm publish
