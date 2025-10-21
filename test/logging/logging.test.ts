@@ -44,12 +44,14 @@ describe('getLogger default behaviour (no setLogger)', () => {
 
   it('should write to devRunnerResults.json at the correct level', () => {
     jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require('fs');
       const appendSpy = jest
         .spyOn(fs, 'appendFileSync')
         // Prevent actual file writes during the test run
         .mockImplementation(() => {});
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getLogger } = require('../../lib/logging/logger');
 
       const logger = getLogger();
