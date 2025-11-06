@@ -71,7 +71,7 @@ export type DropdownUserOptionValue = {
 /**
  * Represents a Polarity Entity object which is passed to an integration's
  * doLookup method.
- * 
+ *
  * @public
  */
 export type Entity = {
@@ -95,24 +95,25 @@ export type Entity = {
   isHTMLTag: boolean;
   isEmail: boolean;
   isDomain: boolean;
-  hashType: string;
+  hashType: 'md5' | 'sha1' | 'sha256' | 'sha512' | '';
   displayValue: string;
-  channels: string[];
-  IPType: string;
+  channels: Channel[];
+  IPType: 'IPv4' | 'IPv6' | '';
+};
+
+export type Channel = {
+  channel_name: string;
+  id: number;
 };
 
 /**
  * Entity Types including custom types
- * @public 
+ * @public
  */
-export type EntityType =
-  | StandardEntityType
-  | '*'
-  | 'custom'
-  | `custom.${string}`;
+export type EntityType = StandardEntityType | '*' | 'custom' | `custom.${string}`;
 
 /**
- * List of supported entity type values 
+ * List of supported entity type values
  * @public
  */
 export type StandardEntityType =
@@ -130,3 +131,12 @@ export type StandardEntityType =
   | 'hash'
   | 'string'
   | 'url';
+
+export type Result<TDetails = unknown> = {
+  entity: Entity;
+  displayValue?: string;
+  data: {
+    summary: string[];
+    details: TDetails;
+  };
+};
