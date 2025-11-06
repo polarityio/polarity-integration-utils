@@ -3,6 +3,7 @@
   "bracketSpacing": true,
   "printWidth": 90,
   "proseWrap": "preserve",
+  "objectWrap": "preserve",
   "semi": true,
   "singleQuote": true,
   "tabWidth": 2,

@@ -67,7 +67,7 @@ export class NetworkError extends IntegrationError {
           'SSL errors are typically caused by an untrusted SSL certificate in the HTTPS request chain (e.g., ' +
           'an internal server that is being queried directly, or a web proxy for external requests). You can temporarily ' +
           'ignore SSL validation errors by enabling the integration setting "Allow Insecure TLS/SSL Connections". In most ' +
-          'cases, you will need to add your organization\'s Certificate Authority to the Polarity Server to resolve the ' +
+          "cases, you will need to add your organization's Certificate Authority to the Polarity Server to resolve the " +
           'issue permanently.';
       } else if (code && code === 'ENOTFOUND') {
         // @ts-expect-error work around due to typescript preventing readonly properties from
