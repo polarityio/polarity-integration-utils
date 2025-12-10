@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "3.0.0",
+  "version": "3.1.3",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -12,7 +12,7 @@
     ".": {
       "import": "./dist/es/index.js",
       "require": "./dist/lib/index.js",
-      "types": "./dist/polarity-integration-utils.d.ts"
+      "types": "./dist/dts/index.d.ts"
     },
     "./logging": {
       "import": "./dist/es/logging/index.js",
@@ -22,27 +22,32 @@
     "./requests": {
       "import": "./dist/es/requests/index.js",
       "require": "./dist/lib/requests/index.js",
-      "types": "./dist/es/requests/index.d.ts"
+      "types": "./dist/dts/requests/index.d.ts"
     },
     "./errors": {
       "import": "./dist/es/errors/index.js",
       "require": "./dist/lib/errors/index.js",
-      "types": "./dist/es/errors/index.d.ts"
+      "types": "./dist/dts/errors/index.d.ts"
     },
     "./user-options": {
       "import": "./dist/es/user-options/index.js",
       "require": "./dist/lib/user-options/index.js",
-      "types": "./dist/es/user-options/index.d.ts"
+      "types": "./dist/dts/user-options/index.d.ts"
     },
     "./helpers": {
       "import": "./dist/es/helpers/index.js",
       "require": "./dist/lib/helpers/index.js",
-      "types": "./dist/es/helpers/index.d.ts"
+      "types": "./dist/dts/helpers/index.d.ts"
     },
     "./context": {
       "import": "./dist/es/context/index.js",
       "require": "./dist/lib/context/index.js",
       "types": "./dist/dts/context/index.d.ts"
+    },
+    "./testing": {
+      "import": "./dist/es/testing/index.js",
+      "require": "./dist/lib/testing/index.js",
+      "types": "./dist/dts/testing/index.d.ts"
     }
   },
   "scripts": {
@@ -100,7 +105,8 @@
   "dependencies": {
     "bottleneck": "^2.19.5",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.43"
+    "postman-request": "^2.88.1-postman.43",
+    "zod": "^4.1.12"
   },
   "sideEffects": false
 }
