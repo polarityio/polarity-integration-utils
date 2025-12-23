@@ -5,6 +5,7 @@
 ```ts
 
 import Bottleneck from 'bottleneck';
+import { z } from 'zod';
 
 // @public
 export class ApiRequestError extends IntegrationError {
@@ -15,6 +16,16 @@ export class ApiRequestError extends IntegrationError {
 export class AuthRequestError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
+
+// @public
+export interface CacheOptions {
+    ttl?: number;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ChannelSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public (undocumented)
+export type Channel = z.infer<typeof ChannelSchema>;
 
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
@@ -27,50 +38,28 @@ export type ConfigRequestProxyOptions = {
     json?: undefined | boolean;
 };
 
-// @public
-export type DoLookupUserOptions = {
-    [key: string]: PossibleUserOptionValue;
-};
-
 // @public (undocumented)
-export type DropdownUserOptionValue = {
-    display: string;
-    value: string;
-};
+export type DoLookupResult<TDetails = unknown> = Result<TDetails>[];
 
+// Warning: (ae-forgotten-export) The symbol "DoLookupUserOptionsSchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public
-export type Entity = {
-    value: string;
-    types: EntityType[];
-    type: EntityType;
-    requestContext: {
-        requestType: 'onDemand';
-        isUserInitiated: boolean;
-    };
-    longitude: number;
-    latitude: number;
-    isURL: boolean;
-    isSHA512: boolean;
-    isSHA256: boolean;
-    isSHA1: boolean;
-    isPrivateIP: boolean;
-    isMD5: boolean;
-    isIPv6: boolean;
-    isIPv4: boolean;
-    isIP: boolean;
-    isHex: boolean;
-    isHash: boolean;
-    isHTMLTag: boolean;
-    isEmail: boolean;
-    isDomain: boolean;
-    hashType: string;
-    displayValue: string;
-    channels: string[];
-    IPType: string;
-};
+export type DoLookupUserOptions = z.infer<typeof DoLookupUserOptionsSchema>;
 
+// Warning: (ae-forgotten-export) The symbol "DropdownUserOptionValueSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public (undocumented)
+export type DropdownUserOptionValue = z.infer<typeof DropdownUserOptionValueSchema>;
+
+// Warning: (ae-forgotten-export) The symbol "EntitySchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public
-export type EntityType = StandardEntityType | '*' | 'custom' | `custom.${string}`;
+export type Entity = z.infer<typeof EntitySchema>;
+
+// Warning: (ae-forgotten-export) The symbol "EntityTypeSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public
+export type EntityType = z.infer<typeof EntityTypeSchema>;
 
 // @public (undocumented)
 interface Error_2 {
@@ -92,6 +81,13 @@ export type ErrorMeta = {
 
 // @public
 export const getLogger: () => Logger;
+
+// @public
+export interface GlobalCache {
+    delete(key: string): Promise<void>;
+    get(key: string): Promise<unknown>;
+    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
+}
 
 // @public (undocumented)
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
@@ -151,6 +147,40 @@ export type HttpRequestResponse = {
 };
 
 // @public (undocumented)
+export interface Integration<TStartupResult = unknown, TDetails = unknown> {
+    // (undocumented)
+    doLookup: (entities: Entity[], options: DoLookupUserOptions, context: IntegrationContext) => Promise<DoLookupResult<TDetails> | IntegrationError | null | void>;
+    // (undocumented)
+    onDetails?: (lookupObject: Result<TDetails>, options: DoLookupUserOptions, context: IntegrationContext) => Promise<unknown>;
+    // (undocumented)
+    onMessage?: (payload: unknown, options: DoLookupUserOptions, context: IntegrationContext) => Promise<unknown>;
+    // (undocumented)
+    startup: (logger: Logger) => Promise<TStartupResult>;
+    // (undocumented)
+    validateOptions: (options: ValidateOptionsUserOptions, context: IntegrationContext) => IntegrationError[];
+}
+
+// @public
+export interface IntegrationCache {
+    delete(key: string): Promise<void>;
+    get(key: string): Promise<unknown>;
+    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IntegrationConfigSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public (undocumented)
+export type IntegrationConfig = z.infer<typeof IntegrationConfigSchema>;
+
+// @public
+export interface IntegrationContext {
+    cache: PolarityCache;
+    integrationId: string;
+    logger: Logger;
+    userId?: string;
+}
+
+// @public (undocumented)
 export class IntegrationError extends Error {
     constructor(message: string, properties?: IntegrationErrorProperties);
     readonly cause: Error_2;
@@ -191,7 +221,7 @@ export class LibraryUsageError extends IntegrationError {
 }
 
 // @public (undocumented)
-export type Logger = {
+type Logger = {
     child?(arg: unknown): Logger;
     info(...args: unknown[]): void;
     debug(...args: unknown[]): void;
@@ -200,6 +230,8 @@ export type Logger = {
     error(...args: unknown[]): void;
     fatal(...args: unknown[]): void;
 };
+export { Logger }
+export { Logger as PolarityLogger }
 
 // @public (undocumented)
 export type MetaObject = {
@@ -213,6 +245,13 @@ export class NetworkError extends IntegrationError {
 
 // @public (undocumented)
 export const parseErrorToReadableJson: (error: Error_2) => any;
+
+// @public
+export interface PolarityCache {
+    global: GlobalCache;
+    integration: IntegrationCache;
+    user: UserCache;
+}
 
 // @public
 export class PolarityRequest {
@@ -259,8 +298,10 @@ export interface PolarityRequestOptions {
     throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
+// Warning: (ae-forgotten-export) The symbol "PossibleUserOptionValueSchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public (undocumented)
-export type PossibleUserOptionValue = undefined | string | number | boolean | DropdownUserOptionValue | DropdownUserOptionValue[];
+export type PossibleUserOptionValue = z.infer<typeof PossibleUserOptionValueSchema>;
 
 // @public (undocumented)
 export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
@@ -270,6 +311,16 @@ export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestO
 
 // @public
 export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
+
+// Warning: (ae-forgotten-export) The symbol "ResultSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public (undocumented)
+export type Result<TDetails = unknown> = Omit<z.infer<typeof ResultSchema>, 'data'> & {
+    data: {
+        summary: string[];
+        details: TDetails;
+    };
+};
 
 // @public
 export class RetryRequestError extends IntegrationError {
@@ -303,28 +354,32 @@ export interface SerializedIntegrationError {
 // @public
 export const setLogger: (logger: Logger) => void;
 
+// Warning: (ae-forgotten-export) The symbol "StandardEntityTypeSchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public
-export type StandardEntityType = 'IP' | 'IPv4' | 'IPv4CIDR' | 'IPv6' | 'MAC' | 'MD5' | 'SHA1' | 'SHA256' | 'cve' | 'domain' | 'email' | 'hash' | 'string' | 'url';
+export type StandardEntityType = z.infer<typeof StandardEntityTypeSchema>;
 
-// @public (undocumented)
-export type ValidateOptionsUserOption = {
-    integration_id?: string;
-    key: string;
-    value: PossibleUserOptionValue;
-    user_can_edit?: boolean;
-    admin_only?: boolean;
-};
+// @public
+export interface UserCache {
+    delete(key: string): Promise<void>;
+    get(key: string): Promise<unknown>;
+    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
+}
 
+// Warning: (ae-forgotten-export) The symbol "ValidateOptionsUserOptionSchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public (undocumented)
-export type ValidateOptionsUserOptions = {
-    [key: string]: ValidateOptionsUserOption;
-};
+export type ValidateOptionsUserOption = z.infer<typeof ValidateOptionsUserOptionSchema>;
 
+// Warning: (ae-forgotten-export) The symbol "ValidateOptionsUserOptionsSchema" needs to be exported by the entry point index.docs.d.ts
+//
 // @public (undocumented)
-export type ValidationError = {
-    key: string;
-    message: string;
-};
+export type ValidateOptionsUserOptions = z.infer<typeof ValidateOptionsUserOptionsSchema>;
+
+// Warning: (ae-forgotten-export) The symbol "ValidationErrorSchema" needs to be exported by the entry point index.docs.d.ts
+//
+// @public (undocumented)
+export type ValidationError = z.infer<typeof ValidationErrorSchema>;
 
 // (No @packageDocumentation comment for this package)
 

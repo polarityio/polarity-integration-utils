@@ -1,10 +1,24 @@
+import { z } from 'zod';
+import { Logger as PolarityLogger } from './logging';
+import {
+  ValidationErrorSchema,
+  DoLookupUserOptionsSchema,
+  ValidateOptionsUserOptionsSchema,
+  ValidateOptionsUserOptionSchema,
+  PossibleUserOptionValueSchema,
+  DropdownUserOptionValueSchema,
+  EntitySchema,
+  EntityTypeSchema,
+  StandardEntityTypeSchema,
+  ChannelSchema,
+  ResultSchema,
+  IntegrationConfigSchema
+} from './zod-types';
+
 /**
  * @public
  */
-export type ValidationError = {
-  key: string;
-  message: string;
-};
+export type ValidationError = z.infer<typeof ValidationErrorSchema>;
 
 /**
  * User options object passed into the integration's `doLookup` method.
@@ -27,106 +41,105 @@ export type ValidationError = {
  * ```
  * @public
  */
-export type DoLookupUserOptions = {
-  [key: string]: PossibleUserOptionValue;
-};
+export type DoLookupUserOptions = z.infer<typeof DoLookupUserOptionsSchema>;
 
 /**
  * @public
  */
-export type ValidateOptionsUserOptions = {
-  [key: string]: ValidateOptionsUserOption;
-};
+export type ValidateOptionsUserOptions = z.infer<typeof ValidateOptionsUserOptionsSchema>;
 
 /**
  * @public
  */
-export type ValidateOptionsUserOption = {
-  integration_id?: string;
-  key: string;
-  value: PossibleUserOptionValue;
-  user_can_edit?: boolean;
-  admin_only?: boolean;
-};
+export type ValidateOptionsUserOption = z.infer<typeof ValidateOptionsUserOptionSchema>;
 
 /**
  * @public
  */
-export type PossibleUserOptionValue =
-  | undefined
-  | string
-  | number
-  | boolean
-  | DropdownUserOptionValue
-  | DropdownUserOptionValue[];
+export type PossibleUserOptionValue = z.infer<typeof PossibleUserOptionValueSchema>;
 
 /**
  * @public
  */
-export type DropdownUserOptionValue = {
-  display: string;
-  value: string;
-};
+export type DropdownUserOptionValue = z.infer<typeof DropdownUserOptionValueSchema>;
 
 /**
  * Represents a Polarity Entity object which is passed to an integration's
  * doLookup method.
- * 
+ *
  * @public
  */
-export type Entity = {
-  value: string;
-  types: EntityType[];
-  type: EntityType;
-  requestContext: { requestType: 'onDemand'; isUserInitiated: boolean };
-  longitude: number;
-  latitude: number;
-  isURL: boolean;
-  isSHA512: boolean;
-  isSHA256: boolean;
-  isSHA1: boolean;
-  isPrivateIP: boolean;
-  isMD5: boolean;
-  isIPv6: boolean;
-  isIPv4: boolean;
-  isIP: boolean;
-  isHex: boolean;
-  isHash: boolean;
-  isHTMLTag: boolean;
-  isEmail: boolean;
-  isDomain: boolean;
-  hashType: string;
-  displayValue: string;
-  channels: string[];
-  IPType: string;
-};
+export type Entity = z.infer<typeof EntitySchema>;
+
+/**
+ * @public
+ */
+export type Channel = z.infer<typeof ChannelSchema>;
 
 /**
  * Entity Types including custom types
- * @public 
- */
-export type EntityType =
-  | StandardEntityType
-  | '*'
-  | 'custom'
-  | `custom.${string}`;
-
-/**
- * List of supported entity type values 
  * @public
  */
-export type StandardEntityType =
-  | 'IP'
-  | 'IPv4'
-  | 'IPv4CIDR'
-  | 'IPv6'
-  | 'MAC'
-  | 'MD5'
-  | 'SHA1'
-  | 'SHA256'
-  | 'cve'
-  | 'domain'
-  | 'email'
-  | 'hash'
-  | 'string'
-  | 'url';
+export type EntityType = z.infer<typeof EntityTypeSchema>;
+
+/**
+ * List of supported entity type values
+ * @public
+ */
+export type StandardEntityType = z.infer<typeof StandardEntityTypeSchema>;
+
+/**
+ * @public
+ */
+export type Result<TDetails = unknown> = Omit<z.infer<typeof ResultSchema>, 'data'> & {
+  data: {
+    summary: string[];
+    details: TDetails;
+  };
+};
+
+/**
+ * @public
+ */
+export type DoLookupResult<TDetails = unknown> = Result<TDetails>[];
+
+/**
+ * @public
+ */
+export type IntegrationConfig = z.infer<typeof IntegrationConfigSchema>;
+
+/**
+ * @public
+ */
+export { PolarityLogger };
+
+/**
+ * @public
+ */
+import { IntegrationContext } from './context';
+import { IntegrationError } from './errors';
+
+export { IntegrationContext, IntegrationError };
+
+export interface Integration<TStartupResult = unknown, TDetails = unknown> {
+  startup: (logger: PolarityLogger) => Promise<TStartupResult>;
+  doLookup: (
+    entities: Entity[],
+    options: DoLookupUserOptions,
+    context: IntegrationContext
+  ) => Promise<DoLookupResult<TDetails> | IntegrationError | null | void>;
+  onMessage?: (
+    payload: unknown,
+    options: DoLookupUserOptions,
+    context: IntegrationContext
+  ) => Promise<unknown>;
+  onDetails?: (
+    lookupObject: Result<TDetails>,
+    options: DoLookupUserOptions,
+    context: IntegrationContext
+  ) => Promise<unknown>;
+  validateOptions: (
+    options: ValidateOptionsUserOptions,
+    context: IntegrationContext
+  ) => IntegrationError[];
+}

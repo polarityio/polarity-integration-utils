@@ -69,7 +69,7 @@ const entity: Entity = {
   hashType: '',
   displayValue: '8.8.8.8',
   channels: [],
-  IPType: 'public'
+  IPType: 'IPv4'
 };
 
 const entityDomain: Entity = {
