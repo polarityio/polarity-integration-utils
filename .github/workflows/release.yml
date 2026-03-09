@@ -76,8 +76,7 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
             echo "is_main=true" >> "$GITHUB_OUTPUT"
           else
-            # Extract major version from support/X.Y branch name
-            MAJOR=$(echo "${{ github.ref_name }}" | sed 's|support/\([0-9]*\).*|\1|')
+            MAJOR=$(node -p "require('./package.json').version.split('.')[0]")
             echo "tag=v${MAJOR}-latest" >> "$GITHUB_OUTPUT"
             echo "is_main=false" >> "$GITHUB_OUTPUT"
           fi
