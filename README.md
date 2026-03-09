@@ -45,8 +45,8 @@ Pull requests targeting `develop`, `main`, or any `support/*` branch trigger the
 Pushes to `main` trigger the full release workflow:
 
 1. **Build & test** — runs the shared build pipeline.
-2. **Deploy docs** — builds TypeDoc documentation and deploys to GitHub Pages.
-3. **Release** — creates a GitHub Release tagged with the package version (e.g., `v3.1.6`), marks it as the latest release, and publishes to npm under the `latest` dist-tag.
+2. **Release** — creates a GitHub Release tagged with the package version (e.g., `v3.1.6`), marks it as the latest release, and publishes to npm under the `latest` dist-tag.
+3. **Deploy docs** — after a successful release, builds TypeDoc documentation and deploys to GitHub Pages.
 
 #### Release (support branches)
 

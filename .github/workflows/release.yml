@@ -18,7 +18,7 @@ jobs:
 
   deploy-docs:
     if: github.ref_name == 'main'
-    needs: build
+    needs: [build, release]
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
