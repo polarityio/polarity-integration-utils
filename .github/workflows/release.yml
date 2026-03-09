@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - support/*
 
 permissions:
   contents: write          # required by the release action
@@ -16,7 +17,8 @@ jobs:
     secrets: inherit
 
   deploy-docs:
-    needs: build
+    if: github.ref_name == 'main'
+    needs: [build, release]
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -67,6 +69,18 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Determine npm dist-tag
+        id: dist_tag
+        run: |
+          if [[ "${{ github.ref_name }}" == main ]]; then
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+            echo "is_main=true" >> "$GITHUB_OUTPUT"
+          else
+            MAJOR=$(node -p "require('./package.json').version.split('.')[0]")
+            echo "tag=v${MAJOR}-latest" >> "$GITHUB_OUTPUT"
+            echo "is_main=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
@@ -74,6 +88,7 @@ jobs:
           name: "v${{ steps.get_version.outputs.version }}"
           draft: false
           prerelease: false
+          makeLatest: ${{ steps.dist_tag.outputs.is_main }}
 
       - name: Publish package to npm (OIDC)
-        run: npm publish
+        run: npm publish --tag ${{ steps.dist_tag.outputs.tag }}
