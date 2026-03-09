@@ -34,7 +34,7 @@ Documentation for this library can be found at: https://polarityio.github.io/pol
 
 ### Continuous Integration
 
-All pull requests run the **build → lint → test** pipeline via GitHub Actions. Ensure local runs are green before opening a PR.
+All pull requests run automated linting and tests (with coverage) via GitHub Actions. Ensure local runs are green before opening a PR.
 
 #### PR Checks
 
