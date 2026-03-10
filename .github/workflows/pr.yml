@@ -1,0 +1,13 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+      - support/*
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    secrets: inherit

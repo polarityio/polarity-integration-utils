@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Ignore all aider files
+.aider*
+
+# Ignore all locally built docs
+docs/
+
 # Runtime data
 pids
 *.pid
@@ -90,3 +96,9 @@ dependency-reduced-pom.xml
 README.html
 
 build/
+
+# Ignore tsdoc metadata file
+tsdoc-metadata.json
+
+# Ignore api-extractor temp build directory
+/temp
