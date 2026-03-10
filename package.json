@@ -61,9 +61,9 @@
   "author": "Polarity IO <support@polarity.io>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/polarity-integration-utils/polarity-integration-utils/issues"
+    "url": "https://github.com/polarityio/polarity-integration-utils/issues"
   },
-  "homepage": "https://github.com/polarity-integration-utils/polarity-integration-utils#readme",
+  "homepage": "https://github.com/polarityio/polarity-integration-utils#readme",
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@microsoft/api-extractor": "^7.57.6",
