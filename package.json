@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -84,7 +84,7 @@
   },
   "dependencies": {
     "bottleneck": "^2.19.5",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "postman-request": "^2.88.1-postman.48"
   },
   "sideEffects": false
