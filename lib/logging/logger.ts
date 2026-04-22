@@ -15,7 +15,7 @@ const createLogMethod =
 
 function createDefaultLogger(): Logger {
   const logger = {
-    child: () => createDefaultLogger(),
+    child: () => logger as Logger,
     trace: createLogMethod('trace'),
     debug: createLogMethod('debug'),
     info: createLogMethod('info'),
