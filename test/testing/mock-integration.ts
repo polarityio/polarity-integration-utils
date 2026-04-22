@@ -1,14 +1,14 @@
-import {
+import type {
   DoLookupUserOptions,
   Entity,
   DoLookupResult,
-  PolarityLogger,
+  Logger,
   IntegrationContext,
   ValidateOptionsUserOptions,
-  IntegrationError
+  ValidationError
 } from '../../lib/types';
 
-export const startup = async (logger: PolarityLogger) => {
+export const startup = async (logger: Logger) => {
   logger.info('starting up');
 };
 
@@ -45,6 +45,6 @@ export const onMessage = async (
 export const validateOptions = (
   _options: ValidateOptionsUserOptions,
   _context: IntegrationContext
-): IntegrationError[] => {
+): ValidationError[] => {
   return [];
 };
