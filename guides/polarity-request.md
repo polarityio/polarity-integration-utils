@@ -219,17 +219,19 @@ There are four hook types:
 ## Adding Authentication with `beforeRequest`
 
 ```js
+async function addAuthentication(requestOptions, userOptions) {
+  return {
+    ...requestOptions,
+    headers: {
+      ...requestOptions.headers,
+      Authorization: `Bearer ${userOptions.apiKey}`
+    }
+  };
+}
+
 const request = new PolarityRequest({
   hooks: {
-    beforeRequest: [
-      async (requestOptions, userOptions) => {
-        requestOptions.headers = {
-          ...requestOptions.headers,
-          Authorization: `Bearer ${userOptions.apiKey}`
-        };
-        return requestOptions;
-      }
-    ]
+    beforeRequest: [addAuthentication]
   }
 });
 ```
@@ -237,15 +239,16 @@ const request = new PolarityRequest({
 ## Extracting Response Data with `afterResponse`
 
 ```js
+async function extractData(response, requestOptions, userOptions) {
+  return {
+    ...response,
+    body: response.body?.data
+  };
+}
+
 const request = new PolarityRequest({
   hooks: {
-    afterResponse: [
-      async (response, requestOptions, userOptions) => {
-        // Extract just the data field from the response body
-        response.body = response.body?.data;
-        return response;
-      }
-    ]
+    afterResponse: [extractData]
   }
 });
 ```
@@ -255,18 +258,18 @@ const request = new PolarityRequest({
 The `onApiError` hook gives you access to both the error and the original HTTP response, making it easy to inspect status codes, headers, and the response body.
 
 ```js
+async function suppressNotFound(error, response, requestOptions, userOptions) {
+  if (response.statusCode === 404) {
+    // Suppress 404 errors — they're expected for missing resources
+    return;
+  }
+  // Re-throw all other errors
+  throw error;
+}
+
 const request = new PolarityRequest({
   hooks: {
-    onApiError: [
-      async (error, response, requestOptions, userOptions) => {
-        if (response.statusCode === 404) {
-          // Suppress 404 errors — they're expected for missing resources
-          return;
-        }
-        // Re-throw all other errors
-        throw error;
-      }
-    ]
+    onApiError: [suppressNotFound]
   }
 });
 ```
@@ -274,15 +277,15 @@ const request = new PolarityRequest({
 ## Handling Network Errors with `onNetworkError`
 
 ```js
+async function logNetworkError(error, requestOptions, userOptions) {
+  logger.error({ err: error }, 'Network error occurred');
+  // Re-throw so the caller knows about the failure
+  throw error;
+}
+
 const request = new PolarityRequest({
   hooks: {
-    onNetworkError: [
-      async (error, requestOptions, userOptions) => {
-        logger.error({ err: error }, 'Network error occurred');
-        // Re-throw so the caller knows about the failure
-        throw error;
-      }
-    ]
+    onNetworkError: [logNetworkError]
   }
 });
 ```
@@ -292,24 +295,23 @@ const request = new PolarityRequest({
 Hooks execute in array order. For `beforeRequest` and `afterResponse`, each hook receives the output of the previous hook:
 
 ```js
+async function addAuth(requestOptions, userOptions) {
+  return {
+    ...requestOptions,
+    headers: { ...requestOptions.headers, Authorization: `Bearer ${userOptions.apiKey}` }
+  };
+}
+
+async function addTrackingHeader(requestOptions, userOptions) {
+  return {
+    ...requestOptions,
+    headers: { ...requestOptions.headers, 'X-Request-Source': 'polarity' }
+  };
+}
+
 const request = new PolarityRequest({
   hooks: {
-    beforeRequest: [
-      // First: add auth header
-      async (requestOptions, userOptions) => {
-        return {
-          ...requestOptions,
-          headers: { ...requestOptions.headers, Authorization: `Bearer ${userOptions.apiKey}` }
-        };
-      },
-      // Second: add custom tracking header
-      async (requestOptions, userOptions) => {
-        return {
-          ...requestOptions,
-          headers: { ...requestOptions.headers, 'X-Request-Source': 'polarity' }
-        };
-      }
-    ]
+    beforeRequest: [addAuth, addTrackingHeader]
   }
 });
 ```
