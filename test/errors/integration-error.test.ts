@@ -47,6 +47,23 @@ describe('IntegrationError', () => {
     expect(intError).toHaveProperty('cause.message', parentMessage);
   });
 
+  it('should accept non-Error cause values', () => {
+    const stringCause = new IntegrationError('error', { cause: 'something went wrong' });
+    expect(stringCause.cause).toBe('something went wrong');
+
+    const objectCause = new IntegrationError('error', { cause: { code: 42 } });
+    expect(objectCause.cause).toEqual({ code: 42 });
+
+    const nullCause = new IntegrationError('error', { cause: null });
+    expect(nullCause.cause).toBeNull();
+  });
+
+  it('should serialize non-Error cause as-is in toJSON', () => {
+    const intError = new IntegrationError('detail', { cause: 'string cause' });
+    const json = intError.toJSON();
+    expect(json.cause).toBe('string cause');
+  });
+
 
   it('should sanitize `requestOptions` auth.password property', () => {
     const message = 'This is the error message';
@@ -223,7 +240,7 @@ describe('IntegrationError', () => {
     expect(serializedError).toHaveProperty('cause.stack');
 
     delete serializedError.stack;
-    delete serializedError.cause.stack;
+    delete (serializedError.cause as Record<string, unknown>).stack;
 
     expect(serializedError).toEqual(expectedSerialization);
   });

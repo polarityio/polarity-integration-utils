@@ -182,7 +182,7 @@ export interface IntegrationConfig {
 // @public (undocumented)
 export class IntegrationError extends Error {
     constructor(message: string, properties?: IntegrationErrorProperties);
-    readonly cause: Error_2;
+    readonly cause: unknown;
     readonly code: string;
     readonly detail: string;
     readonly help: string;
@@ -195,7 +195,7 @@ export class IntegrationError extends Error {
 
 // @public (undocumented)
 export interface IntegrationErrorProperties {
-    cause?: Error_2;
+    cause?: unknown;
     code?: string;
     help?: string;
     meta?: MetaObject;
@@ -347,7 +347,7 @@ export interface SelectOptionItem {
 
 // @public (undocumented)
 export interface SerializedIntegrationError {
-    cause?: Error_2;
+    cause?: unknown;
     code?: number | string;
     detail: string;
     help?: string;

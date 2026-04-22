@@ -45,9 +45,9 @@ export interface IntegrationErrorProperties {
   help?: string;
   /**
    * The `cause` property is used to specify the `cause` of the error.  Typically,
-   * this property is used to pass through a related Error instance.
+   * this property is used to pass through a related Error instance but can be any value.
    */
-  cause?: Error;
+  cause?: unknown;
   /**
    * The HTTP status code applicable to this error, expressed as a string value.
    */
@@ -123,9 +123,9 @@ export interface SerializedIntegrationError {
   code?: number | string;
   /**
    * The `cause` property is used to specify the `cause` of the error.  Typically,
-   * this property is used to pass through a related Error instance.
+   * this property is used to pass through a related Error instance but can be any value.
    */
-  cause?: Error;
+  cause?: unknown;
   /**
    * Relevant for integration errors involving a network call, the `requestOptions` property
    * details the request options that resulted in the specified error.  The `requestOptions` property will automatically
@@ -171,9 +171,9 @@ export class IntegrationError extends Error {
 
   /**
    * The `cause` property is used to specify the `cause` of the error.  Typically,
-   * this property is used to pass through a related Error instance.
+   * this property is used to pass through a related Error instance but can be any value.
    */
-  readonly cause: Error;
+  readonly cause: unknown;
   /**
    * Additional details related to the error that may help the user troubleshoot the issue.  If set by the user
    * via the Error constructor, the user provided value will override any automated help message set by the
@@ -208,7 +208,7 @@ export class IntegrationError extends Error {
       this.status = properties.status;
     }
 
-    if (properties.cause && properties.cause instanceof Error) {
+    if (typeof properties.cause !== 'undefined') {
       this.cause = properties.cause;
     }
 
@@ -258,8 +258,11 @@ export class IntegrationError extends Error {
       props.help = this.help;
     }
 
-    if (this.cause) {
-      props.cause = parseErrorToReadableJson(this.cause);
+    if (this.cause !== undefined) {
+      props.cause =
+        this.cause instanceof Error
+          ? parseErrorToReadableJson(this.cause)
+          : this.cause;
     }
 
     if (this.requestOptions) {
