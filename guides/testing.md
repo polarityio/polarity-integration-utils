@@ -28,26 +28,12 @@ This guide shows integration developers how to use `polarity-integration-utils/t
 
     ```typescript
     import {
-      validateIntegration,
       createEntity,
       createMockIntegrationContext
     } from 'polarity-integration-utils/testing';
     import * as integration from '../src/integration'; // Adjust path to your integration entry point
 
     describe('Integration Tests', () => {
-      // 1. Runtime Validation
-      test('should pass runtime validation checks', () => {
-        const result = validateIntegration(integration);
-
-        if (result.warnings.length > 0) {
-          console.warn('Validation Warnings:', result.warnings);
-        }
-
-        expect(result.isValid).toBe(true);
-        expect(result.errors).toEqual([]);
-      });
-
-      // 2. Functional Tests
       test('should return results for 8.8.8.8', async () => {
         const entities = [createEntity('IP', '8.8.8.8')];
         const options = { apiKey: 'test-key' };
@@ -78,26 +64,7 @@ This guide shows integration developers how to use `polarity-integration-utils/t
 
 ## Testing Strategies
 
-### 1. Runtime Validation (Required)
-
-Every integration should validate its structure and configuration against the strict schema requirements. This ensures your integration implements the required interface correctly.
-
-```typescript
-import { validateIntegration } from 'polarity-integration-utils/testing';
-import * as integration from '../src/integration';
-
-describe('Validation', () => {
-  test('should match integration contract', () => {
-    // Validates functions (startup, doLookup), signatures, and structure
-    const result = validateIntegration(integration);
-
-    expect(result.isValid).toBe(true);
-    expect(result.errors).toEqual([]);
-  });
-});
-```
-
-### 2. Custom Functional Testing (Recommended)
+### 1. Custom Functional Testing (Recommended)
 
 For more control and complex scenarios, use the `createMockIntegrationContext` helper and standard Jest assertions.
 
@@ -226,44 +193,7 @@ describe('Cache Operations', () => {
 });
 ```
 
-### 6. Mocking Requests
-
-If your integration uses `PolarityRequest`, you can use the `mockRequest` helper.
-
-```typescript
-import { mockRequest } from 'polarity-integration-utils/testing';
-
-// Must be called before importing the integration/PolarityRequest
-const { PolarityRequestMock, mockRequest: requestMocks } = mockRequest();
-
-import * as integration from '../src/integration';
-
-describe('API Requests', () => {
-  test('should make correct API call', async () => {
-    requestMocks.get.mockResolvedValue({
-      statusCode: 200,
-      body: { data: 'test' }
-    });
-
-    const context = createMockIntegrationContext();
-    await integration.doLookup([createEntity('IP', '1.1.1.1')], {}, context);
-
-    expect(requestMocks.get).toHaveBeenCalledWith(
-      expect.objectContaining({
-        uri: expect.stringContaining('/api/endpoint')
-      })
-    );
-  });
-});
-```
-
 ## Available Utilities
-
-### `validateIntegration(integration)`
-
-Runs strict validation on the integration object structure. Returns an object with `isValid` (boolean), `errors` (string array), and `warnings` (string array).
-
-- `integration`: The exported integration object.
 
 ### `createEntity(type, value)`
 
@@ -279,14 +209,9 @@ Creates a mock `IntegrationContext` object with mocked logger and cache.
 - `context.logger`: Jest mocks for all log levels.
 - `context.cache`: Jest mocks for `get`, `set`, `delete`.
 
-### `mockRequest()`
-
-Helper to mock `PolarityRequest` for testing HTTP calls.
-
 ## Best Practices
 
 1.  **Use Async/Await**: v2 integrations rely on Promises. Avoid callbacks in tests.
-2.  **Validate Structure**: Always ensure your integration passes `validateIntegration`.
-3.  **Test Edge Cases**: Use `createEntity` with various types and values.
-4.  **Mock Context**: Always pass a mock context to `doLookup` to prevent runtime errors with logger/cache.
-5.  **Clean Mocks**: Use `jest.clearAllMocks()` or `beforeEach` to reset mock state.
+2.  **Test Edge Cases**: Use `createEntity` with various types and values.
+3.  **Mock Context**: Always pass a mock context to `doLookup` to prevent runtime errors with logger/cache.
+4.  **Clean Mocks**: Use `jest.clearAllMocks()` or `beforeEach` to reset mock state.
