@@ -9,7 +9,7 @@ export interface ValidationResult {
 
 export const validateIntegration = (
   integration: Integration,
-  config?: IntegrationConfig
+  _config?: IntegrationConfig
 ): ValidationResult => {
   const result: ValidationResult = {
     isValid: true,
