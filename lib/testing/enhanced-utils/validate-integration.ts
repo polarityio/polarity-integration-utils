@@ -1,4 +1,4 @@
-import { Integration, IntegrationConfig, IntegrationContext } from '../../types';
+import { Integration, IntegrationContext } from '../../types';
 import { createMockIntegrationContext } from './create-mock-integration-context';
 
 export interface ValidationResult {
@@ -8,8 +8,7 @@ export interface ValidationResult {
 }
 
 export const validateIntegration = (
-  integration: Integration,
-  _config?: IntegrationConfig
+  integration: Integration
 ): ValidationResult => {
   const result: ValidationResult = {
     isValid: true,

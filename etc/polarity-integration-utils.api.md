@@ -63,6 +63,24 @@ export type ConfigRequestProxyOptions = {
 
 export { CronPollSpec }
 
+// @public
+export interface CustomType {
+    // (undocumented)
+    description?: string;
+    // (undocumented)
+    editable?: boolean;
+    // (undocumented)
+    enabled?: boolean;
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    regex: string;
+    // (undocumented)
+    type?: 'custom';
+}
+
 export { DoLookupResult }
 
 export { DoLookupUserOptions }
@@ -163,16 +181,12 @@ export { IntegrationCache }
 export interface IntegrationConfig {
     // (undocumented)
     acronym: string;
-    // Warning: (ae-forgotten-export) The symbol "ViewComponent" needs to be exported by the entry point index.docs.d.ts
-    //
     // (undocumented)
     block: ViewComponent;
     // (undocumented)
     copyOnDemand?: boolean;
     // (undocumented)
     customTypes?: CustomType[];
-    // Warning: (ae-forgotten-export) The symbol "CustomType" needs to be exported by the entry point index.docs.d.ts
-    //
     // (undocumented)
     dataTypes?: (string | CustomType)[];
     // (undocumented)
@@ -189,8 +203,6 @@ export interface IntegrationConfig {
     name: string;
     // (undocumented)
     onDemandOnly?: boolean;
-    // Warning: (ae-forgotten-export) The symbol "IntegrationOption" needs to be exported by the entry point index.docs.d.ts
-    //
     // (undocumented)
     options?: IntegrationOption[];
     // (undocumented)
@@ -239,6 +251,43 @@ export interface IntegrationErrorProperties {
     status?: string;
     title?: string;
 }
+
+// @public
+export type IntegrationOption = {
+    type: 'text' | 'password';
+    key: string;
+    name: string;
+    description?: string;
+    default: string | null;
+    userCanEdit?: boolean;
+    adminOnly?: boolean;
+} | {
+    type: 'boolean';
+    key: string;
+    name: string;
+    description?: string;
+    default: boolean | null;
+    userCanEdit?: boolean;
+    adminOnly?: boolean;
+} | {
+    type: 'number';
+    key: string;
+    name: string;
+    description?: string;
+    default: number | null;
+    userCanEdit?: boolean;
+    adminOnly?: boolean;
+} | {
+    type: 'select';
+    key: string;
+    name: string;
+    description?: string;
+    default: SelectOptionItem | SelectOptionItem[] | string | null;
+    options: SelectOptionItem[];
+    multiple?: boolean;
+    userCanEdit: boolean;
+    adminOnly: boolean;
+};
 
 export { IntervalPollSpec }
 
@@ -358,6 +407,14 @@ export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, addit
 
 export { ScreenChangeRequestContext }
 
+// @public
+export interface SelectOptionItem {
+    // (undocumented)
+    display: string;
+    // (undocumented)
+    value: string;
+}
+
 export { SelectTypeOptionValue }
 
 // @public (undocumented)
@@ -386,6 +443,18 @@ export { ValidateOptionsUserOption }
 export { ValidateOptionsUserOptions }
 
 export { ValidationError }
+
+// @public
+export interface ViewComponent {
+    // (undocumented)
+    component: {
+        file: string;
+    };
+    // (undocumented)
+    template: {
+        file: string;
+    };
+}
 
 // (No @packageDocumentation comment for this package)
 

@@ -33,14 +33,12 @@ This guide shows integration developers how to use `polarity-integration-utils/t
       createEntity,
       createMockIntegrationContext
     } from 'polarity-integration-utils/testing';
-    import { IntegrationConfig } from 'polarity-integration-utils';
     import * as integration from '../src/integration'; // Adjust path to your integration entry point
-    import config from '../config/config.json';
 
     describe('Integration Tests', () => {
       // 1. Runtime Validation
       test('should pass runtime validation checks', () => {
-        const result = validateIntegration(integration, config as IntegrationConfig);
+        const result = validateIntegration(integration);
 
         if (result.warnings.length > 0) {
           console.warn('Validation Warnings:', result.warnings);
@@ -87,14 +85,12 @@ Every integration should validate its structure and configuration against the st
 
 ```typescript
 import { validateIntegration } from 'polarity-integration-utils/testing';
-import { IntegrationConfig } from 'polarity-integration-utils';
 import * as integration from '../src/integration';
-import config from '../config/config.json';
 
 describe('Validation', () => {
   test('should match integration contract', () => {
-    // Validates functions (startup, doLookup), signatures, and config.json
-    const result = validateIntegration(integration, config as IntegrationConfig);
+    // Validates functions (startup, doLookup), signatures, and structure
+    const result = validateIntegration(integration);
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toEqual([]);
@@ -264,12 +260,11 @@ describe('API Requests', () => {
 
 ## Available Utilities
 
-### `validateIntegration(integration, config)`
+### `validateIntegration(integration)`
 
-Runs strict validation on the integration object structure and configuration. Returns an object with `isValid` (boolean), `errors` (string array), and `warnings` (string array).
+Runs strict validation on the integration object structure. Returns an object with `isValid` (boolean), `errors` (string array), and `warnings` (string array).
 
 - `integration`: The exported integration object.
-- `config`: The parsed `config.json` object.
 
 ### `createEntity(type, value)`
 

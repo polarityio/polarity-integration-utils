@@ -3,25 +3,30 @@ import type { Logger } from '@polarityio/integration-types';
 
 export type { Logger } from '@polarityio/integration-types';
 
-const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'];
-
-const writeToDevRunnerResults =
+const createLogMethod =
   (loggingLevel: string) =>
-  (...content: unknown[]) =>
+  (...content: unknown[]) => {
+    if (content.length === 0) return true;
     fs.appendFileSync(
       'devRunnerResults.json',
       '\n' + JSON.stringify({ SOURCE: `Logger.${loggingLevel}`, content }, null, 2)
     );
+  };
 
-const defaultLogger = loggingLevels.reduce<Record<string, (...args: unknown[]) => void>>(
-  (agg, level) => ({
-    ...agg,
-    [level]: writeToDevRunnerResults(level)
-  }),
-  {}
-) as unknown as Logger;
+function createDefaultLogger(): Logger {
+  const logger = {
+    child: () => createDefaultLogger(),
+    trace: createLogMethod('trace'),
+    debug: createLogMethod('debug'),
+    info: createLogMethod('info'),
+    warn: createLogMethod('warn'),
+    error: createLogMethod('error'),
+    fatal: createLogMethod('fatal')
+  };
+  return logger as Logger;
+}
 
-let _logger: Logger = defaultLogger;
+let _logger: Logger = createDefaultLogger();
 
 /**
  * Set the logger object used by the integration.

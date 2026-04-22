@@ -49,7 +49,7 @@ export type {
 export { IntegrationError } from './errors';
 
 /**
- * Integration config.json schema
+ * Integration config.json type
  * @public
  */
 export interface IntegrationConfig {
@@ -81,7 +81,11 @@ export interface IntegrationConfig {
   options?: IntegrationOption[];
 }
 
-interface CustomType {
+/**
+ * Custom entity type definition for config.json
+ * @public
+ */
+export interface CustomType {
   type?: 'custom';
   name?: string;
   description?: string;
@@ -91,17 +95,29 @@ interface CustomType {
   enabled?: boolean;
 }
 
-interface ViewComponent {
+/**
+ * View component reference in config.json
+ * @public
+ */
+export interface ViewComponent {
   component: { file: string };
   template: { file: string };
 }
 
-interface SelectOptionItem {
+/**
+ * A select option item with display label and value
+ * @public
+ */
+export interface SelectOptionItem {
   value: string;
   display: string;
 }
 
-type IntegrationOption =
+/**
+ * Integration option definition for config.json
+ * @public
+ */
+export type IntegrationOption =
   | {
       type: 'text' | 'password';
       key: string;
