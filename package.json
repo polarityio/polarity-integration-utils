@@ -39,11 +39,6 @@
       "require": "./dist/lib/helpers/index.js",
       "types": "./dist/dts/helpers/index.d.ts"
     },
-    "./context": {
-      "import": "./dist/es/context/index.js",
-      "require": "./dist/lib/context/index.js",
-      "types": "./dist/dts/context/index.d.ts"
-    },
     "./testing": {
       "import": "./dist/es/testing/index.js",
       "require": "./dist/lib/testing/index.js",
