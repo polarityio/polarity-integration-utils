@@ -1,4 +1,4 @@
-import { DoLookupUserOptions, Integration } from '../../types';
+import type { DoLookupUserOptions, Integration } from '@polarityio/integration-types';
 import { createMockIntegrationContext } from '../enhanced-utils/create-mock-integration-context';
 
 export const testOnMessage = (

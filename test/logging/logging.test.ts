@@ -1,4 +1,5 @@
-import { getLogger, setLogger, type Logger } from '../../lib/logging/logger';
+import { getLogger, setLogger } from '../../lib/logging/logger';
+import type { Logger } from '@polarityio/integration-types';
 
 const loggingFunctions = {
   child: () => loggingFunctions,

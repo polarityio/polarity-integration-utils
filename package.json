@@ -98,10 +98,12 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "@polarityio/integration-types": "^1.1.0",
     "bottleneck": "^2.19.5",
     "lodash": "^4.18.1",
     "postman-request": "^2.88.1-postman.48"
+  },
+  "peerDependencies": {
+    "@polarityio/integration-types": ">=1.1.0"
   },
   "sideEffects": false
 }

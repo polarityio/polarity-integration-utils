@@ -1,4 +1,4 @@
-import { Integration, IntegrationContext } from '../../types';
+import type { Integration, IntegrationContext } from '@polarityio/integration-types';
 import { createMockIntegrationContext } from './create-mock-integration-context';
 
 export interface ValidationResult {

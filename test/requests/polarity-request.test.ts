@@ -16,7 +16,7 @@ import {
   NetworkError,
   RetryRequestError
 } from '../../lib/errors';
-import { Entity } from '../../lib/types';
+import type { Entity } from '@polarityio/integration-types';
 
 type PostmanRequestCallback = (
   error: Error | null,
