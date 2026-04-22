@@ -4,7 +4,6 @@
 
 ```ts
 
-import Bottleneck from 'bottleneck';
 import type { DoLookupUserOptions } from '@polarityio/integration-types';
 import type { Entity } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
@@ -256,6 +255,12 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
+// @public
+export interface Limiter {
+    // (undocumented)
+    schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
+}
+
 // @public (undocumented)
 export type MetaObject = {
     [key: string]: unknown;
@@ -282,7 +287,7 @@ export class PolarityRequest {
     readonly httpResponseErrorMessageProperties: string[];
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
-    limiter: Bottleneck | null;
+    limiter: Limiter | null;
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
@@ -313,7 +318,7 @@ export interface PolarityRequestOptions {
     // (undocumented)
     isApiError?: IsApiErrorFunction;
     // (undocumented)
-    limiter?: Bottleneck;
+    limiter?: Limiter;
     // (undocumented)
     requestOptionsToSanitize?: string[];
     // (undocumented)

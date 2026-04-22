@@ -5,10 +5,10 @@ import {
   HttpRequestResponse,
   PolarityRequest,
   BeforeRequestHook,
-  AfterResponseHook
+  AfterResponseHook,
+  Limiter
 } from '../../lib/requests/polarity-request';
 import postmanRequest from 'postman-request';
-import Bottleneck from 'bottleneck';
 import { sanitizeRequestOptions } from '../../lib/requests/sanitize-request-options';
 import {
   ApiRequestError,
@@ -39,11 +39,25 @@ beforeAll(() => {
 });
 
 jest.mock('postman-request');
-jest.mock('bottleneck');
 
 jest.mock('fs', () => ({
   readFileSync: jest.fn().mockImplementation((x) => x)
 }));
+
+function createMockLimiter(): Limiter {
+  return {
+    schedule: jest.fn(
+      async <T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]) =>
+        fn(...args)
+    )
+  };
+}
+
+class BottleneckError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
 
 const entity: Entity = {
   value: '8.8.8.8',
@@ -199,7 +213,7 @@ describe('PolarityRequest', () => {
 
     it('should create a PolarityRequest object with `limiter` set via constructor', () => {
       expect.assertions(1);
-      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const limiter = createMockLimiter();
       const request = new PolarityRequest({ limiter });
       expect(request.limiter).toBe(limiter);
     });
@@ -1114,29 +1128,18 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const limiter = createMockLimiter();
       const request = new PolarityRequest({ limiter });
 
-      const spy = jest
-        .spyOn(limiter, 'schedule')
-        .mockImplementation(
-          ((...args: unknown[]) => {
-            const requestWithDefaults = args[0] as (
-              requestOptions: HttpRequestOptions
-            ) => Promise<HttpRequestResponse>;
-            const requestOptions = args[1] as HttpRequestOptions;
-            return requestWithDefaults(requestOptions);
-          }) as never
-        );
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
       request.userOptions = userOptionsExternal;
 
       await request.run(requestOptionsExternal);
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(limiter.schedule).toHaveBeenCalledTimes(1);
     });
 
-    it('should catch Bottleneck.BottleneckError and throw a RetryRequestError if limiter is set', async () => {
+    it('should catch BottleneckError and throw a RetryRequestError if limiter is set', async () => {
       expect.assertions(2);
 
       postmanRequest.defaults.mockImplementation(
@@ -1145,14 +1148,11 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const limiter = createMockLimiter();
+      limiter.schedule = jest.fn(() => {
+        throw new BottleneckError('Bottleneck Error');
+      });
       const request = new PolarityRequest({ limiter });
-
-      const spy = jest
-        .spyOn(limiter, 'schedule')
-        .mockImplementation((() => {
-          throw new Bottleneck.BottleneckError('Bottleneck Error');
-        }) as never);
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
       request.userOptions = userOptionsExternal;
@@ -1163,7 +1163,7 @@ describe('PolarityRequest', () => {
         expect(requestError instanceof RetryRequestError).toBeTruthy();
       }
 
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(limiter.schedule).toHaveBeenCalledTimes(1);
     });
 
     it('should allow setting limiter as a mutable property after construction', async () => {
@@ -1178,24 +1178,13 @@ describe('PolarityRequest', () => {
       );
 
       const request = new PolarityRequest();
-      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const limiter = createMockLimiter();
       request.limiter = limiter;
 
-      const spy = jest
-        .spyOn(limiter, 'schedule')
-        .mockImplementation(
-          ((...args: unknown[]) => {
-            const requestWithDefaults = args[0] as (
-              requestOptions: HttpRequestOptions
-            ) => Promise<HttpRequestResponse>;
-            const requestOptions = args[1] as HttpRequestOptions;
-            return requestWithDefaults(requestOptions);
-          }) as never
-        );
       request.userOptions = { customOption: true };
 
       await request.run({ url: 'http://example.com' });
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(limiter.schedule).toHaveBeenCalledTimes(1);
     });
   });
 

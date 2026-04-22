@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { promisify } from 'util';
-import Bottleneck from 'bottleneck';
 import request from 'postman-request';
 import { parallelLimit } from '../internal/helpers/parallel-limit';
 import get from 'lodash/get.js';
@@ -204,6 +203,16 @@ export type IsApiErrorFunction = (
 ) => IsApiErrorResult;
 
 /**
+ * Minimal interface for a rate limiter compatible with PolarityRequest.
+ * The Polarity server provides a Bottleneck instance that satisfies this interface.
+ *
+ * @public
+ */
+export interface Limiter {
+  schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
+}
+
+/**
  * Hook that runs before an HTTP request is made. Each hook receives the output
  * of the previous hook, allowing request options to be modified in a chain.
  *
@@ -307,7 +316,7 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToSanitize?: string[];
   hooks?: PolarityRequestHooks;
-  limiter?: Bottleneck;
+  limiter?: Limiter;
 }
 
 /**
@@ -372,12 +381,12 @@ export class PolarityRequest {
   public userOptions: DoLookupUserOptions = null;
 
   /**
-   * An optional Bottleneck limiter instance used to throttle HTTP requests.
+   * An optional rate limiter instance used to throttle HTTP requests.
    * When set, all requests made via {@link PolarityRequest.run} are scheduled
    * through this limiter. Typically provided by the Polarity server via the
    * integration context.
    */
-  public limiter: Bottleneck | null = null;
+  public limiter: Limiter | null = null;
 
   /**
    * Lifecycle hooks for customizing request behavior. Hooks are configured via the
@@ -506,7 +515,10 @@ export class PolarityRequest {
 
       let transformedError: NetworkError | RetryRequestError;
 
-      if (requestError instanceof Bottleneck.BottleneckError) {
+      if (
+        requestError instanceof Error &&
+        requestError.constructor.name === 'BottleneckError'
+      ) {
         transformedError = new RetryRequestError(
           'This request has been dropped for going over Integration Configured API Throttling Limits',
           {
@@ -533,7 +545,7 @@ export class PolarityRequest {
     }
 
     if (this.limiter) {
-      this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
+      this.logger.trace({ httpResponse }, 'HTTP Response via limiter');
     } else {
       this.logger.trace({ httpResponse }, 'HTTP Response');
     }

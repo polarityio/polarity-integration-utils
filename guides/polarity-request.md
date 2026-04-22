@@ -338,16 +338,16 @@ const request = new PolarityRequest({
 });
 ```
 
-## Rate Limiting with Bottleneck
+## Rate Limiting
 
-In the Polarity server, a [Bottleneck](https://github.com/SGrondin/bottleneck) limiter instance is provided to your integration via the context object. You can pass this limiter to `PolarityRequest` to throttle outgoing HTTP requests:
+The Polarity server provides a rate limiter instance to your integration via the context object. You can pass this limiter to `PolarityRequest` to throttle outgoing HTTP requests. The limiter must satisfy the `Limiter` interface exported by this library:
 
 ```typescript
-import Bottleneck from 'bottleneck';
 import { PolarityRequest } from 'polarity-integration-utils/requests';
+import type { Limiter } from 'polarity-integration-utils/requests';
 
 // The limiter is provided by the Polarity server via the integration context
-const limiter: Bottleneck = context.limiter;
+const limiter: Limiter = context.limiter;
 
 const request = new PolarityRequest({ limiter });
 ```
