@@ -14,12 +14,11 @@ This guide shows integration developers how to use `polarity-integration-utils/t
 
 2.  **Ensure TypeScript Configuration:**
 
-    To import your `config.json` for validation, ensure your `tsconfig.json` has `resolveJsonModule` enabled:
+    For TypeScript integrations, ensure your `tsconfig.json` has `esModuleInterop` enabled:
 
     ```json
     {
       "compilerOptions": {
-        "resolveJsonModule": true,
         "esModuleInterop": true
       }
     }
@@ -287,7 +286,7 @@ Helper to mock `PolarityRequest` for testing HTTP calls.
 ## Best Practices
 
 1.  **Use Async/Await**: v2 integrations rely on Promises. Avoid callbacks in tests.
-2.  **Validate Structure**: Always ensure your integration passes `validateIntegration` including the `config.json`.
+2.  **Validate Structure**: Always ensure your integration passes `validateIntegration`.
 3.  **Test Edge Cases**: Use `createEntity` with various types and values.
 4.  **Mock Context**: Always pass a mock context to `doLookup` to prevent runtime errors with logger/cache.
 5.  **Clean Mocks**: Use `jest.clearAllMocks()` or `beforeEach` to reset mock state.
