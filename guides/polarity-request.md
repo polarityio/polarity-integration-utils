@@ -188,12 +188,128 @@ When an error is encountered, the PolarityRequest instance will look for an erro
 
 
 
-## Customize Error Handling
+## Customize Error Detection
 
-If you need full control over error handling you can implement the `isApiError` method on the `PolarityRequest` instance.  The `isApiError` method receives 
+If you need full control over error detection you can implement the `isApiError` option on the `PolarityRequest` instance.  The `isApiError` function receives the full HTTP response, request options, and user options.  It should return an object with an `isApiError` boolean and an optional `message` string.
+
+When `isApiError` is provided, the `roundedSuccessStatusCodes` and `httpResponseErrorProperties` options are not used.
 
 ```js
-
+const request = new PolarityRequest({
+  isApiError: (httpResponse, requestOptions, userOptions) => {
+    if (httpResponse.body?.status === 'error') {
+      return { isApiError: true, message: httpResponse.body.message };
+    }
+    return { isApiError: false };
+  }
+});
 ```
 
+# Hooks
 
+The `PolarityRequest` class supports lifecycle hooks that allow you to customize request and response behavior. Hooks are passed via the `hooks` option when creating a `PolarityRequest` instance.
+
+There are four hook types:
+
+- **`beforeRequest`** — Runs before each HTTP request. Receives the request options and user options. Returns modified request options. Multiple hooks chain in order.
+- **`afterResponse`** — Runs after a successful HTTP response. Receives the response, request options, and user options. Returns the modified response. Multiple hooks chain in order.
+- **`onApiError`** — Runs when an API error is detected (non-success status code or response body error properties). Receives the error, the full HTTP response, request options, and user options. If all hooks return without throwing, the error is suppressed.
+- **`onNetworkError`** — Runs when a network or rate-limiting error occurs. If all hooks return without throwing, the error is suppressed.
+
+## Adding Authentication with `beforeRequest`
+
+```js
+const request = new PolarityRequest({
+  hooks: {
+    beforeRequest: [
+      async (requestOptions, userOptions) => {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          Authorization: `Bearer ${userOptions.apiKey}`
+        };
+        return requestOptions;
+      }
+    ]
+  }
+});
+```
+
+## Extracting Response Data with `afterResponse`
+
+```js
+const request = new PolarityRequest({
+  hooks: {
+    afterResponse: [
+      async (response, requestOptions, userOptions) => {
+        // Extract just the data field from the response body
+        response.body = response.body?.data;
+        return response;
+      }
+    ]
+  }
+});
+```
+
+## Handling API Errors with `onApiError`
+
+The `onApiError` hook gives you access to both the error and the original HTTP response, making it easy to inspect status codes, headers, and the response body.
+
+```js
+const request = new PolarityRequest({
+  hooks: {
+    onApiError: [
+      async (error, response, requestOptions, userOptions) => {
+        if (response.statusCode === 404) {
+          // Suppress 404 errors — they're expected for missing resources
+          return;
+        }
+        // Re-throw all other errors
+        throw error;
+      }
+    ]
+  }
+});
+```
+
+## Handling Network Errors with `onNetworkError`
+
+```js
+const request = new PolarityRequest({
+  hooks: {
+    onNetworkError: [
+      async (error, requestOptions, userOptions) => {
+        logger.error({ err: error }, 'Network error occurred');
+        // Re-throw so the caller knows about the failure
+        throw error;
+      }
+    ]
+  }
+});
+```
+
+## Chaining Multiple Hooks
+
+Hooks execute in array order. For `beforeRequest` and `afterResponse`, each hook receives the output of the previous hook:
+
+```js
+const request = new PolarityRequest({
+  hooks: {
+    beforeRequest: [
+      // First: add auth header
+      async (requestOptions, userOptions) => {
+        return {
+          ...requestOptions,
+          headers: { ...requestOptions.headers, Authorization: `Bearer ${userOptions.apiKey}` }
+        };
+      },
+      // Second: add custom tracking header
+      async (requestOptions, userOptions) => {
+        return {
+          ...requestOptions,
+          headers: { ...requestOptions.headers, 'X-Request-Source': 'polarity' }
+        };
+      }
+    ]
+  }
+});
+```

@@ -4,8 +4,8 @@ import {
   HttpRequestOptions,
   HttpRequestResponse,
   PolarityRequest,
-  PostprocessRequestSuccess,
-  PreprocessRequestOptions
+  BeforeRequestHook,
+  AfterResponseHook
 } from '../../lib/requests/polarity-request';
 import postmanRequest from 'postman-request';
 import Bottleneck from 'bottleneck';
@@ -117,7 +117,7 @@ describe('PolarityRequest', () => {
 
   describe('Constructor', () => {
     it('should create a PolarityRequest object with default values', () => {
-      expect.assertions(11);
+      expect.assertions(9);
 
       const defaultRequestOptions = {
         rejectUnauthorized: true,
@@ -136,9 +136,12 @@ describe('PolarityRequest', () => {
       expect(request.isApiError).toEqual(null);
       expect(request.userOptions).toEqual(null);
       expect(request.throttlingOptions).toEqual(undefined);
-      expect(typeof request.preprocessRequestOptions).toEqual('function');
-      expect(typeof request.postprocessRequestFailure).toEqual('function');
-      expect(typeof request.postprocessRequestSuccess).toEqual('function');
+      expect(request.hooks).toEqual({
+        beforeRequest: [],
+        afterResponse: [],
+        onApiError: [],
+        onNetworkError: []
+      });
     });
 
     it('should create a PolarityRequest object with `roundedSuccessStatusCodes` set', () => {
@@ -203,31 +206,31 @@ describe('PolarityRequest', () => {
       expect(request.throttlingOptions).toEqual(throttlingOptions);
     });
 
-    it('should create a PolarityRequest object with `preprocessRequestOptions` set', () => {
-      expect.assertions(1);
-      const preprocessRequestOptions = jest.fn();
+    it('should create a PolarityRequest object with `hooks` set via constructor', () => {
+      expect.assertions(4);
+      const beforeRequest = [jest.fn()];
+      const afterResponse = [jest.fn()];
+      const onApiError = [jest.fn()];
+      const onNetworkError = [jest.fn()];
       const request = new PolarityRequest({
-        preprocessRequestOptions
+        hooks: { beforeRequest, afterResponse, onApiError, onNetworkError }
       });
-      expect(request.preprocessRequestOptions).toEqual(preprocessRequestOptions);
+      expect(request.hooks.beforeRequest).toEqual(beforeRequest);
+      expect(request.hooks.afterResponse).toEqual(afterResponse);
+      expect(request.hooks.onApiError).toEqual(onApiError);
+      expect(request.hooks.onNetworkError).toEqual(onNetworkError);
     });
 
-    it('should create a PolarityRequest object with `postprocessRequestFailure` set', () => {
-      expect.assertions(1);
-      const postprocessRequestFailure = jest.fn();
+    it('should create a PolarityRequest object with partial `hooks` set via constructor', () => {
+      expect.assertions(4);
+      const beforeRequest = [jest.fn()];
       const request = new PolarityRequest({
-        postprocessRequestFailure
+        hooks: { beforeRequest }
       });
-      expect(request.postprocessRequestFailure).toEqual(postprocessRequestFailure);
-    });
-
-    it('should create a PolarityRequest object with `postprocessRequestSuccess` set', () => {
-      expect.assertions(1);
-      const postprocessRequestSuccess = jest.fn();
-      const request = new PolarityRequest({
-        postprocessRequestSuccess
-      });
-      expect(request.postprocessRequestSuccess).toEqual(postprocessRequestSuccess);
+      expect(request.hooks.beforeRequest).toEqual(beforeRequest);
+      expect(request.hooks.afterResponse).toEqual([]);
+      expect(request.hooks.onApiError).toEqual([]);
+      expect(request.hooks.onNetworkError).toEqual([]);
     });
 
     it('should create a PolarityRequest object custom `defaults` options value set', () => {
@@ -250,44 +253,6 @@ describe('PolarityRequest', () => {
     });
   });
 
-  describe('Middleware Functions Default Behavior', () => {
-    it('should return requestOptions unmodified in preprocessRequestOptions', async () => {
-      expect.assertions(1);
-      const request = new PolarityRequest();
-      const userOptions = { customOption: true };
-      const requestOptions = { url: 'http://example.com' };
-      const result = await request.preprocessRequestOptions(requestOptions, userOptions);
-      expect(result).toEqual(requestOptions);
-    });
-
-    it('should return error unmodified in postprocessRequestFailure', async () => {
-      expect.assertions(1);
-      const request = new PolarityRequest();
-      const error = new Error('test error');
-      const userOptions = { customOption: true };
-      const requestOptions = { url: 'http://example.com' };
-      try {
-        await request.postprocessRequestFailure(error, requestOptions, userOptions);
-      } catch (thrownError) {
-        expect(thrownError).toEqual(error);
-      }
-    });
-
-    it('should return response unmodified in postprocessRequestSuccess', async () => {
-      expect.assertions(1);
-      const request = new PolarityRequest();
-      const response = { statusCode: 200 } as HttpRequestResponse;
-      const userOptions = { customOption: true };
-      const requestOptions = { url: 'http://example.com' };
-      const result = await request.postprocessRequestSuccess(
-        response,
-        requestOptions,
-        userOptions
-      );
-      expect(result).toEqual(response);
-    });
-  });
-
   describe('run()', () => {
     it('should throw LibraryUsageError if `userOptions` is not set before `run` call', async () => {
       expect.assertions(1);
@@ -300,13 +265,12 @@ describe('PolarityRequest', () => {
       }
     });
 
-    it('should call `preprocessRequestOptions` with the correct userOptions and requestOptions', async () => {
+    it('should call `beforeRequest` hooks with the correct userOptions and requestOptions', async () => {
       expect.assertions(2);
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const preprocessRequestOptions: PreprocessRequestOptions = async (
+      const beforeRequest: BeforeRequestHook = async (
         requestOptions,
         userOptions
       ) => {
@@ -315,13 +279,15 @@ describe('PolarityRequest', () => {
         return requestOptions;
       };
 
+      const request = new PolarityRequest({
+        hooks: { beforeRequest: [beforeRequest] }
+      });
       request.userOptions = userOptionsExternal;
-      request.preprocessRequestOptions = preprocessRequestOptions;
 
       await request.run(requestOptionsExternal);
     });
 
-    it('should call `postprocessRequestSuccess` with the correct httpResponse, requestOptions, and userOptions', async () => {
+    it('should call `afterResponse` hooks with the correct httpResponse, requestOptions, and userOptions', async () => {
       expect.assertions(3);
       const body = { message: 'Request Ran' };
       const response = {
@@ -335,28 +301,29 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const postprocessRequestSuccess: PostprocessRequestSuccess = async (
-        response,
+      const afterResponse: AfterResponseHook = async (
+        hookResponse,
         requestOptions,
         userOptions
       ) => {
-        expect(response).toEqual(response);
+        expect(hookResponse).toEqual(response);
         expect(userOptions).toEqual(userOptionsExternal);
         expect(requestOptions).toEqual(requestOptionsExternal);
-        return response;
+        return hookResponse;
       };
 
+      const request = new PolarityRequest({
+        hooks: { afterResponse: [afterResponse] }
+      });
       request.userOptions = userOptionsExternal;
-      request.postprocessRequestSuccess = postprocessRequestSuccess;
 
       await request.run(requestOptionsExternal);
     });
 
-    it('should call `postprocessRequestFailure` with the correct error, requestOptions, and userOptions', async () => {
+    it('should call `onNetworkError` hooks with the correct error, requestOptions, and userOptions', async () => {
       expect.assertions(3);
 
       const networkError = new Error('Network Error');
@@ -366,18 +333,19 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const postprocessRequestFailure = async (error, requestOptions, userOptions) => {
+      const onNetworkError = async (error, requestOptions, userOptions) => {
         expect(error instanceof NetworkError).toBeTruthy();
         expect(requestOptions).toEqual(requestOptionsExternal);
         expect(userOptions).toEqual(userOptionsExternal);
       };
 
+      const request = new PolarityRequest({
+        hooks: { onNetworkError: [onNetworkError] }
+      });
       request.userOptions = userOptionsExternal;
-      request.postprocessRequestFailure = postprocessRequestFailure;
 
       await request.run(requestOptionsExternal);
     });
@@ -524,7 +492,7 @@ describe('PolarityRequest', () => {
       }
     });
 
-    it('should call request with requestOptions modified by `preprocessRequestOptions` middleware', async () => {
+    it('should call request with requestOptions modified by `beforeRequest` hooks', async () => {
       expect.assertions(1);
       const body = { message: 'Request Ran' };
       const response = {
@@ -539,7 +507,6 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
       const mergedRequestOptions = {
@@ -548,29 +515,27 @@ describe('PolarityRequest', () => {
           page: 1
         }
       };
-      const preprocessRequestOptions: PreprocessRequestOptions = async (
+      const beforeRequest: BeforeRequestHook = async (
         requestOptions,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         userOptions
       ) => {
-        // should modify existing option
         requestOptions.url = 'http://example.org';
-
-        // should add new option
         requestOptions.qs = {
           page: 1
         };
-
         return requestOptions;
       };
 
+      const request = new PolarityRequest({
+        hooks: { beforeRequest: [beforeRequest] }
+      });
       request.userOptions = userOptionsExternal;
-      request.preprocessRequestOptions = preprocessRequestOptions;
 
       await request.run(requestOptionsExternal);
     });
 
-    it('`preprocessRequestOptions` middleware should support deleting existing options', async () => {
+    it('`beforeRequest` hooks should support deleting existing options', async () => {
       expect.assertions(2);
       const body = { message: 'Request Ran' };
       const response = {
@@ -590,14 +555,13 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com', qs: { page: 1 } };
       const mergedRequestOptions = {
         url: 'http://example.com'
       };
 
-      const preprocessRequestOptions: PreprocessRequestOptions = async (
+      const beforeRequest: BeforeRequestHook = async (
         requestOptions,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         userOptions
@@ -606,8 +570,10 @@ describe('PolarityRequest', () => {
         return requestOptions;
       };
 
+      const request = new PolarityRequest({
+        hooks: { beforeRequest: [beforeRequest] }
+      });
       request.userOptions = userOptionsExternal;
-      request.preprocessRequestOptions = preprocessRequestOptions;
 
       await request.run(requestOptionsExternal);
     });
@@ -873,7 +839,7 @@ describe('PolarityRequest', () => {
       }
     });
 
-    it('should call `postprocessRequestFailure` with the correct error, requestOptions, and userOptions', async () => {
+    it('should call `onNetworkError` hooks with correct error on network failure', async () => {
       expect.assertions(3);
 
       const networkError = new Error('Network Error');
@@ -883,23 +849,24 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const postprocessRequestFailure = async (error, requestOptions, userOptions) => {
+      const onNetworkError = async (error, requestOptions, userOptions) => {
         expect(error instanceof NetworkError).toBeTruthy();
         expect(requestOptions).toEqual(requestOptionsExternal);
         expect(userOptions).toEqual(userOptionsExternal);
       };
 
+      const request = new PolarityRequest({
+        hooks: { onNetworkError: [onNetworkError] }
+      });
       request.userOptions = userOptionsExternal;
-      request.postprocessRequestFailure = postprocessRequestFailure;
 
       await request.run(requestOptionsExternal);
     });
 
-    it('should throw error thrown by `postprocessRequestFailure`', async () => {
+    it('should throw error thrown by `onNetworkError` hook', async () => {
       expect.assertions(2);
 
       const networkError = new Error('Network Error');
@@ -909,16 +876,17 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const postprocessRequestFailure = async () => {
+      const onNetworkError = async () => {
         throw new ApiRequestError('API Error');
       };
 
+      const request = new PolarityRequest({
+        hooks: { onNetworkError: [onNetworkError] }
+      });
       request.userOptions = userOptionsExternal;
-      request.postprocessRequestFailure = postprocessRequestFailure;
 
       try {
         await request.run(requestOptionsExternal);
@@ -928,7 +896,7 @@ describe('PolarityRequest', () => {
       }
     });
 
-    it('should not throw error if `postprocessRequestFailure` does not throw error', async () => {
+    it('should not throw error if `onNetworkError` hook suppresses the error', async () => {
       expect.assertions(2);
 
       postmanRequest.defaults.mockImplementation(
@@ -937,23 +905,164 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest();
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      request.userOptions = userOptionsExternal;
+      // Without hooks, should throw
+      const requestNoHooks = new PolarityRequest();
+      requestNoHooks.userOptions = userOptionsExternal;
 
-      // this will throw an error
       try {
-        await request.run(requestOptionsExternal);
+        await requestNoHooks.run(requestOptionsExternal);
       } catch (error) {
         expect(error instanceof NetworkError).toBeTruthy();
       }
 
-      // this implementation of `postprocessRequestFailure` should swallow the error
-      request.postprocessRequestFailure = async () => {};
+      // With onNetworkError hook that doesn't throw, should suppress
+      const requestWithHook = new PolarityRequest({
+        hooks: { onNetworkError: [async () => {}] }
+      });
+      requestWithHook.userOptions = userOptionsExternal;
 
-      await expect(request.run(requestOptionsExternal)).resolves.not.toThrow();
+      await expect(requestWithHook.run(requestOptionsExternal)).resolves.not.toThrow();
+    });
+
+    it('should call `onApiError` hooks with error and response when API error detected', async () => {
+      expect.assertions(6);
+      const body = { message: 'Request Failed' };
+      const response = {
+        statusCode: 400,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const userOptionsExternal = { customOption: true };
+      const requestOptionsExternal = { url: 'http://example.com' };
+
+      const onApiError = async (error, hookResponse, requestOptions, userOptions) => {
+        expect(error instanceof ApiRequestError).toBeTruthy();
+        expect(hookResponse.statusCode).toEqual(400);
+        expect(hookResponse.body).toEqual(body);
+        expect(requestOptions).toEqual(requestOptionsExternal);
+        expect(userOptions).toEqual(userOptionsExternal);
+      };
+
+      const request = new PolarityRequest({
+        hooks: { onApiError: [onApiError] }
+      });
+      request.userOptions = userOptionsExternal;
+
+      // Error is suppressed because hook returns without throwing
+      const result = await request.run(requestOptionsExternal);
+      expect(result).toEqual(response);
+    });
+
+    it('should propagate error thrown by `onApiError` hook', async () => {
+      expect.assertions(2);
+      const body = { message: 'Request Failed' };
+      const response = {
+        statusCode: 400,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const userOptionsExternal = { customOption: true };
+      const requestOptionsExternal = { url: 'http://example.com' };
+
+      const onApiError = async (error) => {
+        throw new ApiRequestError('Custom error: ' + error.message);
+      };
+
+      const request = new PolarityRequest({
+        hooks: { onApiError: [onApiError] }
+      });
+      request.userOptions = userOptionsExternal;
+
+      try {
+        await request.run(requestOptionsExternal);
+      } catch (error) {
+        expect(error instanceof ApiRequestError).toBeTruthy();
+        expect(error.message).toContain('Custom error:');
+      }
+    });
+
+    it('should chain multiple `beforeRequest` hooks in order', async () => {
+      expect.assertions(1);
+      const body = { message: 'Request Ran' };
+      const response = {
+        statusCode: 200,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          expect(requestOptions).toEqual({
+            url: 'http://example.com',
+            headers: { 'X-Auth': 'token123', 'X-Custom': 'value' }
+          });
+          cb(null, response, body);
+        }
+      );
+
+      const addAuth: BeforeRequestHook = async (opts) => {
+        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Auth': 'token123' } };
+      };
+
+      const addCustomHeader: BeforeRequestHook = async (opts) => {
+        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Custom': 'value' } };
+      };
+
+      const request = new PolarityRequest({
+        hooks: { beforeRequest: [addAuth, addCustomHeader] }
+      });
+      request.userOptions = { customOption: true };
+
+      await request.run({ url: 'http://example.com' });
+    });
+
+    it('should chain multiple `afterResponse` hooks in order', async () => {
+      expect.assertions(1);
+      const body = { data: { name: 'test', extra: 'field' } };
+      const response = {
+        statusCode: 200,
+        body
+      };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const extractData: AfterResponseHook = async (resp) => {
+        return { ...resp, body: (resp.body as { data: unknown }).data };
+      };
+
+      const addTimestamp: AfterResponseHook = async (resp) => {
+        return { ...resp, processedAt: 'now' };
+      };
+
+      const request = new PolarityRequest({
+        hooks: { afterResponse: [extractData, addTimestamp] }
+      });
+      request.userOptions = { customOption: true };
+
+      const result = await request.run({ url: 'http://example.com' });
+      expect(result).toEqual({
+        statusCode: 200,
+        body: { name: 'test', extra: 'field' },
+        processedAt: 'now'
+      });
     });
 
     it('should execute bottleneckLimiter.schedule() if throttlingOptions is set', async () => {

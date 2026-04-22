@@ -205,43 +205,97 @@ export type IsApiErrorFunction = (
 ) => IsApiErrorResult;
 
 /**
- * Optional middleware method for modifying {@link HttpRequestOptions} before a request is made
- * via the {@link PolarityRequest.run} method or {@link PolarityRequest.runInParallel} method.
- * The returned `requestOptions` object will be used for the request.  This method is passed
- * a copy of the original `requestOptions` object so it can be modified without side effects.
+ * Hook that runs before an HTTP request is made. Each hook receives the output
+ * of the previous hook, allowing request options to be modified in a chain.
  *
- * This method is typically used for adding authentication (e.g., auth headers, or basic auth) to every request.  It can also
- * be used to add headers that are required on every request or conditionally add headers based
- * on the passed in `userOptions`.
+ * Typically used for adding authentication headers or conditionally modifying
+ * request options based on user options.
  *
  * @public
  */
-export type PreprocessRequestOptions = (
+export type BeforeRequestHook = (
   requestOptions: HttpRequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<HttpRequestOptions> | never | undefined;
+) => Promise<HttpRequestOptions>;
 
 /**
- * Optional middleware method for modifying the {@link HttpRequestResponse} after a successful request.
- * The passed in {@link HttpRequestResponse} object is not a copy but can be safely modified without
- * side effects.  The returned `HttpRequestResponse` object will be used for the response.
+ * Hook that runs after a successful HTTP response. Each hook receives the output
+ * of the previous hook, allowing the response to be modified in a chain.
+ *
+ * Typically used to extract specific fields from the response body or to
+ * transform the response into a more useful shape.
  *
  * @public
  */
-export type PostprocessRequestSuccess = (
+export type AfterResponseHook = (
   response: HttpRequestResponse,
   requestOptions: HttpRequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<HttpRequestResponse> | never;
+) => Promise<HttpRequestResponse>;
 
 /**
+ * Hook that runs when an API error is detected (non-success status code or error
+ * properties found in the response body). Receives the full HTTP response so the
+ * hook can inspect status codes, headers, and body.
+ *
+ * If all registered hooks return without throwing, the error is suppressed and
+ * the HTTP response is returned to the caller. To propagate or replace the error,
+ * throw from within the hook.
+ *
  * @public
  */
-export type PostprocessRequestFailure = (
-  error: Error,
+export type OnApiErrorHook = (
+  error: ApiRequestError,
+  response: HttpRequestResponse,
   requestOptions: HttpRequestOptions,
   userOptions: DoLookupUserOptions
-) => Promise<unknown> | never;
+) => Promise<void>;
+
+/**
+ * Hook that runs when a network error or rate-limiting error occurs during a request.
+ *
+ * If all registered hooks return without throwing, the error is suppressed.
+ * To propagate or replace the error, throw from within the hook.
+ *
+ * @public
+ */
+export type OnNetworkErrorHook = (
+  error: NetworkError | RetryRequestError,
+  requestOptions: HttpRequestOptions,
+  userOptions: DoLookupUserOptions
+) => Promise<void>;
+
+/**
+ * Hooks for customizing the {@link PolarityRequest} lifecycle. All hook arrays
+ * execute in order. `beforeRequest` and `afterResponse` hooks chain their output,
+ * while error hooks run sequentially and can suppress errors by returning without
+ * throwing.
+ *
+ * @public
+ */
+export interface PolarityRequestHooks {
+  /**
+   * Hooks that run before each HTTP request. Each hook receives a copy of the request
+   * options and the return value is passed to the next hook (or used for the request).
+   */
+  beforeRequest?: BeforeRequestHook[];
+  /**
+   * Hooks that run after a successful HTTP response. Each hook receives the response
+   * from the previous hook and the return value is passed to the next hook (or returned
+   * to the caller).
+   */
+  afterResponse?: AfterResponseHook[];
+  /**
+   * Hooks that run when an API error is detected. Each hook receives the error and the
+   * full HTTP response. If all hooks return without throwing, the error is suppressed.
+   */
+  onApiError?: OnApiErrorHook[];
+  /**
+   * Hooks that run when a network or rate-limiting error occurs. If all hooks return
+   * without throwing, the error is suppressed.
+   */
+  onNetworkError?: OnNetworkErrorHook[];
+}
 
 /**
  * @public
@@ -253,9 +307,7 @@ export interface PolarityRequestOptions {
   httpResponseErrorProperties?: string[];
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToSanitize?: string[];
-  preprocessRequestOptions?: PreprocessRequestOptions;
-  postprocessRequestSuccess?: PostprocessRequestSuccess;
-  postprocessRequestFailure?: PostprocessRequestFailure;
+  hooks?: PolarityRequestHooks;
   throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
@@ -323,66 +375,17 @@ export class PolarityRequest {
   public userOptions: DoLookupUserOptions = null;
 
   /**
-   * Optional middleware method for modifying {@link HttpRequestOptions} before a request is made
-   * via the {@link PolarityRequest.run} method or {@link PolarityRequest.runInParallel} method.
-   * The returned `requestOptions` object will be used for the request.  This method is passed
-   * a copy of the original `requestOptions` object so it can be modified without side effects.
+   * Lifecycle hooks for customizing request behavior. Hooks are configured via the
+   * {@link PolarityRequestOptions.hooks} property when creating a new instance of the
+   * {@link PolarityRequest} class.
    *
-   * This method is typically used for adding authentication (e.g., auth headers, or basic auth) to every request.
-   * It can also be used to add headers that are required on every request or conditionally add headers based
-   * on the passed in `userOptions`.
-   *
-   * This method can be set as part of the {@link PolarityRequestOptions} when creating a new instance of the
-   * {@link PolarityRequest} class or can be set after the fact.
-   *
-   * @param requestOptions - A copy of the request options used for the request.  This object can be modified
-   * without side effects.
-   * @param userOptions - The user options passed into the `doLookup` method.
-   * @returns The modified request options to use for the request.
+   * @see {@link PolarityRequestHooks} for hook type details.
    */
-  public preprocessRequestOptions: PreprocessRequestOptions = async (
-    requestOptions: HttpRequestOptions,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    userOptions: DoLookupUserOptions
-  ): Promise<HttpRequestOptions> => requestOptions;
-
-  /**
-   * Optional middleware method for modifying the {@link HttpRequestResponse} after a successful request.
-   * The passed in {@link HttpRequestResponse} object is not a copy but can be safely modified without
-   * side effects.  The returned `HttpRequestResponse` object will be used for the response.
-   *
-   * @param response - The HTTP response from the request.
-   * @param requestOptions - The request options used for the request.
-   * @param userOptions - The user options passed into the `doLookup` method.
-   */
-  public postprocessRequestSuccess: PostprocessRequestSuccess = async (
-    response: HttpRequestResponse,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    requestOptions: HttpRequestOptions,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    userOptions: DoLookupUserOptions
-  ): Promise<HttpRequestResponse> => response;
-
-  /**
-   * Method that can be implemented to post-process the HTTP response after a failed request.
-   * This method is typically used to inspect the error thrown and either alter the error
-   * object (e.g., to change the error message property to something more specific), to ignore
-   * the error (by not rethrowing it), or to take a specific action based on the error (e.g.,
-   * in the case of a RetryRequestError you may want to retry the request or return a special
-   * payload to the integration front end).
-   *
-   * @param error - The error thrown during the request.
-   * @param requestOptions - The request options used for the request.
-   * @param userOptions - The user options passed into the `doLookup` method.
-   */
-  public postprocessRequestFailure: PostprocessRequestFailure = (
-    error: Error,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    requestOptions: HttpRequestOptions,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    userOptions: DoLookupUserOptions
-  ): never => {
-    throw error;
+  public readonly hooks: Required<PolarityRequestHooks> = {
+    beforeRequest: [],
+    afterResponse: [],
+    onApiError: [],
+    onNetworkError: []
   };
 
   public get throttlingOptions(): Bottleneck.ConstructorOptions {
@@ -453,16 +456,12 @@ export class PolarityRequest {
       this.requestOptionsToSanitize = options.requestOptionsToSanitize;
     }
 
-    if (options.postprocessRequestFailure) {
-      this.postprocessRequestFailure = options.postprocessRequestFailure;
-    }
-
-    if (options.postprocessRequestSuccess) {
-      this.postprocessRequestSuccess = options.postprocessRequestSuccess;
-    }
-
-    if (options.preprocessRequestOptions) {
-      this.preprocessRequestOptions = options.preprocessRequestOptions;
+    if (options.hooks) {
+      const h = options.hooks;
+      if (h.beforeRequest) this.hooks.beforeRequest = h.beforeRequest;
+      if (h.afterResponse) this.hooks.afterResponse = h.afterResponse;
+      if (h.onApiError) this.hooks.onApiError = h.onApiError;
+      if (h.onNetworkError) this.hooks.onNetworkError = h.onNetworkError;
     }
 
     if (options.throttlingOptions) {
@@ -500,87 +499,96 @@ export class PolarityRequest {
       );
     }
 
-    // Note that we specifically pass a copy of requestOptions to `preprocessRequestOptions`
-    // which lets the user modify the requestOptions object without affecting the original
-    const postprocessedRequestOptions = await this.preprocessRequestOptions(
-      {
-        ...requestOptions
-      },
-      this.userOptions
-    );
+    // Run beforeRequest hooks — each receives previous hook's output
+    let processedOptions: HttpRequestOptions = { ...requestOptions };
+    for (const hook of this.hooks.beforeRequest) {
+      processedOptions = await hook(processedOptions, this.userOptions);
+    }
 
-    let postprocessRequestResults: HttpRequestResponse;
+    let httpResponse: HttpRequestResponse;
 
     try {
-      const httpResponse = await (this.bottleneckLimiter
+      httpResponse = await (this.bottleneckLimiter
         ? this.bottleneckLimiter.schedule(
             this.requestWithDefaults,
-            postprocessedRequestOptions
+            processedOptions
           )
-        : this.requestWithDefaults(postprocessedRequestOptions));
-
-      if (this.bottleneckLimiter) {
-        this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
-      } else {
-        this.logger.trace({ httpResponse }, 'HTTP Response');
-      }
-
-      this.maybeThrowApiRequestError(httpResponse, postprocessedRequestOptions);
-
-      postprocessRequestResults = await this.postprocessRequestSuccess(
-        httpResponse,
-        postprocessedRequestOptions,
-        this.userOptions
-      );
+        : this.requestWithDefaults(processedOptions));
     } catch (requestError) {
-      let transformedError = requestError;
-
       if (requestError instanceof LibraryUsageError) {
         throw requestError;
       }
 
-      if (!(requestError instanceof ApiRequestError)) {
-        transformedError = new NetworkError('Network error encountered during request', {
-          cause: requestError,
-          requestOptions: postprocessedRequestOptions,
-          requestOptionsToSanitize: this.requestOptionsToSanitize
-        });
-      }
+      let transformedError: NetworkError | RetryRequestError;
 
       if (requestError instanceof Bottleneck.BottleneckError) {
         transformedError = new RetryRequestError(
           'This request has been dropped for going over Integration Configured API Throttling Limits',
           {
-            requestOptions: postprocessedRequestOptions,
+            requestOptions: processedOptions,
             requestOptionsToSanitize: this.requestOptionsToSanitize
           }
         );
+      } else {
+        transformedError = new NetworkError('Network error encountered during request', {
+          cause: requestError,
+          requestOptions: processedOptions,
+          requestOptionsToSanitize: this.requestOptionsToSanitize
+        });
       }
 
-      // Possibly throws an error
-      await this.postprocessRequestFailure(
-        transformedError,
-        postprocessedRequestOptions,
-        this.userOptions
-      );
+      if (this.hooks.onNetworkError.length > 0) {
+        for (const hook of this.hooks.onNetworkError) {
+          await hook(transformedError, processedOptions, this.userOptions);
+        }
+        return undefined;
+      }
+
+      throw transformedError;
     }
 
-    return postprocessRequestResults;
+    if (this.bottleneckLimiter) {
+      this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
+    } else {
+      this.logger.trace({ httpResponse }, 'HTTP Response');
+    }
+
+    // Check for API-level errors
+    const apiError = this.detectApiError(httpResponse, processedOptions);
+
+    if (apiError) {
+      if (this.hooks.onApiError.length > 0) {
+        for (const hook of this.hooks.onApiError) {
+          await hook(apiError, httpResponse, processedOptions, this.userOptions);
+        }
+        return httpResponse;
+      }
+      throw apiError;
+    }
+
+    // Run afterResponse hooks — each receives previous hook's output
+    let result = httpResponse;
+    for (const hook of this.hooks.afterResponse) {
+      result = await hook(result, processedOptions, this.userOptions);
+    }
+
+    return result;
   }
 
   /**
-   * Checks whether the HTTP response is an API error and throws an ApiRequestError if it is.
+   * Checks whether the HTTP response is an API error and returns an ApiRequestError if it is.
    *
    * @param httpResponse - The HTTP response from the Postman request.
    * @param requestOptions - The options used for the request.
+   * @returns An ApiRequestError if the response indicates an API error, undefined otherwise.
    *
-   * @throws {@link ApiRequestError}
-   * Throws an error if the response indicates an API error.
+   * @throws {@link LibraryUsageError}
+   * Throws if the `isApiError` function returns an invalid result.
    */
-  private maybeThrowApiRequestError(
+  private detectApiError(
     httpResponse: HttpRequestResponse,
     requestOptions: HttpRequestOptions
-  ): void {
+  ): ApiRequestError | undefined {
     const { statusCode, body } = httpResponse;
 
     const requestOptionsWithoutSensitiveData = sanitizeRequestOptions(
@@ -632,7 +640,7 @@ export class PolarityRequest {
     }
 
     if (hasApiError) {
-      throw new ApiRequestError(message, {
+      return new ApiRequestError(message, {
         status: statusCode.toString(),
         requestOptions: requestOptionsWithoutSensitiveData,
         requestOptionsToSanitize: this.requestOptionsToSanitize,
@@ -641,6 +649,8 @@ export class PolarityRequest {
         }
       });
     }
+
+    return undefined;
   }
 
   /**
