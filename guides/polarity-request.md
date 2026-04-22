@@ -8,36 +8,37 @@ The Polarity Integration Utils library provides a set of utilities to help you b
 
 # Setup
 
-To start, you will need to `require` the `PolarityRequest` class at the top of your `integration.js` file.
+To start, import the `PolarityRequest` class at the top of your integration file.
 
-```
-const { PolarityRequest } = require('polarity-integration-utils/requests');
+```typescript
+import { PolarityRequest } from 'polarity-integration-utils/requests';
 ```
 
 Typically, you will want to create a single instance of the `PolarityRequest` class and use that instance for all of your requests.  You can do this by creating a new instance in the `startup` method of your integration.
 
-```js
-let request;
+```typescript
+import type { Logger } from '@polarityio/integration-types';
+import { setLogger } from 'polarity-integration-utils/logging';
 
-function startup(logger){
+let request: PolarityRequest;
+
+function startup(logger: Logger): void {
   setLogger(logger);
   request = new PolarityRequest();
 }
 ```
 
-You now have access to the `request` object throughout the `integration.js` file.
+You now have access to the `request` object throughout your integration file.
 
-Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.  You can include the `setLogger` method by requiring it like this: 
-
-```js
-const { setLogger } = require('polarity-integration-utils/logging');
-```
+Note the use of {@link setLogger} here from the logging utilities module.  Setting the logger within your `startup` method is important as it will ensure that all logging from the `PolarityRequest` class is properly logged to the integration's log file.
 
 Within your `doLookup` method you will want to set the `userOptions` property on the `request` instance.  This will ensure that the `userOptions` are passed along with each request.  This step should be done before any requests are made.  
 
-```js
-async function doLookup(entities, options, cb) {
-    request.userOptions = options;
+```typescript
+import type { Entity, DoLookupUserOptions, DoLookupCallback } from '@polarityio/integration-types';
+
+async function doLookup(entities: Entity[], options: DoLookupUserOptions, cb: DoLookupCallback): Promise<void> {
+  request.userOptions = options;
 }
 ```
 
@@ -53,9 +54,9 @@ The {@link PolarityRequest.run} method runs a single HTTP request based on the p
 
 As an example, to make a request to the GitHub API you could do the following:
 
-```js
+```typescript
 const response = await request.run({
-    url: 'https://api.github.com/users/octocat',
+  url: 'https://api.github.com/users/octocat'
 });
 ```
 
@@ -65,15 +66,17 @@ the response body is not JSON, you can set the `json` property on the `HttpReque
 The HTTP request is considered successful if any 2xx status code is returned.  In the event a non-2xx status code is returned, the `run` method will throw an {@link ApiRequestError} that you should catch and handle appropriately.  
 In the event of a network error (e.g., DNS lookup failure, connection timeout, etc.), the `run` method will throw a {@link NetworkError}.
 
-```js
+```typescript
+import { ApiRequestError, NetworkError } from 'polarity-integration-utils/errors';
+
 try {
   const response = await request.run({
-    url: 'https://api.github.com/users/octocat',
+    url: 'https://api.github.com/users/octocat'
   });
 } catch (error) {
-  if(error instanceof ApiRequestError) {
+  if (error instanceof ApiRequestError) {
     // handle API request error
-  } else if(error instanceof NetworkError) {
+  } else if (error instanceof NetworkError) {
     // handle network errors
   } else {
     // handle other errors
@@ -89,28 +92,28 @@ The `runInParallel` method will return an array of {@link HttpRequestResponse} o
 
 A typical pattern for running multiple requests in parallel is to create an array of requests and then passing those into the `runInParallel` method.
 
-```javascript
-const users = ['octocat', 'polarityio', 'threatconnect-inc'];
+```typescript
+import type { HttpRequestOptions } from 'polarity-integration-utils/requests';
 
-const requests = users.map(user => {
-  return {
-    url: `https://api.github.com/users/${user}`,
-  }
-})
+const users: string[] = ['octocat', 'polarityio', 'threatconnect-inc'];
+
+const requests: HttpRequestOptions[] = users.map((user) => ({
+  url: `https://api.github.com/users/${user}`
+}));
 
 try {
-  const responses = await requestInParallel({
+  const responses = await request.runInParallel({
     allRequestOptions: requests
   });
-  
-  responses.forEach(response => {
+
+  for (const response of responses) {
     const body = response.body;
     // Process response as needed
-  });
-} catch(error){
-  if(error instanceof ApiRequestError) {
+  }
+} catch (error) {
+  if (error instanceof ApiRequestError) {
     // handle API request error
-  } else if(error instanceof NetworkError) {
+  } else if (error instanceof NetworkError) {
     // handle network errors
   } else {
     // handle other errors
@@ -127,7 +130,7 @@ By default, the PolarityRequest class will consider any 2xx status code as a suc
 
 For example, if you also wanted to treat 400 responses as successful (i.e., not throw an {@link ApiRequestError}), you could do the following:
 
-```js
+```typescript
 const request = new PolarityRequest({
   // Treat 2xx and 4xx status codes as "successful" (i.e., do not throw an ApiRequestError)
   roundedSuccessStatusCodes: [200, 400]
@@ -151,7 +154,7 @@ Some APIs always return a 200 HTTP Status Code and represent a failure in the re
 
 You could configure the `PolarityRequest` instance to throw an error if the `result.error.code` property is present in the response body like this:
 
-```js
+```typescript
 const request = new PolarityRequest({
   httpResponseErrorProperties: ['result.error.code']
 });
@@ -178,10 +181,10 @@ For example, if the response payload is like this:
 
 You can configure the `PolarityRequest` instance to throw an error with the message "This is a useful error message" like this:
 
-```js
+```typescript
 const request = new PolarityRequest({
   httpResponseErrorMessageProperties: ['result.error.message']
-})
+});
 ```
 
 When an error is encountered, the PolarityRequest instance will look for an error message in the response body using the specified path.  If the path is not found, or the value at the path is not a string, the default error message will be used.  If more than one path is provided, the first path that contains a string will be used. 
@@ -194,14 +197,23 @@ If you need full control over error detection you can implement the `isApiError`
 
 When `isApiError` is provided, the `roundedSuccessStatusCodes` and `httpResponseErrorProperties` options are not used for error detection.  If `isApiError` returns `{ isApiError: true }` without a `message`, the `httpResponseErrorMessageProperties` and `httpResponseErrorProperties` options may still be used to derive a default error message.
 
-```js
-const request = new PolarityRequest({
-  isApiError: (httpResponse, requestOptions, userOptions) => {
-    if (httpResponse.body?.status === 'error') {
-      return { isApiError: true, message: httpResponse.body.message };
-    }
-    return { isApiError: false };
+```typescript
+import type { HttpRequestResponse, HttpRequestOptions, IsApiErrorResult } from 'polarity-integration-utils/requests';
+import type { DoLookupUserOptions } from '@polarityio/integration-types';
+
+function checkForApiError(
+  httpResponse: HttpRequestResponse,
+  requestOptions: HttpRequestOptions,
+  userOptions: DoLookupUserOptions
+): IsApiErrorResult {
+  if (httpResponse.body?.status === 'error') {
+    return { isApiError: true, message: httpResponse.body.message };
   }
+  return { isApiError: false };
+}
+
+const request = new PolarityRequest({
+  isApiError: checkForApiError
 });
 ```
 
@@ -218,8 +230,10 @@ There are four hook types:
 
 ## Adding Authentication with `beforeRequest`
 
-```js
-async function addAuthentication(requestOptions, userOptions) {
+```typescript
+import type { BeforeRequestHook } from 'polarity-integration-utils/requests';
+
+const addAuthentication: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
     ...requestOptions,
     headers: {
@@ -227,7 +241,7 @@ async function addAuthentication(requestOptions, userOptions) {
       Authorization: `Bearer ${userOptions.apiKey}`
     }
   };
-}
+};
 
 const request = new PolarityRequest({
   hooks: {
@@ -238,13 +252,15 @@ const request = new PolarityRequest({
 
 ## Extracting Response Data with `afterResponse`
 
-```js
-async function extractData(response, requestOptions, userOptions) {
+```typescript
+import type { AfterResponseHook } from 'polarity-integration-utils/requests';
+
+const extractData: AfterResponseHook = async (response, requestOptions, userOptions) => {
   return {
     ...response,
     body: response.body?.data
   };
-}
+};
 
 const request = new PolarityRequest({
   hooks: {
@@ -257,15 +273,17 @@ const request = new PolarityRequest({
 
 The `onApiError` hook gives you access to both the error and the original HTTP response, making it easy to inspect status codes, headers, and the response body.
 
-```js
-async function suppressNotFound(error, response, requestOptions, userOptions) {
+```typescript
+import type { OnApiErrorHook } from 'polarity-integration-utils/requests';
+
+const suppressNotFound: OnApiErrorHook = async (error, response, requestOptions, userOptions) => {
   if (response.statusCode === 404) {
     // Suppress 404 errors — they're expected for missing resources
     return;
   }
   // Re-throw all other errors
   throw error;
-}
+};
 
 const request = new PolarityRequest({
   hooks: {
@@ -276,12 +294,14 @@ const request = new PolarityRequest({
 
 ## Handling Network Errors with `onNetworkError`
 
-```js
-async function logNetworkError(error, requestOptions, userOptions) {
+```typescript
+import type { OnNetworkErrorHook } from 'polarity-integration-utils/requests';
+
+const logNetworkError: OnNetworkErrorHook = async (error, requestOptions, userOptions) => {
   logger.error({ err: error }, 'Network error occurred');
   // Re-throw so the caller knows about the failure
   throw error;
-}
+};
 
 const request = new PolarityRequest({
   hooks: {
@@ -294,20 +314,22 @@ const request = new PolarityRequest({
 
 Hooks execute in array order. For `beforeRequest` and `afterResponse`, each hook receives the output of the previous hook:
 
-```js
-async function addAuth(requestOptions, userOptions) {
+```typescript
+import type { BeforeRequestHook } from 'polarity-integration-utils/requests';
+
+const addAuth: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
     ...requestOptions,
     headers: { ...requestOptions.headers, Authorization: `Bearer ${userOptions.apiKey}` }
   };
-}
+};
 
-async function addTrackingHeader(requestOptions, userOptions) {
+const addTrackingHeader: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
     ...requestOptions,
     headers: { ...requestOptions.headers, 'X-Request-Source': 'polarity' }
   };
-}
+};
 
 const request = new PolarityRequest({
   hooks: {
