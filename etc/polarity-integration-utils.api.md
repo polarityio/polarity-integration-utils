@@ -285,7 +285,7 @@ export class PolarityRequest {
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
-    run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse> | never;
+    run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse | undefined> | never;
     runInParallel(options: RunInParallelOptions): Promise<HttpRequestResponse[]>;
     // (undocumented)
     get throttlingOptions(): Bottleneck.ConstructorOptions;

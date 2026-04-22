@@ -492,7 +492,7 @@ export class PolarityRequest {
    */
   public async run(
     requestOptions: HttpRequestOptions
-  ): Promise<HttpRequestResponse> | never {
+  ): Promise<HttpRequestResponse | undefined> | never {
     if (!this.userOptions) {
       throw new LibraryUsageError(
         'PolarityRequest property `userOptions` must be set before calling `run` method'
@@ -502,7 +502,13 @@ export class PolarityRequest {
     // Run beforeRequest hooks — each receives previous hook's output
     let processedOptions: HttpRequestOptions = { ...requestOptions };
     for (const hook of this.hooks.beforeRequest) {
-      processedOptions = await hook(processedOptions, this.userOptions);
+      const hookResult = await hook(processedOptions, this.userOptions);
+      if (!hookResult || typeof hookResult !== 'object') {
+        throw new LibraryUsageError(
+          'Each `beforeRequest` hook must return an `HttpRequestOptions` object.'
+        );
+      }
+      processedOptions = hookResult;
     }
 
     let httpResponse: HttpRequestResponse;
@@ -569,7 +575,13 @@ export class PolarityRequest {
     // Run afterResponse hooks — each receives previous hook's output
     let result = httpResponse;
     for (const hook of this.hooks.afterResponse) {
-      result = await hook(result, processedOptions, this.userOptions);
+      const hookResult = await hook(result, processedOptions, this.userOptions);
+      if (!hookResult || typeof hookResult !== 'object') {
+        throw new LibraryUsageError(
+          'Each `afterResponse` hook must return an `HttpRequestResponse` object.'
+        );
+      }
+      result = hookResult;
     }
 
     return result;
@@ -772,12 +784,14 @@ export class PolarityRequest {
       return async () => {
         try {
           const response = await this.run(requestOptions);
-          if (requestOptions.entity) {
-            response.entity = requestOptions.entity;
-          } else if (requestOptions.entities) {
-            response.entities = requestOptions.entities;
-          } else if (requestOptions.requestId) {
-            response.requestId = requestOptions.requestId;
+          if (response) {
+            if (requestOptions.entity) {
+              response.entity = requestOptions.entity;
+            } else if (requestOptions.entities) {
+              response.entities = requestOptions.entities;
+            } else if (requestOptions.requestId) {
+              response.requestId = requestOptions.requestId;
+            }
           }
           return response;
         } catch (requestError) {

@@ -924,7 +924,8 @@ describe('PolarityRequest', () => {
       });
       requestWithHook.userOptions = userOptionsExternal;
 
-      await expect(requestWithHook.run(requestOptionsExternal)).resolves.not.toThrow();
+      const result = await requestWithHook.run(requestOptionsExternal);
+      expect(result).toBeUndefined();
     });
 
     it('should call `onApiError` hooks with error and response when API error detected', async () => {
@@ -1063,6 +1064,42 @@ describe('PolarityRequest', () => {
         body: { name: 'test', extra: 'field' },
         processedAt: 'now'
       });
+    });
+
+    it('should throw LibraryUsageError if `beforeRequest` hook returns undefined', async () => {
+      expect.assertions(2);
+
+      const request = new PolarityRequest({
+        hooks: {
+          beforeRequest: [async () => undefined as never]
+        }
+      });
+      request.userOptions = { customOption: true };
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+        expect(error.message).toContain('beforeRequest');
+      }
+    });
+
+    it('should throw LibraryUsageError if `afterResponse` hook returns undefined', async () => {
+      expect.assertions(2);
+
+      const request = new PolarityRequest({
+        hooks: {
+          afterResponse: [async () => undefined as never]
+        }
+      });
+      request.userOptions = { customOption: true };
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+        expect(error.message).toContain('afterResponse');
+      }
     });
 
     it('should execute bottleneckLimiter.schedule() if throttlingOptions is set', async () => {

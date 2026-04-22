@@ -192,7 +192,7 @@ When an error is encountered, the PolarityRequest instance will look for an erro
 
 If you need full control over error detection you can implement the `isApiError` option on the `PolarityRequest` instance.  The `isApiError` function receives the full HTTP response, request options, and user options.  It should return an object with an `isApiError` boolean and an optional `message` string.
 
-When `isApiError` is provided, the `roundedSuccessStatusCodes` and `httpResponseErrorProperties` options are not used.
+When `isApiError` is provided, the `roundedSuccessStatusCodes` and `httpResponseErrorProperties` options are not used for error detection.  If `isApiError` returns `{ isApiError: true }` without a `message`, the `httpResponseErrorMessageProperties` and `httpResponseErrorProperties` options may still be used to derive a default error message.
 
 ```js
 const request = new PolarityRequest({
@@ -205,7 +205,7 @@ const request = new PolarityRequest({
 });
 ```
 
-# Hooks
+## Hooks
 
 The `PolarityRequest` class supports lifecycle hooks that allow you to customize request and response behavior. Hooks are passed via the `hooks` option when creating a `PolarityRequest` instance.
 
