@@ -337,3 +337,28 @@ const request = new PolarityRequest({
   }
 });
 ```
+
+## Rate Limiting with Bottleneck
+
+In the Polarity server, a [Bottleneck](https://github.com/SGrondin/bottleneck) limiter instance is provided to your integration via the context object. You can pass this limiter to `PolarityRequest` to throttle outgoing HTTP requests:
+
+```typescript
+import Bottleneck from 'bottleneck';
+import { PolarityRequest } from 'polarity-integration-utils/requests';
+
+// The limiter is provided by the Polarity server via the integration context
+const limiter: Bottleneck = context.limiter;
+
+const request = new PolarityRequest({ limiter });
+```
+
+You can also set the limiter as a mutable property after construction:
+
+```typescript
+const request = new PolarityRequest();
+
+// Set the limiter later when it becomes available
+request.limiter = context.limiter;
+```
+
+When a limiter is set, all HTTP requests made via `run()` are scheduled through `limiter.schedule()`. If the limiter rejects a request (e.g., due to a `highWater` limit), a `RetryRequestError` is thrown so the Polarity server knows to retry later.

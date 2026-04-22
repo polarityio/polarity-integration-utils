@@ -282,14 +282,12 @@ export class PolarityRequest {
     readonly httpResponseErrorMessageProperties: string[];
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
+    limiter: Bottleneck | null;
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
     run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse | undefined> | never;
     runInParallel(options: RunInParallelOptions): Promise<HttpRequestResponse[]>;
-    // (undocumented)
-    get throttlingOptions(): Bottleneck.ConstructorOptions;
-    set throttlingOptions(throttlingOptions: Bottleneck.ConstructorOptions);
     // (undocumented)
     userOptions: DoLookupUserOptions;
 }
@@ -315,11 +313,11 @@ export interface PolarityRequestOptions {
     // (undocumented)
     isApiError?: IsApiErrorFunction;
     // (undocumented)
+    limiter?: Bottleneck;
+    // (undocumented)
     requestOptionsToSanitize?: string[];
     // (undocumented)
     roundedSuccessStatusCodes?: number[];
-    // (undocumented)
-    throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
 // @public

@@ -135,7 +135,7 @@ describe('PolarityRequest', () => {
       expect(request.httpResponseErrorMessageProperties).toEqual([]);
       expect(request.isApiError).toEqual(null);
       expect(request.userOptions).toEqual(null);
-      expect(request.throttlingOptions).toEqual(undefined);
+      expect(request.limiter).toEqual(null);
       expect(request.hooks).toEqual({
         beforeRequest: [],
         afterResponse: [],
@@ -197,13 +197,11 @@ describe('PolarityRequest', () => {
       expect(request.userOptions).toEqual(userOptions);
     });
 
-    it('should create a PolarityRequest object with `throttlingOptions` set', () => {
+    it('should create a PolarityRequest object with `limiter` set via constructor', () => {
       expect.assertions(1);
-      const throttlingOptions = { maxRequestsPerSecond: 5 };
-      const request = new PolarityRequest({
-        throttlingOptions
-      });
-      expect(request.throttlingOptions).toEqual(throttlingOptions);
+      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const request = new PolarityRequest({ limiter });
+      expect(request.limiter).toBe(limiter);
     });
 
     it('should create a PolarityRequest object with `hooks` set via constructor', () => {
@@ -1102,7 +1100,7 @@ describe('PolarityRequest', () => {
       }
     });
 
-    it('should execute bottleneckLimiter.schedule() if throttlingOptions is set', async () => {
+    it('should execute limiter.schedule() if limiter is set', async () => {
       expect.assertions(1);
       const body = { message: 'Request Ran' };
       const response = {
@@ -1116,24 +1114,19 @@ describe('PolarityRequest', () => {
         }
       );
 
-      const request = new PolarityRequest({
-        throttlingOptions: {
-          maxRequestsPerSecond: 5
-        }
-      });
+      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const request = new PolarityRequest({ limiter });
 
       const spy = jest
-        // @ts-expect-error using spyOn to mock a private method
-        .spyOn(request.bottleneckLimiter, 'schedule')
+        .spyOn(limiter, 'schedule')
         .mockImplementation(
-          (
-            requestWithDefaults: (
+          ((...args: unknown[]) => {
+            const requestWithDefaults = args[0] as (
               requestOptions: HttpRequestOptions
-            ) => Promise<HttpRequestResponse>,
-            requestOptions: HttpRequestOptions
-          ) => {
+            ) => Promise<HttpRequestResponse>;
+            const requestOptions = args[1] as HttpRequestOptions;
             return requestWithDefaults(requestOptions);
-          }
+          }) as never
         );
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
@@ -1143,32 +1136,23 @@ describe('PolarityRequest', () => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
-    it('should catch Bottleneck.BottleneckError and throw a RetryRequestError if throttlingOptions is set', async () => {
+    it('should catch Bottleneck.BottleneckError and throw a RetryRequestError if limiter is set', async () => {
       expect.assertions(2);
-      const body = { message: 'Request Ran' };
-      const response = {
-        statusCode: 200,
-        body
-      };
 
       postmanRequest.defaults.mockImplementation(
         () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
-          cb(null, response, body);
+          cb(null, { statusCode: 200, body: {} }, {});
         }
       );
 
-      const request = new PolarityRequest({
-        throttlingOptions: {
-          maxRequestsPerSecond: 5
-        }
-      });
+      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      const request = new PolarityRequest({ limiter });
 
       const spy = jest
-        // @ts-expect-error using spyOn to mock a private method
-        .spyOn(request.bottleneckLimiter, 'schedule')
-        .mockImplementation(() => {
+        .spyOn(limiter, 'schedule')
+        .mockImplementation((() => {
           throw new Bottleneck.BottleneckError('Bottleneck Error');
-        });
+        }) as never);
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
       request.userOptions = userOptionsExternal;
@@ -1179,6 +1163,38 @@ describe('PolarityRequest', () => {
         expect(requestError instanceof RetryRequestError).toBeTruthy();
       }
 
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow setting limiter as a mutable property after construction', async () => {
+      expect.assertions(1);
+      const body = { message: 'Request Ran' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest();
+      const limiter = new Bottleneck({ maxConcurrent: 5, minTime: 200 });
+      request.limiter = limiter;
+
+      const spy = jest
+        .spyOn(limiter, 'schedule')
+        .mockImplementation(
+          ((...args: unknown[]) => {
+            const requestWithDefaults = args[0] as (
+              requestOptions: HttpRequestOptions
+            ) => Promise<HttpRequestResponse>;
+            const requestOptions = args[1] as HttpRequestOptions;
+            return requestWithDefaults(requestOptions);
+          }) as never
+        );
+      request.userOptions = { customOption: true };
+
+      await request.run({ url: 'http://example.com' });
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });
@@ -1224,41 +1240,6 @@ describe('PolarityRequest', () => {
         expect(error).toBe(libError);
         expect(error instanceof LibraryUsageError).toBeTruthy();
       }
-    });
-  });
-
-  describe('throttlingOptions setter', () => {
-    it('should create a new Bottleneck limiter when throttlingOptions are changed', () => {
-      const request = new PolarityRequest({
-        throttlingOptions: { maxRequestsPerSecond: 5 }
-      });
-
-      const firstLimiter = (request as unknown as { bottleneckLimiter: unknown })
-        .bottleneckLimiter;
-
-      request.throttlingOptions = { maxRequestsPerSecond: 10 };
-
-      const secondLimiter = (request as unknown as { bottleneckLimiter: unknown })
-        .bottleneckLimiter;
-
-      expect(firstLimiter).not.toBe(secondLimiter);
-    });
-
-    it('should NOT create a new Bottleneck limiter when throttlingOptions are unchanged', () => {
-      const request = new PolarityRequest({
-        throttlingOptions: { maxRequestsPerSecond: 5 }
-      });
-
-      const firstLimiter = (request as unknown as { bottleneckLimiter: unknown })
-        .bottleneckLimiter;
-
-      // Re-assign identical throttling options
-      request.throttlingOptions = { maxRequestsPerSecond: 5 };
-
-      const secondLimiter = (request as unknown as { bottleneckLimiter: unknown })
-        .bottleneckLimiter;
-
-      expect(firstLimiter).toBe(secondLimiter);
     });
   });
 

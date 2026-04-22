@@ -3,7 +3,6 @@ import { promisify } from 'util';
 import Bottleneck from 'bottleneck';
 import request from 'postman-request';
 import { parallelLimit } from '../internal/helpers/parallel-limit';
-import { isDeepStrictEqual } from 'node:util';
 import get from 'lodash/get.js';
 import has from 'lodash/has.js';
 import {
@@ -308,7 +307,7 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToSanitize?: string[];
   hooks?: PolarityRequestHooks;
-  throttlingOptions?: Bottleneck.ConstructorOptions;
+  limiter?: Bottleneck;
 }
 
 /**
@@ -316,12 +315,10 @@ export interface PolarityRequestOptions {
  * @public
  */
 export class PolarityRequest {
-  private bottleneckLimiter;
   /**
    * Instance of a Bunyan logger
    */
   private logger;
-  private internalThrottlingOptions: Bottleneck.ConstructorOptions;
   /**
    * postman-request library request object with default values set.  Used internally for
    * making HTTP requests directly via the postman-request library
@@ -375,6 +372,14 @@ export class PolarityRequest {
   public userOptions: DoLookupUserOptions = null;
 
   /**
+   * An optional Bottleneck limiter instance used to throttle HTTP requests.
+   * When set, all requests made via {@link PolarityRequest.run} are scheduled
+   * through this limiter. Typically provided by the Polarity server via the
+   * integration context.
+   */
+  public limiter: Bottleneck | null = null;
+
+  /**
    * Lifecycle hooks for customizing request behavior. Hooks are configured via the
    * {@link PolarityRequestOptions.hooks} property when creating a new instance of the
    * {@link PolarityRequest} class.
@@ -387,32 +392,6 @@ export class PolarityRequest {
     onApiError: [],
     onNetworkError: []
   };
-
-  public get throttlingOptions(): Bottleneck.ConstructorOptions {
-    return this.internalThrottlingOptions;
-  }
-
-  // REVIEW: Do we want to tie our throttling specifically to Bottleneck or do we want to make
-  // it more generic and independent of Bottleneck?
-  public set throttlingOptions(throttlingOptions: Bottleneck.ConstructorOptions) {
-    if (isDeepStrictEqual(this.internalThrottlingOptions, throttlingOptions)) return;
-
-    this.bottleneckLimiter = new Bottleneck({
-      ...throttlingOptions,
-      maxConcurrent:
-        typeof throttlingOptions.maxConcurrent === 'string'
-          ? Number.parseInt(throttlingOptions.maxConcurrent, 10)
-          : throttlingOptions.maxConcurrent,
-      minTime:
-        typeof throttlingOptions.minTime === 'string'
-          ? Number.parseInt(throttlingOptions.minTime, 10)
-          : throttlingOptions.minTime,
-      highWater: throttlingOptions.highWater || 50,
-      strategy: throttlingOptions.strategy || Bottleneck.strategy.OVERFLOW
-    });
-
-    this.internalThrottlingOptions = throttlingOptions;
-  }
 
   constructor(options: PolarityRequestOptions = {}) {
     const defaults = options.defaults || {};
@@ -464,8 +443,8 @@ export class PolarityRequest {
       if (h.onNetworkError) this.hooks.onNetworkError = h.onNetworkError;
     }
 
-    if (options.throttlingOptions) {
-      this.throttlingOptions = options.throttlingOptions;
+    if (options.limiter) {
+      this.limiter = options.limiter;
     }
 
     const defaultRequestOptions = {
@@ -514,8 +493,8 @@ export class PolarityRequest {
     let httpResponse: HttpRequestResponse;
 
     try {
-      httpResponse = await (this.bottleneckLimiter
-        ? this.bottleneckLimiter.schedule(
+      httpResponse = await (this.limiter
+        ? this.limiter.schedule(
             this.requestWithDefaults,
             processedOptions
           )
@@ -553,7 +532,7 @@ export class PolarityRequest {
       throw transformedError;
     }
 
-    if (this.bottleneckLimiter) {
+    if (this.limiter) {
       this.logger.trace({ httpResponse }, 'HTTP Response via Bottleneck');
     } else {
       this.logger.trace({ httpResponse }, 'HTTP Response');
