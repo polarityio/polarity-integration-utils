@@ -1,4 +1,4 @@
-import { Entity, EntityType } from '../../types';
+import type { Entity, EntityType } from '@polarityio/integration-types';
 
 export const createEntity = (type: EntityType, value: string): Entity => {
   const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(
@@ -8,8 +8,9 @@ export const createEntity = (type: EntityType, value: string): Entity => {
 
   return {
     value,
+    rawValue: value,
     displayValue: value,
-    type,
+    type: type as Entity['type'],
     types: [type],
     isDomain,
     isIPv4,
@@ -27,11 +28,12 @@ export const createEntity = (type: EntityType, value: string): Entity => {
     isURL: false,
     latitude: 0,
     longitude: 0,
+    IPLong: 0,
     hashType: '',
     IPType: isIPv4 ? 'IPv4' : '',
     channels: [],
     requestContext: {
-      requestType: 'onDemand',
+      requestType: 'OnDemand',
       isUserInitiated: true
     }
   };

@@ -1,4 +1,7 @@
 import fs from 'fs';
+import type { Logger } from '@polarityio/integration-types';
+
+export type { Logger } from '@polarityio/integration-types';
 
 const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'];
 
@@ -16,22 +19,9 @@ const defaultLogger = loggingLevels.reduce<Record<string, (...args: unknown[]) =
     [level]: writeToDevRunnerResults(level)
   }),
   {}
-) as Logger;
+) as unknown as Logger;
 
 let _logger: Logger = defaultLogger;
-
-/**
- * @public
- */
-export type Logger = {
-  child?(arg: unknown): Logger;
-  info(...args: unknown[]): void;
-  debug(...args: unknown[]): void;
-  trace(...args: unknown[]): void;
-  warn(...args: unknown[]): void;
-  error(...args: unknown[]): void;
-  fatal(...args: unknown[]): void;
-};
 
 /**
  * Set the logger object used by the integration.

@@ -47,11 +47,13 @@ jest.mock('fs', () => ({
 
 const entity: Entity = {
   value: '8.8.8.8',
+  rawValue: '8.8.8.8',
   types: ['IP', 'IPv4'],
-  type: 'IP',
-  requestContext: { requestType: 'onDemand', isUserInitiated: true },
+  type: 'IPv4',
+  requestContext: { requestType: 'OnDemand', isUserInitiated: true },
   longitude: 0,
   latitude: 0,
+  IPLong: 0,
   isURL: false,
   isSHA512: false,
   isSHA256: false,
@@ -74,11 +76,13 @@ const entity: Entity = {
 
 const entityDomain: Entity = {
   value: 'google.com',
+  rawValue: 'google.com',
   types: ['domain'],
   type: 'domain',
-  requestContext: { requestType: 'onDemand', isUserInitiated: true },
+  requestContext: { requestType: 'OnDemand', isUserInitiated: true },
   longitude: 0,
   latitude: 0,
+  IPLong: 0,
   isURL: false,
   isSHA512: false,
   isSHA256: false,

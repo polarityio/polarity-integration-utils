@@ -103,10 +103,10 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
+    "@polarityio/integration-types": "file:../polarity-integration-types",
     "bottleneck": "^2.19.5",
     "lodash": "^4.18.1",
-    "postman-request": "^2.88.1-postman.48",
-    "zod": "^4.3.6"
+    "postman-request": "^2.88.1-postman.48"
   },
   "sideEffects": false
 }

@@ -1,13 +1,14 @@
-import { getLogger, setLogger } from '../../lib/logging/logger';
+import { getLogger, setLogger, type Logger } from '../../lib/logging/logger';
 
 const loggingFunctions = {
+  child: () => loggingFunctions,
   info: () => 1,
   debug: () => 2,
   trace: () => 3,
   warn: () => 4,
   error: () => 5,
   fatal: () => 6
-};
+} as unknown as Logger;
 
 describe('getLogger', () => {
   it('should have default logging functions', () => {

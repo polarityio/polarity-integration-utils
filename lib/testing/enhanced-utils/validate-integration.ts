@@ -1,7 +1,5 @@
-import { Integration, IntegrationContext, IntegrationConfig } from '../../types';
-import { IntegrationConfigSchema } from '../../zod-types';
+import { Integration, IntegrationConfig, IntegrationContext } from '../../types';
 import { createMockIntegrationContext } from './create-mock-integration-context';
-import z from 'zod';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -29,15 +27,6 @@ export const validateIntegration = (
 
   // Check exported integration object structure (e.g. if it's wrapped in an 'integration' property)
   checkIntegrationObject(integration, result);
-
-  if (config) {
-    const configResult = IntegrationConfigSchema.safeParse(config);
-    if (!configResult.success) {
-      result.errors.push(
-        `Invalid config.json: ${JSON.stringify(z.treeifyError(configResult.error), null, 2)}`
-      );
-    }
-  }
 
   result.isValid = result.errors.length === 0;
 
@@ -88,13 +77,14 @@ function checkOnMessageFunction(integration: Integration, result: ValidationResu
 
 function validateFunctionSignatures(integration: Integration, result: ValidationResult) {
   const mockLogger = {
+    child: () => mockLogger,
     info: () => {},
     debug: () => {},
     warn: () => {},
     error: () => {},
     trace: () => {},
     fatal: () => {}
-  };
+  } as unknown as Parameters<Integration['startup']>[0];
 
   const mockContext: IntegrationContext = createMockIntegrationContext();
 
