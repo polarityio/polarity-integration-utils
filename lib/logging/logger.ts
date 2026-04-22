@@ -1,8 +1,6 @@
 import fs from 'fs';
 import type { Logger } from '@polarityio/integration-types';
 
-export type { Logger } from '@polarityio/integration-types';
-
 const createLogMethod =
   (loggingLevel: string) =>
   (...content: unknown[]) => {

@@ -6,7 +6,7 @@ import type {
   IntegrationContext,
   ValidateOptionsUserOptions,
   ValidationError
-} from '../../lib/types';
+} from '@polarityio/integration-types';
 
 export const startup = async (logger: Logger) => {
   logger.info('starting up');
