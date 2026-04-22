@@ -152,16 +152,14 @@ Test how your integration handles various error conditions.
 import { IntegrationError } from 'polarity-integration-utils';
 
 describe('Error Handling', () => {
-  test('should return IntegrationError on API failure', async () => {
+  test('should throw IntegrationError on API failure', async () => {
     const entities = [createEntity('domain', 'error.com')];
     const options = { apiKey: 'invalid-key' };
     const context = createMockIntegrationContext();
 
-    const result = await integration.doLookup(entities, options, context);
-
-    expect(result).toBeInstanceOf(IntegrationError);
-    // OR if your integration throws:
-    // await expect(integration.doLookup(entities, options, context)).rejects.toThrow();
+    await expect(
+      integration.doLookup(entities, options, context)
+    ).rejects.toThrow(IntegrationError);
   });
 });
 ```
@@ -171,17 +169,35 @@ describe('Error Handling', () => {
 Test option validation logic.
 
 ```typescript
+import type { ValidateOptionsUserOptions } from 'polarity-integration-utils';
+
 describe('validateOptions', () => {
   const context = createMockIntegrationContext();
 
   test('should pass valid options', () => {
-    const options = { apiKey: 'valid-key' };
+    const options: ValidateOptionsUserOptions = {
+      apiKey: {
+        key: 'apiKey',
+        value: 'valid-key',
+        integration_id: 'test-integration',
+        user_can_edit: true,
+        admin_only: false
+      }
+    };
     const errors = integration.validateOptions(options, context);
     expect(errors).toHaveLength(0);
   });
 
   test('should fail missing required options', () => {
-    const options = {};
+    const options: ValidateOptionsUserOptions = {
+      apiKey: {
+        key: 'apiKey',
+        value: '',
+        integration_id: 'test-integration',
+        user_can_edit: true,
+        admin_only: false
+      }
+    };
     const errors = integration.validateOptions(options, context);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].key).toBe('apiKey');
@@ -267,7 +283,7 @@ Creates a fully formed `Entity` object for testing.
 Creates a mock `IntegrationContext` object with mocked logger and cache.
 
 - `context.logger`: Jest mocks for all log levels.
-- `context.cache`: Jest mocks for `get`, `set`, `has`, `delete`.
+- `context.cache`: Jest mocks for `get`, `set`, `delete`.
 
 ### `mockRequest()`
 
