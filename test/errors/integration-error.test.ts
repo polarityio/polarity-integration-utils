@@ -228,6 +228,23 @@ describe('IntegrationError', () => {
     expect(serializedError).toEqual(expectedSerialization);
   });
 
+  it('should set `help` property when provided', () => {
+    const intError = new IntegrationError('detail message', {
+      help: 'Try checking the API key in the integration settings.'
+    });
+
+    expect(intError).toHaveProperty('help', 'Try checking the API key in the integration settings.');
+  });
+
+  it('should serialize `help` property in toJSON', () => {
+    const intError = new IntegrationError('detail message', {
+      help: 'See the documentation for more info.'
+    });
+
+    const json = intError.toJSON();
+    expect(json).toHaveProperty('help', 'See the documentation for more info.');
+  });
+
   it('toJSON omits optional fields when they are not set', () => {
     const err = new IntegrationError('plain message');
     

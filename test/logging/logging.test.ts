@@ -37,6 +37,34 @@ describe('getLogger', () => {
   });  
 });
 
+describe('default logger child()', () => {
+  it('should return the same logger instance from child()', () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getLogger } = require('../../lib/logging/logger');
+      const logger = getLogger();
+      const childLogger = logger.child({ module: 'test' });
+      expect(childLogger).toBe(logger);
+    });
+  });
+});
+
+describe('default logger no-args behaviour', () => {
+  it('should return true when log method is called with no arguments', () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getLogger } = require('../../lib/logging/logger');
+      const logger = getLogger();
+      expect(logger.info()).toBe(true);
+      expect(logger.debug()).toBe(true);
+      expect(logger.trace()).toBe(true);
+      expect(logger.warn()).toBe(true);
+      expect(logger.error()).toBe(true);
+      expect(logger.fatal()).toBe(true);
+    });
+  });
+});
+
 const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'] as const;
 
 describe('getLogger default behaviour (no setLogger)', () => {

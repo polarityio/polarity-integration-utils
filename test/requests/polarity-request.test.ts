@@ -1146,6 +1146,50 @@ describe('PolarityRequest', () => {
     });
   });
 
+  describe('Constructor logger fallback', () => {
+    it('should use getLogger() directly when logger has no child() method', () => {
+      const loggerWithoutChild = {
+        trace: jest.fn(),
+        info: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn(),
+        fatal: jest.fn(),
+        warn: jest.fn()
+      };
+      setLogger(loggerWithoutChild as never);
+      const request = new PolarityRequest();
+      // The logger should be the same reference since child() doesn't exist
+      expect(
+        (request as unknown as { logger: unknown }).logger
+      ).toBe(loggerWithoutChild);
+      // Restore normal logger for other tests
+      setLogger(identityLogger);
+    });
+  });
+
+  describe('run() error handling', () => {
+    it('should rethrow LibraryUsageError from requestWithDefaults without wrapping', async () => {
+      expect.assertions(2);
+      const libError = new LibraryUsageError('Bad usage in request');
+
+      postmanRequest.defaults.mockImplementation(
+        () => () => {
+          throw libError;
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error).toBe(libError);
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+      }
+    });
+  });
+
   describe('throttlingOptions setter', () => {
     it('should create a new Bottleneck limiter when throttlingOptions are changed', () => {
       const request = new PolarityRequest({
@@ -1478,6 +1522,55 @@ describe('PolarityRequest', () => {
       );
       expect(results[0].body).toEqual(bodyIp);
       expect(results[1].body).toEqual(bodyDomain);
+    });
+
+    it('should attach `entities` array to response when provided on requestOptions', async () => {
+      expect.assertions(2);
+      const body = { message: 'Bulk Lookup' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+
+      const entitiesList = [entity, entityDomain];
+      const results = await request.runInParallel({
+        allRequestOptions: [
+          { url: 'http://example.com/bulk', entities: entitiesList }
+        ]
+      });
+
+      expect(results.length).toEqual(1);
+      expect(results[0].entities).toBe(entitiesList);
+    });
+
+    it('should attach `requestId` to response when provided on requestOptions', async () => {
+      expect.assertions(2);
+      const body = { message: 'Identified Request' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+
+      const results = await request.runInParallel({
+        allRequestOptions: [
+          { url: 'http://example.com/req1', requestId: 'request-abc-123' }
+        ]
+      });
+
+      expect(results.length).toEqual(1);
+      expect(results[0].requestId).toBe('request-abc-123');
     });
   });
 });
