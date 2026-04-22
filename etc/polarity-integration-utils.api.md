@@ -5,7 +5,36 @@
 ```ts
 
 import Bottleneck from 'bottleneck';
-import { z } from 'zod';
+import { CacheOptions } from '@polarityio/integration-types';
+import { Channel } from '@polarityio/integration-types';
+import { CronPollSpec } from '@polarityio/integration-types';
+import { DoLookupResult } from '@polarityio/integration-types';
+import { DoLookupUserOptions } from '@polarityio/integration-types';
+import { Entity } from '@polarityio/integration-types';
+import { EntityPosition } from '@polarityio/integration-types';
+import { EntityType } from '@polarityio/integration-types';
+import { EntityTypeIdentifier } from '@polarityio/integration-types';
+import { GlobalCache } from '@polarityio/integration-types';
+import { Integration } from '@polarityio/integration-types';
+import { IntegrationCache } from '@polarityio/integration-types';
+import { IntegrationContext } from '@polarityio/integration-types';
+import { IntervalPollSpec } from '@polarityio/integration-types';
+import { Logger } from '@polarityio/integration-types';
+import { LookupResult } from '@polarityio/integration-types';
+import { OnDemandRequestContext } from '@polarityio/integration-types';
+import { PolarityCache } from '@polarityio/integration-types';
+import { Poll } from '@polarityio/integration-types';
+import { PollFunction } from '@polarityio/integration-types';
+import { PollSpec } from '@polarityio/integration-types';
+import { PossibleUserOptionValue } from '@polarityio/integration-types';
+import { RequestContext } from '@polarityio/integration-types';
+import { ScreenChangeRequestContext } from '@polarityio/integration-types';
+import { SelectTypeOptionValue } from '@polarityio/integration-types';
+import { StandardEntityType } from '@polarityio/integration-types';
+import { UserCache } from '@polarityio/integration-types';
+import { ValidateOptionsUserOption } from '@polarityio/integration-types';
+import { ValidateOptionsUserOptions } from '@polarityio/integration-types';
+import { ValidationError } from '@polarityio/integration-types';
 
 // @public
 export class ApiRequestError extends IntegrationError {
@@ -17,15 +46,9 @@ export class AuthRequestError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-// @public
-export interface CacheOptions {
-    ttl?: number;
-}
+export { CacheOptions }
 
-// Warning: (ae-forgotten-export) The symbol "ChannelSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type Channel = z.infer<typeof ChannelSchema>;
+export { Channel }
 
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
@@ -38,28 +61,19 @@ export type ConfigRequestProxyOptions = {
     json?: undefined | boolean;
 };
 
-// @public (undocumented)
-export type DoLookupResult<TDetails = unknown> = Result<TDetails>[];
+export { CronPollSpec }
 
-// Warning: (ae-forgotten-export) The symbol "DoLookupUserOptionsSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public
-export type DoLookupUserOptions = z.infer<typeof DoLookupUserOptionsSchema>;
+export { DoLookupResult }
 
-// Warning: (ae-forgotten-export) The symbol "DropdownUserOptionValueSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type DropdownUserOptionValue = z.infer<typeof DropdownUserOptionValueSchema>;
+export { DoLookupUserOptions }
 
-// Warning: (ae-forgotten-export) The symbol "EntitySchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public
-export type Entity = z.infer<typeof EntitySchema>;
+export { Entity }
 
-// Warning: (ae-forgotten-export) The symbol "EntityTypeSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public
-export type EntityType = z.infer<typeof EntityTypeSchema>;
+export { EntityPosition }
+
+export { EntityType }
+
+export { EntityTypeIdentifier }
 
 // @public (undocumented)
 interface Error_2 {
@@ -82,12 +96,7 @@ export type ErrorMeta = {
 // @public
 export const getLogger: () => Logger;
 
-// @public
-export interface GlobalCache {
-    delete(key: string): Promise<void>;
-    get(key: string): Promise<unknown>;
-    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
-}
+export { GlobalCache }
 
 // @public (undocumented)
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
@@ -146,39 +155,64 @@ export type HttpRequestResponse = {
     [key: string]: unknown;
 };
 
-// @public (undocumented)
-export interface Integration<TStartupResult = unknown, TDetails = unknown> {
-    // (undocumented)
-    doLookup: (entities: Entity[], options: DoLookupUserOptions, context: IntegrationContext) => Promise<DoLookupResult<TDetails> | IntegrationError | null | void>;
-    // (undocumented)
-    onDetails?: (lookupObject: Result<TDetails>, options: DoLookupUserOptions, context: IntegrationContext) => Promise<unknown>;
-    // (undocumented)
-    onMessage?: (payload: unknown, options: DoLookupUserOptions, context: IntegrationContext) => Promise<unknown>;
-    // (undocumented)
-    startup: (logger: Logger) => Promise<TStartupResult>;
-    // (undocumented)
-    validateOptions: (options: ValidateOptionsUserOptions, context: IntegrationContext) => IntegrationError[];
-}
+export { Integration }
+
+export { IntegrationCache }
 
 // @public
-export interface IntegrationCache {
-    delete(key: string): Promise<void>;
-    get(key: string): Promise<unknown>;
-    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
+export interface IntegrationConfig {
+    // (undocumented)
+    acronym: string;
+    // Warning: (ae-forgotten-export) The symbol "ViewComponent" needs to be exported by the entry point index.docs.d.ts
+    //
+    // (undocumented)
+    block: ViewComponent;
+    // (undocumented)
+    copyOnDemand?: boolean;
+    // (undocumented)
+    customTypes?: CustomType[];
+    // Warning: (ae-forgotten-export) The symbol "CustomType" needs to be exported by the entry point index.docs.d.ts
+    //
+    // (undocumented)
+    dataTypes?: (string | CustomType)[];
+    // (undocumented)
+    defaultColor?: string;
+    // (undocumented)
+    description?: string;
+    // (undocumented)
+    entityTypes?: string[];
+    // (undocumented)
+    logging?: {
+        level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+    };
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    onDemandOnly?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IntegrationOption" needs to be exported by the entry point index.docs.d.ts
+    //
+    // (undocumented)
+    options?: IntegrationOption[];
+    // (undocumented)
+    polarityIntegrationUuid: string;
+    // (undocumented)
+    request?: {
+        cert?: string;
+        key?: string;
+        passphrase?: string;
+        ca?: string;
+        proxy?: string;
+        rejectUnauthorized?: boolean;
+    };
+    // (undocumented)
+    styles?: string[];
+    // (undocumented)
+    summary?: ViewComponent;
+    // (undocumented)
+    supportsAdditionalCustomTypes?: boolean;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IntegrationConfigSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type IntegrationConfig = z.infer<typeof IntegrationConfigSchema>;
-
-// @public
-export interface IntegrationContext {
-    cache: PolarityCache;
-    integrationId: string;
-    logger: Logger;
-    userId?: string;
-}
+export { IntegrationContext }
 
 // @public (undocumented)
 export class IntegrationError extends Error {
@@ -206,6 +240,8 @@ export interface IntegrationErrorProperties {
     title?: string;
 }
 
+export { IntervalPollSpec }
+
 // @public (undocumented)
 export type IsApiErrorFunction = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => IsApiErrorResult;
 
@@ -220,18 +256,9 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-// @public (undocumented)
-type Logger = {
-    child?(arg: unknown): Logger;
-    info(...args: unknown[]): void;
-    debug(...args: unknown[]): void;
-    trace(...args: unknown[]): void;
-    warn(...args: unknown[]): void;
-    error(...args: unknown[]): void;
-    fatal(...args: unknown[]): void;
-};
 export { Logger }
-export { Logger as PolarityLogger }
+
+export { LookupResult }
 
 // @public (undocumented)
 export type MetaObject = {
@@ -243,15 +270,12 @@ export class NetworkError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
+export { OnDemandRequestContext }
+
 // @public (undocumented)
 export const parseErrorToReadableJson: (error: Error_2) => any;
 
-// @public
-export interface PolarityCache {
-    global: GlobalCache;
-    integration: IntegrationCache;
-    user: UserCache;
-}
+export { PolarityCache }
 
 // @public
 export class PolarityRequest {
@@ -298,10 +322,13 @@ export interface PolarityRequestOptions {
     throttlingOptions?: Bottleneck.ConstructorOptions;
 }
 
-// Warning: (ae-forgotten-export) The symbol "PossibleUserOptionValueSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type PossibleUserOptionValue = z.infer<typeof PossibleUserOptionValueSchema>;
+export { Poll }
+
+export { PollFunction }
+
+export { PollSpec }
+
+export { PossibleUserOptionValue }
 
 // @public (undocumented)
 export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
@@ -312,15 +339,7 @@ export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestO
 // @public
 export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
 
-// Warning: (ae-forgotten-export) The symbol "ResultSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type Result<TDetails = unknown> = Omit<z.infer<typeof ResultSchema>, 'data'> & {
-    data: {
-        summary: string[];
-        details: TDetails;
-    };
-};
+export { RequestContext }
 
 // @public
 export class RetryRequestError extends IntegrationError {
@@ -336,6 +355,10 @@ export type RunInParallelOptions = {
 
 // @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
+
+export { ScreenChangeRequestContext }
+
+export { SelectTypeOptionValue }
 
 // @public (undocumented)
 export interface SerializedIntegrationError {
@@ -354,32 +377,15 @@ export interface SerializedIntegrationError {
 // @public
 export const setLogger: (logger: Logger) => void;
 
-// Warning: (ae-forgotten-export) The symbol "StandardEntityTypeSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public
-export type StandardEntityType = z.infer<typeof StandardEntityTypeSchema>;
+export { StandardEntityType }
 
-// @public
-export interface UserCache {
-    delete(key: string): Promise<void>;
-    get(key: string): Promise<unknown>;
-    set(key: string, value: unknown, options?: CacheOptions): Promise<void>;
-}
+export { UserCache }
 
-// Warning: (ae-forgotten-export) The symbol "ValidateOptionsUserOptionSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type ValidateOptionsUserOption = z.infer<typeof ValidateOptionsUserOptionSchema>;
+export { ValidateOptionsUserOption }
 
-// Warning: (ae-forgotten-export) The symbol "ValidateOptionsUserOptionsSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type ValidateOptionsUserOptions = z.infer<typeof ValidateOptionsUserOptionsSchema>;
+export { ValidateOptionsUserOptions }
 
-// Warning: (ae-forgotten-export) The symbol "ValidationErrorSchema" needs to be exported by the entry point index.docs.d.ts
-//
-// @public (undocumented)
-export type ValidationError = z.infer<typeof ValidationErrorSchema>;
+export { ValidationError }
 
 // (No @packageDocumentation comment for this package)
 
