@@ -362,3 +362,74 @@ request.limiter = context.limiter;
 ```
 
 When a limiter is set, all HTTP requests made via `run()` are scheduled through `limiter.schedule()`. If the limiter rejects a request (e.g., due to a `highWater` limit), a `RetryRequestError` is thrown so the Polarity server knows to retry later.
+
+### Handling `RetryRequestError`
+
+By default, a `RetryRequestError` propagates up to the Polarity server which will retry the request automatically. If you want to handle the rate limit gracefully — for example, returning results with a flag instead of failing — you can catch the error in your integration:
+
+```typescript
+import { PolarityRequest } from 'polarity-integration-utils/requests';
+import { RetryRequestError } from 'polarity-integration-utils/errors';
+import type { Limiter } from 'polarity-integration-utils/requests';
+import type { LookupResult } from '@polarityio/integration-types';
+
+const limiter: Limiter = context.limiter;
+const request = new PolarityRequest({ limiter });
+
+async function doLookup(entity: Entity): Promise<LookupResult> {
+  try {
+    const response = await request.run({
+      url: `https://api.example.com/lookup?q=${entity.value}`
+    });
+
+    return {
+      entity,
+      data: {
+        summary: [response.body.title],
+        details: response.body
+      }
+    };
+  } catch (error) {
+    if (error instanceof RetryRequestError) {
+      return {
+        entity,
+        data: {
+          summary: ['API Limit Reached'],
+          details: { apiLimitReached: true }
+        }
+      };
+    }
+    throw error;
+  }
+}
+```
+
+Alternatively, you can use the `onNetworkError` hook to handle rate limit errors. When an `onNetworkError` hook returns without throwing, the error is suppressed and `run()` returns `undefined`:
+
+```typescript
+import { PolarityRequest } from 'polarity-integration-utils/requests';
+import { RetryRequestError } from 'polarity-integration-utils/errors';
+import type { OnNetworkErrorHook } from 'polarity-integration-utils/requests';
+
+const suppressRateLimitError: OnNetworkErrorHook = async (error) => {
+  if (error instanceof RetryRequestError) {
+    logger.warn('Rate limit reached, suppressing error');
+    return;
+  }
+  throw error;
+};
+
+const request = new PolarityRequest({
+  limiter: context.limiter,
+  hooks: {
+    onNetworkError: [suppressRateLimitError]
+  }
+});
+
+const response = await request.run({ url: 'https://api.example.com/data' });
+
+if (!response) {
+  // Rate limit was hit — run() returned undefined because the hook suppressed the error
+  return { entity, data: { summary: ['API Limit Reached'], details: { apiLimitReached: true } } };
+}
+```
