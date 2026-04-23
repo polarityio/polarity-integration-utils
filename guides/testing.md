@@ -6,143 +6,221 @@ category: Guides
 
 # Integration Testing Guide
 
-This guide shows integration developers how to use `polarity-integration-utils/testing` to create comprehensive test suites for their integrations (v2).
+This guide shows integration developers how to write tests for Polarity integrations using [Vitest](https://vitest.dev/) and the test helpers from `polarity-integration-utils/testing`.
 
 ## Quick Setup
 
 1.  **Install testing dependencies:**
 
     ```bash
-    npm install --save-dev jest @types/jest ts-jest
+    npm install --save-dev vitest
     ```
 
-    _Note: `ts-jest` is recommended for TypeScript integrations._
-
-2.  **Ensure TypeScript Configuration:**
-
-    For TypeScript integrations, ensure your `tsconfig.json` has `esModuleInterop` enabled:
-
-    ```json
-    {
-      "compilerOptions": {
-        "esModuleInterop": true
-      }
-    }
-    ```
-
-3.  **Create a test file** (e.g., `test/integration.test.ts`):
+2.  **Add a Vitest config** (`vitest.config.ts`):
 
     ```typescript
-    import {
-      createEntity,
-      createMockIntegrationContext
-    } from 'polarity-integration-utils/testing';
-    import * as integration from '../src/integration'; // Adjust path to your integration entry point
+    import { defineConfig } from 'vitest/config';
 
-    describe('Integration Tests', () => {
-      test('should return results for 8.8.8.8', async () => {
-        const entities = [createEntity('IP', '8.8.8.8')];
-        const options = { apiKey: 'test-key' };
-        const context = createMockIntegrationContext();
-
-        const result = await integration.doLookup(entities, options, context);
-
-        expect(result).toHaveLength(1);
-        expect(result[0].entity.value).toBe('8.8.8.8');
-      });
+    export default defineConfig({
+      test: {
+        environment: 'node',
+        include: ['test/**/*.test.ts']
+      }
     });
     ```
 
-4.  **Add test script to package.json:**
+3.  **Add a test script** to `package.json`:
 
     ```json
     {
       "scripts": {
-        "test": "jest"
+        "test": "vitest run",
+        "test:watch": "vitest"
       }
     }
     ```
 
-5.  **Run tests:**
+4.  **Run tests:**
+
     ```bash
     npm test
     ```
 
-## Testing Strategies
+## Mocking HTTP Endpoints
 
-### 1. Custom Functional Testing (Recommended)
+Most integrations make HTTP requests via `postman-request`. The most common testing pattern is mocking this module so tests run without hitting real APIs.
 
-For more control and complex scenarios, use the `createMockIntegrationContext` helper and standard Jest assertions.
+### Setting Up the Mock
 
-#### Testing `doLookup`
+Use `vi.hoisted()` to create mock functions that are available before `vi.mock()` rewires imports:
 
 ```typescript
-import {
-  createEntity,
-  createMockIntegrationContext
-} from 'polarity-integration-utils/testing';
-import * as integration from '../src/integration';
+import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
+import type { Entity, DoLookupUserOptions, IntegrationContext } from '@polarityio/integration-types';
 
-describe('doLookup Functionality', () => {
-  let context;
+// Hoist the mock function so it's available before vi.mock() runs
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn()
+}));
 
-  beforeEach(() => {
-    context = createMockIntegrationContext();
-  });
-
-  test('should handle IP entities', async () => {
-    const entities = [createEntity('IP', '8.8.8.8')];
-    const options = { apiKey: 'test-key' };
-
-    const result = await integration.doLookup(entities, options, context);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].entity.value).toBe('8.8.8.8');
-    expect(result[0].data.summary).toBeDefined();
-  });
-
-  test('should handle empty results', async () => {
-    const entities = [createEntity('domain', 'nonexistent.com')];
-    const options = { apiKey: 'test-key' };
-
-    const result = await integration.doLookup(entities, options, context);
-
-    expect(result).toHaveLength(0); // or null/undefined depending on implementation
-  });
+vi.mock('postman-request', () => {
+  return { default: mockRequest };
 });
+
+// Import your integration AFTER vi.mock() so it receives the mocked module
+import { doLookup, startup } from '../src/integration';
 ```
 
-### 3. Error Handling
+### Helper Functions for Mock Responses
 
-Test how your integration handles various error conditions.
+Create reusable helpers for simulating successful and failed HTTP responses:
 
 ```typescript
-import { IntegrationError } from 'polarity-integration-utils';
+function mockRequestSuccess(body: Record<string, unknown>, statusCode = 200): void {
+  mockRequest.mockImplementation(
+    (_opts: unknown, cb: (err: null, res: { statusCode: number; body: unknown }) => void) => {
+      cb(null, { statusCode, body });
+    }
+  );
+}
 
-describe('Error Handling', () => {
-  test('should throw IntegrationError on API failure', async () => {
-    const entities = [createEntity('domain', 'error.com')];
-    const options = { apiKey: 'invalid-key' };
-    const context = createMockIntegrationContext();
+function mockRequestError(message: string): void {
+  mockRequest.mockImplementation((_opts: unknown, cb: (err: Error) => void) => {
+    cb(new Error(message));
+  });
+}
+```
+
+### Writing Tests with Mocked Endpoints
+
+```typescript
+describe('doLookup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return results for a successful API response', async () => {
+    mockRequestSuccess({
+      ip: '8.8.8.8',
+      hostname: 'dns.google',
+      org: 'Google LLC',
+      country: 'US'
+    });
+
+    const entities: Entity[] = [createMockEntity()];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
+
+    const results = await doLookup(entities, options, createMockContext());
+
+    expect(results).toHaveLength(1);
+    expect(results[0].data).not.toBeNull();
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw on network errors', async () => {
+    mockRequestError('ECONNREFUSED');
+
+    const entities: Entity[] = [createMockEntity()];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
     await expect(
-      integration.doLookup(entities, options, context)
-    ).rejects.toThrow(IntegrationError);
+      doLookup(entities, options, createMockContext())
+    ).rejects.toBeDefined();
+  });
+
+  it('should throw on non-success status codes', async () => {
+    mockRequestSuccess(
+      { error: { title: 'Forbidden', message: 'Invalid token' } },
+      403
+    );
+
+    const entities: Entity[] = [createMockEntity()];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
+
+    await expect(
+      doLookup(entities, options, createMockContext())
+    ).rejects.toBeDefined();
   });
 });
 ```
 
-### 4. Testing `validateOptions`
+## Test Helpers
 
-Test option validation logic.
+### `createEntity(type, value)`
+
+Creates a fully formed `Entity` object for testing.
 
 ```typescript
-import type { ValidateOptionsUserOptions } from 'polarity-integration-utils';
+import { createEntity } from 'polarity-integration-utils/testing';
+
+const ipEntity = createEntity('IPv4', '8.8.8.8');
+const domainEntity = createEntity('domain', 'example.com');
+const hashEntity = createEntity('MD5', 'd41d8cd98f00b204e9800998ecf8427e');
+```
+
+- `type`: An `EntityType` string (e.g., `'IPv4'`, `'IPv6'`, `'domain'`, `'MD5'`, `'SHA256'`)
+- `value`: The entity value string
+
+### `createMockIntegrationContext()`
+
+Creates a mock `IntegrationContext` with stubbed logger and cache methods.
+
+```typescript
+import { createMockIntegrationContext } from 'polarity-integration-utils/testing';
+
+const context = createMockIntegrationContext();
+
+// context.logger — stubbed logger (trace, debug, info, warn, error, fatal)
+// context.cache.global — stubbed get, set, delete
+// context.cache.integration — stubbed get, set, delete
+// context.cache.user — stubbed get, set, delete
+```
+
+> **Note:** `createMockIntegrationContext` uses `jest.fn()` internally for stubs. If your project uses Vitest, you may prefer creating your own mock context using `vi.fn()` as shown below.
+
+### Creating a Vitest-Native Mock Context
+
+```typescript
+import { vi } from 'vitest';
+import type { IntegrationContext, Logger } from '@polarityio/integration-types';
+
+function createMockLogger(): Logger {
+  const logger: Record<string, unknown> = {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn()
+  };
+  (logger.child as ReturnType<typeof vi.fn>).mockReturnValue(logger);
+  return logger as unknown as Logger;
+}
+
+function createMockContext(): IntegrationContext {
+  return {
+    logger: createMockLogger(),
+    cache: {
+      global: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+      integration: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+      user: { get: vi.fn(), set: vi.fn(), delete: vi.fn() }
+    },
+    integrationId: 'test-integration',
+    userId: 1,
+    startPolling: vi.fn(),
+    stopPolling: vi.fn()
+  } as unknown as IntegrationContext;
+}
+```
+
+## Testing `validateOptions`
+
+```typescript
+import type { ValidateOptionsUserOptions } from '@polarityio/integration-types';
 
 describe('validateOptions', () => {
-  const context = createMockIntegrationContext();
-
-  test('should pass valid options', () => {
+  it('should pass with valid options', () => {
     const options: ValidateOptionsUserOptions = {
       apiKey: {
         key: 'apiKey',
@@ -152,11 +230,11 @@ describe('validateOptions', () => {
         admin_only: false
       }
     };
-    const errors = integration.validateOptions(options, context);
+    const errors = validateOptions(options, createMockContext());
     expect(errors).toHaveLength(0);
   });
 
-  test('should fail missing required options', () => {
+  it('should return errors for missing required options', () => {
     const options: ValidateOptionsUserOptions = {
       apiKey: {
         key: 'apiKey',
@@ -166,58 +244,43 @@ describe('validateOptions', () => {
         admin_only: false
       }
     };
-    const errors = integration.validateOptions(options, context);
+    const errors = validateOptions(options, createMockContext());
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].key).toBe('apiKey');
   });
 });
 ```
 
-### 5. Mocking Cache
+## Mocking Cache
 
-The `createMockIntegrationContext` helper provides a mock cache implementation that you can inspect.
+You can provide mock implementations for cache methods to simulate caching behavior:
 
 ```typescript
-describe('Cache Operations', () => {
-  test('should cache lookup results', async () => {
-    const context = createMockIntegrationContext();
-    // Mock cache implementation if needed, defaults are jest.fn()
-    const cacheStore = new Map();
-    context.cache.global.get.mockImplementation((key) => cacheStore.get(key));
-    context.cache.global.set.mockImplementation((key, value) =>
-      cacheStore.set(key, value)
-    );
+describe('cache operations', () => {
+  it('should cache lookup results', async () => {
+    mockRequestSuccess({ ip: '8.8.8.8', org: 'Google LLC' });
+    const context = createMockContext();
+    const cacheStore = new Map<string, unknown>();
 
-    const entities = [createEntity('IP', '8.8.8.8')];
-    const options = { apiKey: 'test-key' };
+    (context.cache.integration.get as ReturnType<typeof vi.fn>)
+      .mockImplementation((key: string) => cacheStore.get(key));
+    (context.cache.integration.set as ReturnType<typeof vi.fn>)
+      .mockImplementation((key: string, value: unknown) => cacheStore.set(key, value));
 
-    // First lookup (cache miss)
-    await integration.doLookup(entities, options, context);
+    const entities: Entity[] = [createMockEntity()];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
-    expect(context.cache.global.set).toHaveBeenCalled();
+    await doLookup(entities, options, context);
+
+    expect(context.cache.integration.set).toHaveBeenCalled();
   });
 });
 ```
 
-## Available Utilities
-
-### `createEntity(type, value)`
-
-Creates a fully formed `Entity` object for testing.
-
-- `type`: string (e.g., 'IP', 'domain', 'hash')
-- `value`: string
-
-### `createMockIntegrationContext()`
-
-Creates a mock `IntegrationContext` object with mocked logger and cache.
-
-- `context.logger`: Jest mocks for all log levels.
-- `context.cache`: Jest mocks for `get`, `set`, `delete`.
-
 ## Best Practices
 
-1.  **Use Async/Await**: v2 integrations rely on Promises. Avoid callbacks in tests.
-2.  **Test Edge Cases**: Use `createEntity` with various types and values.
-3.  **Mock Context**: Always pass a mock context to `doLookup` to prevent runtime errors with logger/cache.
-4.  **Clean Mocks**: Use `jest.clearAllMocks()` or `beforeEach` to reset mock state.
+1. **Clear mocks between tests** — Use `vi.clearAllMocks()` in `beforeEach` to prevent state leaking between tests.
+2. **Mock at the module boundary** — Mock `postman-request` (or whatever HTTP client your integration uses) rather than internal functions.
+3. **Test edge cases** — Empty responses, error status codes, network failures, rate limits, and invalid input.
+4. **Use `vi.hoisted()`** — When using `vi.mock()`, any mock functions referenced inside the factory must be hoisted so they exist before the mock is applied.
+5. **Import after mocking** — Always import your integration module _after_ `vi.mock()` calls so it receives the mocked dependencies.
