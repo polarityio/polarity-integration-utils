@@ -71,7 +71,8 @@
     "lint": "tsc --noEmit && eslint .",
     "lint:fix": "eslint . --fix",
     "lint:ts": "tsc --noEmit",
-    "lint:es": "eslint ."
+    "lint:es": "eslint .",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
