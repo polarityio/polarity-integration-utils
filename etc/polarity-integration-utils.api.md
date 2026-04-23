@@ -303,7 +303,7 @@ export class PolarityRequest {
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
     run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse | undefined> | never;
-    runInParallel(options: RunInParallelOptions): Promise<HttpRequestResponse[]>;
+    runInParallel(options: RunInParallelOptions): Promise<(HttpRequestResponse | undefined)[]>;
     // (undocumented)
     userOptions: DoLookupUserOptions;
 }

@@ -491,7 +491,7 @@ export class PolarityRequest {
     let processedOptions: HttpRequestOptions = { ...requestOptions };
     for (const hook of this.hooks.beforeRequest) {
       const hookResult = await hook(processedOptions, this.userOptions);
-      if (!hookResult || typeof hookResult !== 'object') {
+      if (!hookResult || typeof hookResult !== 'object' || Array.isArray(hookResult)) {
         throw new LibraryUsageError(
           'Each `beforeRequest` hook must return an `HttpRequestOptions` object.'
         );
@@ -567,7 +567,7 @@ export class PolarityRequest {
     let result = httpResponse;
     for (const hook of this.hooks.afterResponse) {
       const hookResult = await hook(result, processedOptions, this.userOptions);
-      if (!hookResult || typeof hookResult !== 'object') {
+      if (!hookResult || typeof hookResult !== 'object' || Array.isArray(hookResult)) {
         throw new LibraryUsageError(
           'Each `afterResponse` hook must return an `HttpRequestResponse` object.'
         );
@@ -753,12 +753,14 @@ export class PolarityRequest {
    * `requestId` property.
    *
    * @param options - An array of request options for running requests in parallel.
-   * @returns A promise that resolves to an array of responses.  If the `returnErrors` property is set to `true`
-   * then the response objects will have their `error` property set to the thrown error.
+   * @returns A promise that resolves to an array of responses in the same order as the input
+   * request options. If the `returnErrors` property is set to `true`, the response objects will
+   * have their `error` property set to the thrown error. If `onNetworkError` hooks are configured
+   * and suppress an error (return without throwing), the corresponding entry will be `undefined`.
    */
   public async runInParallel(
     options: RunInParallelOptions
-  ): Promise<HttpRequestResponse[]> {
+  ): Promise<(HttpRequestResponse | undefined)[]> {
     const allRequestOptions = options.allRequestOptions;
     const returnErrors = options.returnErrors || false;
     const maxConcurrentRequests = options.maxConcurrentRequests || 5;
@@ -797,7 +799,7 @@ export class PolarityRequest {
       };
     });
 
-    const results: HttpRequestResponse[] = await parallelLimit(
+    const results: (HttpRequestResponse | undefined)[] = await parallelLimit(
       tasks,
       maxConcurrentRequests
     );

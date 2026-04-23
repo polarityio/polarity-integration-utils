@@ -88,7 +88,9 @@ try {
 
 A common requirement is to run multiple requests in parallel.  This can be done with the {@link PolarityRequest.runInParallel} method which takes an options object containing an array of {@link HttpRequestOptions}.  Additionally, you can specify how many requests to run in parallel (defaults to 5), and whether to return errors as part of the return payload or throw an error if any of the requests fail (the default behavior).
 
-The `runInParallel` method will return an array of {@link HttpRequestResponse} objects.
+The `runInParallel` method will return an array of {@link HttpRequestResponse} objects. The results array preserves the same order as the input `allRequestOptions` array, so `results[i]` corresponds to `allRequestOptions[i]`.
+
+> **Note:** If you have `onNetworkError` hooks configured and a hook suppresses an error (returns without throwing), the corresponding entry in the results array will be `undefined`. This only applies when `onNetworkError` hooks are present. If you don't use `onNetworkError` hooks, every entry in the results array is guaranteed to be an `HttpRequestResponse`.
 
 A typical pattern for running multiple requests in parallel is to create an array of requests and then passing those into the `runInParallel` method.
 
@@ -270,7 +272,7 @@ There are four hook types:
 - **`beforeRequest`** — Runs before each HTTP request. Receives the request options and user options. Returns modified request options. Multiple hooks chain in order.
 - **`afterResponse`** — Runs after a successful HTTP response. Receives the response, request options, and user options. Returns the modified response. Multiple hooks chain in order.
 - **`onApiError`** — Runs when an API error is detected (non-success status code or response body error properties). Receives the error, the full HTTP response, request options, and user options. If all hooks return without throwing, the error is suppressed.
-- **`onNetworkError`** — Runs when a network or rate-limiting error occurs. If all hooks return without throwing, the error is suppressed.
+- **`onNetworkError`** — Runs when a network or rate-limiting error occurs. If all hooks return without throwing, the error is suppressed and `run()` returns `undefined`.
 
 ## Adding Authentication with `beforeRequest`
 

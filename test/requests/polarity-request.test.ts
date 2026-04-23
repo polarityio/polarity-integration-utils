@@ -1113,6 +1113,42 @@ describe('PolarityRequest', () => {
       }
     });
 
+    it('should throw LibraryUsageError if `beforeRequest` hook returns an array', async () => {
+      expect.assertions(2);
+
+      const request = new PolarityRequest({
+        hooks: {
+          beforeRequest: [async () => [] as never]
+        }
+      });
+      request.userOptions = { customOption: true };
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+        expect(error.message).toContain('beforeRequest');
+      }
+    });
+
+    it('should throw LibraryUsageError if `afterResponse` hook returns an array', async () => {
+      expect.assertions(2);
+
+      const request = new PolarityRequest({
+        hooks: {
+          afterResponse: [async () => [] as never]
+        }
+      });
+      request.userOptions = { customOption: true };
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error instanceof LibraryUsageError).toBeTruthy();
+        expect(error.message).toContain('afterResponse');
+      }
+    });
+
     it('should execute limiter.schedule() if limiter is set', async () => {
       expect.assertions(1);
       const body = { message: 'Request Ran' };
