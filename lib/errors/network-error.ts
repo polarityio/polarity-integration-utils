@@ -56,9 +56,8 @@ export class NetworkError extends IntegrationError {
     super(message, properties);
 
     // Check if we are wrapping an original error
-    if (properties.cause instanceof Error) {
-      const originalError = properties.cause;
-      const code = originalError.code?.toString();
+    if (properties.cause && typeof properties.cause === 'object' && 'code' in properties.cause) {
+      const code = properties.cause.code?.toString();
 
       if (code && SSL_ERROR_CODES.has(code)) {
         // @ts-expect-error work around due to typescript preventing readonly properties from
