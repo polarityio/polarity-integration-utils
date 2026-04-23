@@ -124,6 +124,31 @@ try {
 
 # Modifying Request Behavior
 
+## Request Defaults
+
+The `defaults` option configures the underlying HTTP client with default settings for TLS certificates, proxy configuration, and response parsing. These are applied to every request made by the instance:
+
+```typescript
+const request = new PolarityRequest({
+  defaults: {
+    // TLS/SSL certificate options (file paths read at construction time)
+    ca: '/path/to/ca-bundle.pem',
+    cert: '/path/to/client-cert.pem',
+    key: '/path/to/client-key.pem',
+    passphrase: 'cert-passphrase',
+
+    // Proxy and TLS settings
+    proxy: 'http://proxy.example.com:8080',
+    rejectUnauthorized: true, // default: true
+
+    // Automatically parse JSON responses (default: true)
+    json: true
+  }
+});
+```
+
+In most Polarity integrations these values come from the integration's `config.json` and are passed through from the server. You typically won't set them manually.
+
 ## Modify Success HTTP Status Codes
 
 By default, the PolarityRequest class will consider any 2xx status code as a successful response.  You can modify this behavior by setting the `successStatusCodes` property when creating the `PolarityRequest` instance.
@@ -189,7 +214,26 @@ const request = new PolarityRequest({
 
 When an error is encountered, the PolarityRequest instance will look for an error message in the response body using the specified path.  If the path is not found, or the value at the path is not a string, the default error message will be used.  If more than one path is provided, the first path that contains a string will be used. 
 
+## Sanitize Sensitive Request Options
 
+When errors are thrown by `PolarityRequest`, the request options are included in the error for debugging. By default, common sensitive fields are automatically redacted:
+
+- `auth.password`
+- `auth.bearer`
+- `body.password`
+- `form.client_secret`
+- `headers.authorization` (case-insensitive)
+- `headers.x-api-key` (case-insensitive)
+
+If your integration sends additional sensitive data in request options, you can specify extra paths to sanitize using `requestOptionsToSanitize`. Paths use dot notation:
+
+```typescript
+const request = new PolarityRequest({
+  requestOptionsToSanitize: ['headers.x-custom-token', 'body.apiSecret']
+});
+```
+
+These paths are sanitized in addition to the defaults — you do not need to re-specify the built-in paths.
 
 ## Customize Error Detection
 
