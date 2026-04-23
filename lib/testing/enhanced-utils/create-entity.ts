@@ -27,6 +27,7 @@ export const createEntity = (type: EntityType, value: string): Entity => {
     value
   );
   const isIPv4 = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(value);
+  const isIPv6 = /^[\da-fA-F:]+$/.test(value) && value.includes(':');
 
   return {
     value,
@@ -36,12 +37,12 @@ export const createEntity = (type: EntityType, value: string): Entity => {
     types: [type],
     isDomain,
     isIPv4,
-    isIP: isIPv4,
+    isIP: isIPv4 || isIPv6,
     isEmail: false,
     isHash: false,
     isHex: false,
     isHTMLTag: false,
-    isIPv6: false,
+    isIPv6,
     isMD5: false,
     isPrivateIP: false,
     isSHA1: false,
@@ -52,7 +53,7 @@ export const createEntity = (type: EntityType, value: string): Entity => {
     longitude: 0,
     IPLong: 0,
     hashType: '',
-    IPType: isIPv4 ? 'IPv4' : '',
+    IPType: isIPv4 ? 'IPv4' : isIPv6 ? 'IPv6' : '',
     channels: [],
     requestContext: {
       requestType: 'OnDemand',

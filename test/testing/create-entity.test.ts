@@ -32,6 +32,21 @@ describe('createEntity', () => {
     expect(entity.IPType).toBe('IPv4');
   });
 
+  it('should detect IPv6 values', () => {
+    const entity = createEntity('IPv6', '::1');
+    expect(entity.isIPv6).toBe(true);
+    expect(entity.isIP).toBe(true);
+    expect(entity.isIPv4).toBe(false);
+    expect(entity.IPType).toBe('IPv6');
+  });
+
+  it('should detect full IPv6 addresses', () => {
+    const entity = createEntity('IPv6', '2001:0db8:85a3:0000:0000:8a2e:0370:7334');
+    expect(entity.isIPv6).toBe(true);
+    expect(entity.isIP).toBe(true);
+    expect(entity.IPType).toBe('IPv6');
+  });
+
   it('should set default entity properties', () => {
     const entity = createEntity('hash', 'abc123');
     expect(entity.value).toBe('abc123');
