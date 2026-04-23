@@ -6,7 +6,7 @@ category: Guides
 
 # Cache Interface Guide
 
-The Polarity Integration Utils library provides a hierarchical caching system with three scopes: global, integration, and user. This guide explains how to use the cache interfaces effectively in your integrations.
+The Polarity server provides a hierarchical caching system with three scopes: global, integration, and user. The cache object is passed to your integration via the server context. This guide explains how to use the cache interfaces effectively in your integrations.
 
 ## Cache Hierarchy
 
