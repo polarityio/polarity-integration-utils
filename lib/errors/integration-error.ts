@@ -5,7 +5,7 @@ import { sanitizeRequestOptions } from '../requests/sanitize-request-options';
 /**
  * @public
  */
-export interface Error {
+export interface ResponseError {
   name: string;
   message: string;
   stack?: string;
