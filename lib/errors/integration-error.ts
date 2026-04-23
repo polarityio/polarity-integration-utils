@@ -208,7 +208,7 @@ export class IntegrationError extends Error {
       this.status = properties.status;
     }
 
-    if (properties.cause) {
+    if ('cause' in properties && typeof properties.cause !== 'undefined') {
       this.cause = properties.cause;
     }
 
