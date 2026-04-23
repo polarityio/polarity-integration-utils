@@ -6,6 +6,9 @@
 
 import type { DoLookupUserOptions } from '@polarityio/integration-types';
 import type { Entity } from '@polarityio/integration-types';
+import type { EntityType } from '@polarityio/integration-types';
+import type { Integration } from '@polarityio/integration-types';
+import type { IntegrationContext } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
 
 // @public
@@ -34,6 +37,18 @@ export type ConfigRequestProxyOptions = {
     proxy?: undefined | string;
     json?: undefined | boolean;
 };
+
+// @public
+export const createEntity: (type: EntityType, value: string) => Entity;
+
+// @public
+export const createIntegrationTests: (integration: Integration) => {
+    testDoLookup: any;
+    testOnMessage: any;
+};
+
+// @public
+export const createMockIntegrationContext: (createMockFn?: MockFnFactory) => IntegrationContext;
 
 // @public
 export interface CustomType {
@@ -265,6 +280,9 @@ export interface Limiter {
 export type MetaObject = {
     [key: string]: unknown;
 };
+
+// @public
+export type MockFnFactory = () => (...args: any[]) => any;
 
 // @public
 export class NetworkError extends IntegrationError {

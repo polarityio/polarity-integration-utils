@@ -21,6 +21,28 @@ export type MockFnFactory = () => (...args: any[]) => any;
 
 const noOp: MockFnFactory = () => () => undefined;
 
+/**
+ * Creates a mock `IntegrationContext`
+ * with stubbed logger, cache, and polling methods.
+ *
+ * Pass your testing framework's mock function factory to enable spy capabilities
+ * (e.g., `toHaveBeenCalledWith()`). When omitted, plain no-op stubs are used.
+ *
+ * @param createMockFn - A factory that creates mock functions (e.g., `vi.fn` or `jest.fn`)
+ * @returns A fully populated `IntegrationContext` with stubbed methods
+ *
+ * @example
+ * ```typescript
+ * // Vitest
+ * const ctx = createMockIntegrationContext(vi.fn);
+ *
+ * // Jest
+ * const ctx = createMockIntegrationContext(jest.fn);
+ *
+ * // No framework — plain no-ops
+ * const ctx = createMockIntegrationContext();
+ * ```
+ */
 export const createMockIntegrationContext = (
   createMockFn: MockFnFactory = noOp
 ): IntegrationContext => {
