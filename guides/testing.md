@@ -46,25 +46,38 @@ This guide shows integration developers how to write tests for Polarity integrat
     npm test
     ```
 
-## Mocking HTTP Endpoints
+## Mocking PolarityRequest
 
-Most integrations make HTTP requests via `postman-request`. The most common testing pattern is mocking this module so tests run without hitting real APIs.
+Integrations use `PolarityRequest` to make HTTP requests. In tests, you mock the `PolarityRequest` module so that calls to `request.run()` return controlled responses without hitting real APIs.
 
 ### Setting Up the Mock
 
-Use `vi.hoisted()` to create mock functions that are available before `vi.mock()` rewires imports:
+Use `vi.hoisted()` to create the mock `run` function, then use `vi.mock()` to replace the `PolarityRequest` class with a mock that uses it:
 
 ```typescript
 import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
-import type { Entity, DoLookupUserOptions, IntegrationContext } from '@polarityio/integration-types';
+import type {
+  Entity,
+  DoLookupUserOptions,
+  IntegrationContext
+} from '@polarityio/integration-types';
+import type { HttpRequestResponse } from 'polarity-integration-utils/requests';
 
-// Hoist the mock function so it's available before vi.mock() runs
-const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+// Hoist mock functions so they're available before vi.mock() runs
+const { mockRun } = vi.hoisted(() => ({
+  mockRun: vi.fn()
 }));
 
-vi.mock('postman-request', () => {
-  return { default: mockRequest };
+vi.mock('polarity-integration-utils/requests', () => {
+  return {
+    PolarityRequest: vi.fn().mockImplementation(() => ({
+      run: mockRun,
+      runInParallel: vi.fn(),
+      userOptions: null,
+      limiter: null,
+      hooks: { beforeRequest: [], afterResponse: [], onApiError: [], onNetworkError: [] }
+    }))
+  };
 });
 
 // Import your integration AFTER vi.mock() so it receives the mocked module
@@ -73,25 +86,22 @@ import { doLookup, startup } from '../src/integration';
 
 ### Helper Functions for Mock Responses
 
-Create reusable helpers for simulating successful and failed HTTP responses:
+Create reusable helpers that configure `mockRun` to resolve or reject:
 
 ```typescript
-function mockRequestSuccess(body: Record<string, unknown>, statusCode = 200): void {
-  mockRequest.mockImplementation(
-    (_opts: unknown, cb: (err: null, res: { statusCode: number; body: unknown }) => void) => {
-      cb(null, { statusCode, body });
-    }
-  );
+function mockRunSuccess(body: unknown, statusCode = 200): void {
+  mockRun.mockResolvedValue({
+    statusCode,
+    body
+  } as HttpRequestResponse);
 }
 
-function mockRequestError(message: string): void {
-  mockRequest.mockImplementation((_opts: unknown, cb: (err: Error) => void) => {
-    cb(new Error(message));
-  });
+function mockRunError(error: Error): void {
+  mockRun.mockRejectedValue(error);
 }
 ```
 
-### Writing Tests with Mocked Endpoints
+### Writing Tests
 
 ```typescript
 describe('doLookup', () => {
@@ -100,47 +110,81 @@ describe('doLookup', () => {
   });
 
   it('should return results for a successful API response', async () => {
-    mockRequestSuccess({
+    mockRunSuccess({
       ip: '8.8.8.8',
       hostname: 'dns.google',
       org: 'Google LLC',
       country: 'US'
     });
 
-    const entities: Entity[] = [createMockEntity()];
+    const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
     const results = await doLookup(entities, options, createMockContext());
 
     expect(results).toHaveLength(1);
     expect(results[0].data).not.toBeNull();
-    expect(mockRequest).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle empty results', async () => {
+    mockRunSuccess({ ip: '8.8.8.8', bogon: true });
+
+    const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
+
+    const results = await doLookup(entities, options, createMockContext());
+
+    expect(results[0].data).toBeNull();
+  });
+
+  it('should throw when the API returns an error', async () => {
+    const { ApiRequestError } = await import('polarity-integration-utils/errors');
+    mockRunError(new ApiRequestError('Forbidden'));
+
+    const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
+    const options: DoLookupUserOptions = { apiKey: 'invalid-key' };
+
+    await expect(
+      doLookup(entities, options, createMockContext())
+    ).rejects.toThrow('Forbidden');
   });
 
   it('should throw on network errors', async () => {
-    mockRequestError('ECONNREFUSED');
+    const { NetworkError } = await import('polarity-integration-utils/errors');
+    mockRunError(new NetworkError('ECONNREFUSED'));
 
-    const entities: Entity[] = [createMockEntity()];
+    const entities: Entity[] = [createEntity('domain', 'unreachable.example.com')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
     await expect(
       doLookup(entities, options, createMockContext())
-    ).rejects.toBeDefined();
+    ).rejects.toThrow('ECONNREFUSED');
   });
+});
+```
 
-  it('should throw on non-success status codes', async () => {
-    mockRequestSuccess(
-      { error: { title: 'Forbidden', message: 'Invalid token' } },
-      403
-    );
+### Verifying Request Options
 
-    const entities: Entity[] = [createMockEntity()];
-    const options: DoLookupUserOptions = { apiKey: 'test-key' };
+You can inspect how your integration called `request.run()` to verify it builds the correct request:
 
-    await expect(
-      doLookup(entities, options, createMockContext())
-    ).rejects.toBeDefined();
-  });
+```typescript
+it('should pass the correct URL and headers', async () => {
+  mockRunSuccess({ result: 'ok' });
+
+  const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
+  const options: DoLookupUserOptions = { apiKey: 'my-key' };
+
+  await doLookup(entities, options, createMockContext());
+
+  expect(mockRun).toHaveBeenCalledWith(
+    expect.objectContaining({
+      url: expect.stringContaining('8.8.8.8'),
+      headers: expect.objectContaining({
+        Authorization: 'Bearer my-key'
+      })
+    })
+  );
 });
 ```
 
@@ -258,7 +302,7 @@ You can provide mock implementations for cache methods to simulate caching behav
 ```typescript
 describe('cache operations', () => {
   it('should cache lookup results', async () => {
-    mockRequestSuccess({ ip: '8.8.8.8', org: 'Google LLC' });
+    mockRunSuccess({ ip: '8.8.8.8', org: 'Google LLC' });
     const context = createMockContext();
     const cacheStore = new Map<string, unknown>();
 
@@ -267,7 +311,7 @@ describe('cache operations', () => {
     (context.cache.integration.set as ReturnType<typeof vi.fn>)
       .mockImplementation((key: string, value: unknown) => cacheStore.set(key, value));
 
-    const entities: Entity[] = [createMockEntity()];
+    const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
     await doLookup(entities, options, context);
@@ -279,8 +323,9 @@ describe('cache operations', () => {
 
 ## Best Practices
 
-1. **Clear mocks between tests** — Use `vi.clearAllMocks()` in `beforeEach` to prevent state leaking between tests.
-2. **Mock at the module boundary** — Mock `postman-request` (or whatever HTTP client your integration uses) rather than internal functions.
-3. **Test edge cases** — Empty responses, error status codes, network failures, rate limits, and invalid input.
+1. **Mock at the `PolarityRequest` level** — Mock `request.run()` rather than the underlying HTTP library. This keeps tests decoupled from internal implementation details.
+2. **Clear mocks between tests** — Use `vi.clearAllMocks()` in `beforeEach` to prevent state leaking between tests.
+3. **Test edge cases** — Empty responses, API errors, network errors, rate limits, and invalid input.
 4. **Use `vi.hoisted()`** — When using `vi.mock()`, any mock functions referenced inside the factory must be hoisted so they exist before the mock is applied.
 5. **Import after mocking** — Always import your integration module _after_ `vi.mock()` calls so it receives the mocked dependencies.
+6. **Verify request options** — Use `expect(mockRun).toHaveBeenCalledWith(expect.objectContaining(...))` to assert your integration builds the correct request URL, headers, and body.
