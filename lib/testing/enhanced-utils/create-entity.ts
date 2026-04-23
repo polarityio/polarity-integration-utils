@@ -6,6 +6,22 @@ function toEntityTypeIdentifier(type: EntityType): EntityTypeIdentifier {
   return type as EntityTypeIdentifier;
 }
 
+/**
+ * Creates a mock `Entity` for use in tests.
+ *
+ * Automatically detects whether the value is a domain or IPv4 address and sets
+ * the corresponding boolean flags. All other flags default to `false`.
+ *
+ * @param type - An `EntityType` string (e.g., `'IPv4'`, `'domain'`, `'MD5'`)
+ * @param value - The entity value string
+ * @returns A fully populated `Entity` object
+ *
+ * @example
+ * ```typescript
+ * const ip = createEntity('IPv4', '8.8.8.8');
+ * const domain = createEntity('domain', 'example.com');
+ * ```
+ */
 export const createEntity = (type: EntityType, value: string): Entity => {
   const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(
     value

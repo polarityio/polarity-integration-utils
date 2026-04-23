@@ -4,37 +4,14 @@
 
 ```ts
 
-import Bottleneck from 'bottleneck';
-import { CacheOptions } from '@polarityio/integration-types';
-import { Channel } from '@polarityio/integration-types';
-import { CronPollSpec } from '@polarityio/integration-types';
-import { DoLookupResult } from '@polarityio/integration-types';
-import { DoLookupUserOptions } from '@polarityio/integration-types';
-import { Entity } from '@polarityio/integration-types';
-import { EntityPosition } from '@polarityio/integration-types';
-import { EntityType } from '@polarityio/integration-types';
-import { EntityTypeIdentifier } from '@polarityio/integration-types';
-import { GlobalCache } from '@polarityio/integration-types';
-import { Integration } from '@polarityio/integration-types';
-import { IntegrationCache } from '@polarityio/integration-types';
-import { IntegrationContext } from '@polarityio/integration-types';
-import { IntervalPollSpec } from '@polarityio/integration-types';
-import { Logger } from '@polarityio/integration-types';
-import { LookupResult } from '@polarityio/integration-types';
-import { OnDemandRequestContext } from '@polarityio/integration-types';
-import { PolarityCache } from '@polarityio/integration-types';
-import { Poll } from '@polarityio/integration-types';
-import { PollFunction } from '@polarityio/integration-types';
-import { PollSpec } from '@polarityio/integration-types';
-import { PossibleUserOptionValue } from '@polarityio/integration-types';
-import { RequestContext } from '@polarityio/integration-types';
-import { ScreenChangeRequestContext } from '@polarityio/integration-types';
-import { SelectTypeOptionValue } from '@polarityio/integration-types';
-import { StandardEntityType } from '@polarityio/integration-types';
-import { UserCache } from '@polarityio/integration-types';
-import { ValidateOptionsUserOption } from '@polarityio/integration-types';
-import { ValidateOptionsUserOptions } from '@polarityio/integration-types';
-import { ValidationError } from '@polarityio/integration-types';
+import type { DoLookupUserOptions } from '@polarityio/integration-types';
+import type { Entity } from '@polarityio/integration-types';
+import type { EntityType } from '@polarityio/integration-types';
+import type { IntegrationContext } from '@polarityio/integration-types';
+import type { Logger } from '@polarityio/integration-types';
+
+// @public
+export type AfterResponseHook = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse>;
 
 // @public
 export class ApiRequestError extends IntegrationError {
@@ -46,9 +23,8 @@ export class AuthRequestError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-export { CacheOptions }
-
-export { Channel }
+// @public
+export type BeforeRequestHook = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions>;
 
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
@@ -61,7 +37,11 @@ export type ConfigRequestProxyOptions = {
     json?: undefined | boolean;
 };
 
-export { CronPollSpec }
+// @public
+export const createEntity: (type: EntityType, value: string) => Entity;
+
+// @public
+export const createMockIntegrationContext: (createMockFn?: MockFnFactory) => IntegrationContext;
 
 // @public
 export interface CustomType {
@@ -80,18 +60,6 @@ export interface CustomType {
     // (undocumented)
     type?: 'custom';
 }
-
-export { DoLookupResult }
-
-export { DoLookupUserOptions }
-
-export { Entity }
-
-export { EntityPosition }
-
-export { EntityType }
-
-export { EntityTypeIdentifier }
 
 // @public (undocumented)
 interface Error_2 {
@@ -113,8 +81,6 @@ export type ErrorMeta = {
 
 // @public
 export const getLogger: () => Logger;
-
-export { GlobalCache }
 
 // @public (undocumented)
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
@@ -173,10 +139,6 @@ export type HttpRequestResponse = {
     [key: string]: unknown;
 };
 
-export { Integration }
-
-export { IntegrationCache }
-
 // @public
 export interface IntegrationConfig {
     // (undocumented)
@@ -224,12 +186,10 @@ export interface IntegrationConfig {
     supportsAdditionalCustomTypes?: boolean;
 }
 
-export { IntegrationContext }
-
 // @public (undocumented)
 export class IntegrationError extends Error {
     constructor(message: string, properties?: IntegrationErrorProperties);
-    readonly cause: Error_2;
+    readonly cause: unknown;
     readonly code: string;
     readonly detail: string;
     readonly help: string;
@@ -242,7 +202,7 @@ export class IntegrationError extends Error {
 
 // @public (undocumented)
 export interface IntegrationErrorProperties {
-    cause?: Error_2;
+    cause?: unknown;
     code?: string;
     help?: string;
     meta?: MetaObject;
@@ -289,8 +249,6 @@ export type IntegrationOption = {
     adminOnly: boolean;
 };
 
-export { IntervalPollSpec }
-
 // @public (undocumented)
 export type IsApiErrorFunction = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => IsApiErrorResult;
 
@@ -305,9 +263,11 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-export { Logger }
-
-export { LookupResult }
+// @public
+export interface Limiter {
+    // (undocumented)
+    schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
+}
 
 // @public (undocumented)
 export type MetaObject = {
@@ -315,36 +275,45 @@ export type MetaObject = {
 };
 
 // @public
+export type MockFnFactory = () => (...args: any[]) => any;
+
+// @public
 export class NetworkError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-export { OnDemandRequestContext }
+// @public
+export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
+
+// @public
+export type OnNetworkErrorHook = (error: NetworkError | RetryRequestError, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
 
 // @public (undocumented)
 export const parseErrorToReadableJson: (error: Error_2) => any;
 
-export { PolarityCache }
-
 // @public
 export class PolarityRequest {
     constructor(options?: PolarityRequestOptions);
+    readonly hooks: Required<PolarityRequestHooks>;
     readonly httpResponseErrorMessageProperties: string[];
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
-    postprocessRequestFailure: PostprocessRequestFailure;
-    postprocessRequestSuccess: PostprocessRequestSuccess;
-    preprocessRequestOptions: PreprocessRequestOptions;
+    limiter: Limiter | null;
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
-    run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse> | never;
-    runInParallel(options: RunInParallelOptions): Promise<HttpRequestResponse[]>;
-    // (undocumented)
-    get throttlingOptions(): Bottleneck.ConstructorOptions;
-    set throttlingOptions(throttlingOptions: Bottleneck.ConstructorOptions);
+    run(requestOptions: HttpRequestOptions): Promise<HttpRequestResponse | undefined> | never;
+    runInParallel(options: RunInParallelOptions): Promise<(HttpRequestResponse | undefined)[]>;
     // (undocumented)
     userOptions: DoLookupUserOptions;
+}
+
+// @public
+export interface PolarityRequestHooks {
+    afterResponse?: AfterResponseHook[];
+    beforeRequest?: BeforeRequestHook[];
+    onApiError?: OnApiErrorHook[];
+    onNetworkError?: OnNetworkErrorHook[];
 }
 
 // @public (undocumented)
@@ -352,43 +321,20 @@ export interface PolarityRequestOptions {
     // (undocumented)
     defaults?: ConfigRequestProxyOptions;
     // (undocumented)
+    hooks?: PolarityRequestHooks;
+    // (undocumented)
     httpResponseErrorMessageProperties?: string[];
     // (undocumented)
     httpResponseErrorProperties?: string[];
     // (undocumented)
     isApiError?: IsApiErrorFunction;
     // (undocumented)
-    postprocessRequestFailure?: PostprocessRequestFailure;
-    // (undocumented)
-    postprocessRequestSuccess?: PostprocessRequestSuccess;
-    // (undocumented)
-    preprocessRequestOptions?: PreprocessRequestOptions;
+    limiter?: Limiter;
     // (undocumented)
     requestOptionsToSanitize?: string[];
     // (undocumented)
     roundedSuccessStatusCodes?: number[];
-    // (undocumented)
-    throttlingOptions?: Bottleneck.ConstructorOptions;
 }
-
-export { Poll }
-
-export { PollFunction }
-
-export { PollSpec }
-
-export { PossibleUserOptionValue }
-
-// @public (undocumented)
-export type PostprocessRequestFailure = (error: Error, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<unknown> | never;
-
-// @public
-export type PostprocessRequestSuccess = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse> | never;
-
-// @public
-export type PreprocessRequestOptions = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions> | never | undefined;
-
-export { RequestContext }
 
 // @public
 export class RetryRequestError extends IntegrationError {
@@ -405,8 +351,6 @@ export type RunInParallelOptions = {
 // @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
 
-export { ScreenChangeRequestContext }
-
 // @public
 export interface SelectOptionItem {
     // (undocumented)
@@ -415,11 +359,9 @@ export interface SelectOptionItem {
     value: string;
 }
 
-export { SelectTypeOptionValue }
-
 // @public (undocumented)
 export interface SerializedIntegrationError {
-    cause?: Error_2;
+    cause?: unknown;
     code?: number | string;
     detail: string;
     help?: string;
@@ -433,16 +375,6 @@ export interface SerializedIntegrationError {
 
 // @public
 export const setLogger: (logger: Logger) => void;
-
-export { StandardEntityType }
-
-export { UserCache }
-
-export { ValidateOptionsUserOption }
-
-export { ValidateOptionsUserOptions }
-
-export { ValidationError }
 
 // @public
 export interface ViewComponent {
