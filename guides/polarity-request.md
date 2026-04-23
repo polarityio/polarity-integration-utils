@@ -404,7 +404,7 @@ async function doLookup(entity: Entity): Promise<LookupResult> {
 }
 ```
 
-Alternatively, you can use the `onNetworkError` hook to handle rate limit errors. When an `onNetworkError` hook returns without throwing, the error is suppressed and `run()` returns `undefined`:
+Alternatively, you can use the `onNetworkError` hook to suppress rate limit errors so that `run()` returns `undefined` instead of throwing. **Note:** Suppressing rate limit errors is not generally recommended as it silently drops requests that could otherwise be retried. Use this pattern only when your integration needs to return partial results rather than fail entirely:
 
 ```typescript
 import { PolarityRequest } from 'polarity-integration-utils/requests';
