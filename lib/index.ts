@@ -1,9 +1,7 @@
 import * as errors from './errors';
 import * as requests from './requests';
 import * as logging from './logging';
-import * as context from './context';
-import * as types from './types';
 
 export * from './types';
 
-export { errors, requests, logging, context, types };
+export { errors, requests, logging };

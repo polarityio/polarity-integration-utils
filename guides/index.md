@@ -8,23 +8,26 @@ The Polarity Integration Utils library provides a set of utilities to help you b
 
 ## Installation
 
-You can leverage the Polarity Request library in your integration by installing the `polarity-integration-utils` package. You can install the package using `npm` which will also update your `package.json` like this:
+Install `polarity-integration-utils` and its peer dependency `@polarityio/integration-types`:
 
 ```bash
-npm install polarity-integration-utils
+npm install polarity-integration-utils @polarityio/integration-types
 ```
 
-Additionally, you can manually add the dependency to your `package.json` the `dependencies`:
+Or manually add both to your `package.json`:
 
-```
+```json
 {
-  "dependencies": "polarity-integration-utils": "^2.0.0"
+  "dependencies": {
+    "polarity-integration-utils": "^4.0.0",
+    "@polarityio/integration-types": "^1.1.0"
+  }
 }
 ```
 
-When manually adding the dependency, you will need to run `npm install` to install the package.
+When manually adding dependencies, run `npm install` to install them.
 
 ## Guides
 
 - [Polarity Request](./polarity-request.md) - HTTP request utilities for integrations
-- [Cache Interface](./cache.md) - Hierarchical caching system for improved performance
+- [Testing](./testing.md) - Testing utilities for integrations

@@ -1,145 +1,111 @@
-import { z } from 'zod';
-import { Logger as PolarityLogger } from './logging';
-import {
-  ValidationErrorSchema,
-  DoLookupUserOptionsSchema,
-  ValidateOptionsUserOptionsSchema,
-  ValidateOptionsUserOptionSchema,
-  PossibleUserOptionValueSchema,
-  DropdownUserOptionValueSchema,
-  EntitySchema,
-  EntityTypeSchema,
-  StandardEntityTypeSchema,
-  ChannelSchema,
-  ResultSchema,
-  IntegrationConfigSchema
-} from './zod-types';
+// Re-export utils-specific types
+export { IntegrationError } from './errors';
 
 /**
+ * Integration config.json type
  * @public
  */
-export type ValidationError = z.infer<typeof ValidationErrorSchema>;
-
-/**
- * User options object passed into the integration's `doLookup` method.
- *
- * @example
- * Example of the user options object passed into `doLookup`
- * ```js
- * function doLookup(entities, options, cb){
- *   // options here is of type DoLookupUserOptions
- * }
- * ```
- *
- * @example
- * As an example, if your integration has a user option with a `key` value of
- * `apiKey` within its `config.json`, the user options object passed into the `doLookup` method would look like:
- * ```json
- * {
- *   "apiKey": "XXXXXXXXXX"
- * }
- * ```
- * @public
- */
-export type DoLookupUserOptions = z.infer<typeof DoLookupUserOptionsSchema>;
-
-/**
- * @public
- */
-export type ValidateOptionsUserOptions = z.infer<typeof ValidateOptionsUserOptionsSchema>;
-
-/**
- * @public
- */
-export type ValidateOptionsUserOption = z.infer<typeof ValidateOptionsUserOptionSchema>;
-
-/**
- * @public
- */
-export type PossibleUserOptionValue = z.infer<typeof PossibleUserOptionValueSchema>;
-
-/**
- * @public
- */
-export type DropdownUserOptionValue = z.infer<typeof DropdownUserOptionValueSchema>;
-
-/**
- * Represents a Polarity Entity object which is passed to an integration's
- * doLookup method.
- *
- * @public
- */
-export type Entity = z.infer<typeof EntitySchema>;
-
-/**
- * @public
- */
-export type Channel = z.infer<typeof ChannelSchema>;
-
-/**
- * Entity Types including custom types
- * @public
- */
-export type EntityType = z.infer<typeof EntityTypeSchema>;
-
-/**
- * List of supported entity type values
- * @public
- */
-export type StandardEntityType = z.infer<typeof StandardEntityTypeSchema>;
-
-/**
- * @public
- */
-export type Result<TDetails = unknown> = Omit<z.infer<typeof ResultSchema>, 'data'> & {
-  data: {
-    summary: string[];
-    details: TDetails;
+export interface IntegrationConfig {
+  polarityIntegrationUuid: string;
+  name: string;
+  acronym: string;
+  description?: string;
+  defaultColor?: string;
+  entityTypes?: string[];
+  dataTypes?: (string | CustomType)[];
+  customTypes?: CustomType[];
+  supportsAdditionalCustomTypes?: boolean;
+  styles?: string[];
+  block: ViewComponent;
+  summary?: ViewComponent;
+  onDemandOnly?: boolean;
+  copyOnDemand?: boolean;
+  logging?: {
+    level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   };
-};
-
-/**
- * @public
- */
-export type DoLookupResult<TDetails = unknown> = Result<TDetails>[];
-
-/**
- * @public
- */
-export type IntegrationConfig = z.infer<typeof IntegrationConfigSchema>;
-
-/**
- * @public
- */
-export { PolarityLogger };
-
-/**
- * @public
- */
-import { IntegrationContext } from './context';
-import { IntegrationError } from './errors';
-
-export { IntegrationContext, IntegrationError };
-
-export interface Integration<TStartupResult = unknown, TDetails = unknown> {
-  startup: (logger: PolarityLogger) => Promise<TStartupResult>;
-  doLookup: (
-    entities: Entity[],
-    options: DoLookupUserOptions,
-    context: IntegrationContext
-  ) => Promise<DoLookupResult<TDetails> | IntegrationError | null | void>;
-  onMessage?: (
-    payload: unknown,
-    options: DoLookupUserOptions,
-    context: IntegrationContext
-  ) => Promise<unknown>;
-  onDetails?: (
-    lookupObject: Result<TDetails>,
-    options: DoLookupUserOptions,
-    context: IntegrationContext
-  ) => Promise<unknown>;
-  validateOptions: (
-    options: ValidateOptionsUserOptions,
-    context: IntegrationContext
-  ) => IntegrationError[];
+  request?: {
+    cert?: string;
+    key?: string;
+    passphrase?: string;
+    ca?: string;
+    proxy?: string;
+    rejectUnauthorized?: boolean;
+  };
+  options?: IntegrationOption[];
 }
+
+/**
+ * Custom entity type definition for config.json
+ * @public
+ */
+export interface CustomType {
+  type?: 'custom';
+  name?: string;
+  description?: string;
+  key: string;
+  regex: string;
+  editable?: boolean;
+  enabled?: boolean;
+}
+
+/**
+ * View component reference in config.json
+ * @public
+ */
+export interface ViewComponent {
+  component: { file: string };
+  template: { file: string };
+}
+
+/**
+ * A select option item with display label and value
+ * @public
+ */
+export interface SelectOptionItem {
+  value: string;
+  display: string;
+}
+
+/**
+ * Integration option definition for config.json
+ * @public
+ */
+export type IntegrationOption =
+  | {
+      type: 'text' | 'password';
+      key: string;
+      name: string;
+      description?: string;
+      default: string | null;
+      userCanEdit?: boolean;
+      adminOnly?: boolean;
+    }
+  | {
+      type: 'boolean';
+      key: string;
+      name: string;
+      description?: string;
+      default: boolean | null;
+      userCanEdit?: boolean;
+      adminOnly?: boolean;
+    }
+  | {
+      type: 'number';
+      key: string;
+      name: string;
+      description?: string;
+      default: number | null;
+      userCanEdit?: boolean;
+      adminOnly?: boolean;
+    }
+  | {
+      type: 'select';
+      key: string;
+      name: string;
+      description?: string;
+      default: SelectOptionItem | SelectOptionItem[] | string | null;
+      options: SelectOptionItem[];
+      multiple?: boolean;
+      userCanEdit: boolean;
+      adminOnly: boolean;
+    };

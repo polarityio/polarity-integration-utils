@@ -6,4 +6,4 @@ export * from './errors';
 export * from './requests';
 export * from './logging';
 export * from './types';
-export * from './context';
+export * from './testing';
