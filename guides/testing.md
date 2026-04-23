@@ -205,58 +205,30 @@ const hashEntity = createEntity('MD5', 'd41d8cd98f00b204e9800998ecf8427e');
 - `type`: An `EntityType` string (e.g., `'IPv4'`, `'IPv6'`, `'domain'`, `'MD5'`, `'SHA256'`)
 - `value`: The entity value string
 
-### `createMockIntegrationContext()`
+### `createMockIntegrationContext(createMockFn?)`
 
-Creates a mock `IntegrationContext` with stubbed logger and cache methods.
+Creates a mock `IntegrationContext` with stubbed logger and cache methods. Pass your testing framework's mock function factory to enable spy capabilities (e.g., `toHaveBeenCalledWith()`).
 
 ```typescript
 import { createMockIntegrationContext } from 'polarity-integration-utils/testing';
 
+// With Vitest — enables assertions on mock calls
+const context = createMockIntegrationContext(vi.fn);
+
+// With Jest
+const context = createMockIntegrationContext(jest.fn);
+
+// Without a framework — uses plain no-op stubs
 const context = createMockIntegrationContext();
-
-// context.logger — stubbed logger (trace, debug, info, warn, error, fatal)
-// context.cache.global — stubbed get, set, delete
-// context.cache.integration — stubbed get, set, delete
-// context.cache.user — stubbed get, set, delete
 ```
 
-> **Note:** `createMockIntegrationContext` uses `jest.fn()` internally for stubs. If your project uses Vitest, you may prefer creating your own mock context using `vi.fn()` as shown below.
+The returned context includes:
 
-### Creating a Vitest-Native Mock Context
+- `context.logger` — stubbed logger (`trace`, `debug`, `info`, `warn`, `error`, `fatal`, `child`)
+- `context.cache.global` / `integration` / `user` — stubbed `get`, `set`, `delete`
+- `context.startPolling` / `stopPolling` — stubbed functions
 
-```typescript
-import { vi } from 'vitest';
-import type { IntegrationContext, Logger } from '@polarityio/integration-types';
-
-function createMockLogger(): Logger {
-  const logger: Record<string, unknown> = {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-    child: vi.fn()
-  };
-  (logger.child as ReturnType<typeof vi.fn>).mockReturnValue(logger);
-  return logger as unknown as Logger;
-}
-
-function createMockContext(): IntegrationContext {
-  return {
-    logger: createMockLogger(),
-    cache: {
-      global: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
-      integration: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
-      user: { get: vi.fn(), set: vi.fn(), delete: vi.fn() }
-    },
-    integrationId: 'test-integration',
-    userId: 1,
-    startPolling: vi.fn(),
-    stopPolling: vi.fn()
-  } as unknown as IntegrationContext;
-}
-```
+When a mock factory is provided, `logger.child()` is automatically wired to return the logger for method chaining.
 
 ## Testing `validateOptions`
 

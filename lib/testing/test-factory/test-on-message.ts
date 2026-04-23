@@ -17,17 +17,8 @@ export const testOnMessage = (
   }
 ) => {
   test(description, async () => {
-    const mockLogger = {
-      child: jest.fn().mockReturnThis(),
-      info: jest.fn(),
-      debug: jest.fn(),
-      trace: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      fatal: jest.fn()
-    } as unknown as Parameters<typeof integration.startup>[0];
-    await integration.startup(mockLogger);
     const context = createMockIntegrationContext();
+    await integration.startup(context.logger);
     if (typeof integration.onMessage !== 'function') {
       throw new Error('Integration does not have an onMessage method.');
     }

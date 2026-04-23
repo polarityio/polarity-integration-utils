@@ -15,17 +15,8 @@ export const testDoLookup = (
   }
 ) => {
   test(description, async () => {
-    const mockLogger = {
-      child: jest.fn().mockReturnThis(),
-      info: jest.fn(),
-      debug: jest.fn(),
-      trace: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      fatal: jest.fn()
-    } as unknown as Parameters<typeof integration.startup>[0];
-    await integration.startup(mockLogger);
     const context = createMockIntegrationContext();
+    await integration.startup(context.logger);
     const result = await integration.doLookup(entities, options, context);
     expect(result).toEqual(expected);
   });
