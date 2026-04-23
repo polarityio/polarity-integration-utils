@@ -2,7 +2,6 @@ import { setLogger } from '../../lib/logging/logger';
 import { identity } from 'lodash/fp';
 import {
   HttpRequestOptions,
-  HttpRequestResponse,
   PolarityRequest,
   BeforeRequestHook,
   AfterResponseHook,
