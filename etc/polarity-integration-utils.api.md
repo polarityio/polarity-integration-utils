@@ -7,7 +7,6 @@
 import type { DoLookupUserOptions } from '@polarityio/integration-types';
 import type { Entity } from '@polarityio/integration-types';
 import type { EntityType } from '@polarityio/integration-types';
-import type { Integration } from '@polarityio/integration-types';
 import type { IntegrationContext } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
 
@@ -40,12 +39,6 @@ export type ConfigRequestProxyOptions = {
 
 // @public
 export const createEntity: (type: EntityType, value: string) => Entity;
-
-// @public
-export const createIntegrationTests: (integration: Integration) => {
-    testDoLookup: any;
-    testOnMessage: any;
-};
 
 // @public
 export const createMockIntegrationContext: (createMockFn?: MockFnFactory) => IntegrationContext;
