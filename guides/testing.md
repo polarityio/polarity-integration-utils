@@ -1,3 +1,9 @@
+---
+title: Testing
+group: Documents
+category: Guides
+---
+
 # Integration Testing Guide
 
 This guide shows integration developers how to use `polarity-integration-utils/testing` to create comprehensive test suites for their integrations (v2).

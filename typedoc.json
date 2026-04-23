@@ -1,7 +1,12 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./lib/index.docs.ts"],
-  "projectDocuments": ["./guides/*.md"],
+  "projectDocuments": [
+    "./guides/index.md",
+    "./guides/polarity-request.md",
+    "./guides/cache.md",
+    "./guides/testing.md"
+  ],
   "outputs": [
     {
       "name": "html",
