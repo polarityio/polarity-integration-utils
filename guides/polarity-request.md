@@ -361,11 +361,11 @@ const request = new PolarityRequest();
 request.limiter = context.limiter;
 ```
 
-When a limiter is set, all HTTP requests made via `run()` are scheduled through `limiter.schedule()`. If the limiter rejects a request (e.g., due to a `highWater` limit), a `RetryRequestError` is thrown so the Polarity server knows to retry later.
+When a limiter is set, all HTTP requests made via `run()` are scheduled through `limiter.schedule()`. If the limiter rejects a request (e.g., due to a `highWater` limit), a `RetryRequestError` is thrown.
 
 ### Handling `RetryRequestError`
 
-By default, a `RetryRequestError` propagates up to the Polarity server which will retry the request automatically. If you want to handle the rate limit gracefully — for example, returning results with a flag instead of failing — you can catch the error in your integration:
+By default, a `RetryRequestError` propagates up to the caller as an unhandled error. You can catch it in your integration to handle the rate limit gracefully — for example, returning results with a flag instead of failing:
 
 ```typescript
 import { PolarityRequest } from 'polarity-integration-utils/requests';
