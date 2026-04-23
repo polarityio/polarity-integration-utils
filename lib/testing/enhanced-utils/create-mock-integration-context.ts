@@ -17,6 +17,7 @@ import type { IntegrationContext } from '@polarityio/integration-types';
  * const ctx = createMockIntegrationContext();
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must use `any` to match vi.fn/jest.fn signatures
 export type MockFnFactory = () => (...args: any[]) => any;
 
 const noOp: MockFnFactory = () => () => undefined;
@@ -64,10 +65,10 @@ export const createMockIntegrationContext = (
   } as unknown as IntegrationContext['logger'];
 
   // Make child() return the logger for method chaining
-  if (typeof (childFn as any).mockReturnValue === 'function') {
-    (childFn as any).mockReturnValue(logger);
+  if (typeof (childFn as unknown as { mockReturnValue?: unknown }).mockReturnValue === 'function') {
+    (childFn as unknown as { mockReturnValue: (val: unknown) => void }).mockReturnValue(logger);
   } else {
-    (logger as any).child = () => logger;
+    (logger as unknown as Record<string, unknown>).child = () => logger;
   }
 
   return {
