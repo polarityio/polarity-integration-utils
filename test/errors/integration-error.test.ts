@@ -223,7 +223,7 @@ describe('IntegrationError', () => {
     expect(serializedError).toHaveProperty('cause.stack');
 
     delete serializedError.stack;
-    delete serializedError.cause.stack;
+    delete (serializedError.cause as { stack?: string })?.stack;
 
     expect(serializedError).toEqual(expectedSerialization);
   });

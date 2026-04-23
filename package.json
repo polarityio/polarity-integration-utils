@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "3.1.8",
+  "version": "3.2.0",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -71,7 +71,8 @@
     "lint": "tsc --noEmit && eslint .",
     "lint:fix": "eslint . --fix",
     "lint:ts": "tsc --noEmit",
-    "lint:es": "eslint ."
+    "lint:es": "eslint .",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",

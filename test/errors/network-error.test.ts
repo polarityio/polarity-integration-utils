@@ -26,7 +26,7 @@ describe('NetworkError', () => {
 
     expect(intError).toHaveProperty('help');
     
-    expect(intError.help.substring(0, 10)).toEqual('SSL errors');
+    expect(intError.help?.substring(0, 10)).toEqual('SSL errors');
   });
 
   it('should set help property for Network errors', () => {
@@ -40,7 +40,7 @@ describe('NetworkError', () => {
 
     expect(intError).toHaveProperty('help');
 
-    expect(intError.help.substring(0, 7)).toEqual('Network');
+    expect(intError.help?.substring(0, 7)).toEqual('Network');
   });
 
   it('should set help property for DNS (ENOTFOUND) errors', () => {

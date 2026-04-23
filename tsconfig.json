@@ -15,7 +15,8 @@
     "lib": ["es2022"],
     "declaration": true,
     "declarationMap": true,
-    "declarationDir": "dist/dts"
+    "declarationDir": "dist/dts",
+    "types": ["jest", "node"]
   },
   "exclude": ["dist"]
 }
