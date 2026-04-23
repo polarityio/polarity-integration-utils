@@ -147,7 +147,7 @@ const request = new PolarityRequest({
 });
 ```
 
-In most Polarity integrations these values come from the integration's `config.json` and are passed through from the server. You typically won't set them manually.
+Default values for proxy and TLS certificates are provided by the Polarity server and do not typically need to be manually set. The server passes these through based on the platform's configuration.
 
 ## Modify Success HTTP Status Codes
 
