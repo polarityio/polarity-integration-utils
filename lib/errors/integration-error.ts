@@ -157,29 +157,29 @@ export class IntegrationError extends Error {
   /**
    * a meta object containing non-standard meta-information about the error.
    */
-  readonly meta: ErrorMeta;
+  readonly meta?: ErrorMeta;
 
   /**
    * The HTTP status code applicable to this error, expressed as a string value.
    */
-  readonly status: string;
+  readonly status?: string;
 
   /**
    *  an application-specific error code, expressed as a string value.
    */
-  readonly code: string;
+  readonly code?: string;
 
   /**
    * The `cause` property is used to specify the `cause` of the error.  Typically,
    * this property is used to pass through a related Error instance but can be any value.
    */
-  readonly cause: unknown;
+  readonly cause?: unknown;
   /**
    * Additional details related to the error that may help the user troubleshoot the issue.  If set by the user
    * via the Error constructor, the user provided value will override any automated help message set by the
    * Error class.
    */
-  readonly help: string;
+  readonly help?: string;
   /**
    * Relevant for integration errors involving a network call, the `requestOptions` property
    * details the request options that resulted in the specified error.  The `requestOptions` property will automatically
