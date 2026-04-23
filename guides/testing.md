@@ -62,6 +62,7 @@ import type {
   IntegrationContext
 } from '@polarityio/integration-types';
 import type { HttpRequestResponse } from 'polarity-integration-utils/requests';
+import { createMockIntegrationContext } from 'polarity-integration-utils/testing';
 
 // Hoist mock functions so they're available before vi.mock() runs
 const { mockRun } = vi.hoisted(() => ({
@@ -82,6 +83,9 @@ vi.mock('polarity-integration-utils/requests', () => {
 
 // Import your integration AFTER vi.mock() so it receives the mocked module
 import { doLookup, startup } from '../src/integration';
+
+// Shorthand for creating a mock context with Vitest spies
+const createMockContext = () => createMockIntegrationContext(vi.fn);
 ```
 
 ### Helper Functions for Mock Responses
@@ -267,28 +271,42 @@ describe('validateOptions', () => {
 });
 ```
 
-## Mocking Cache
+## Asserting on Cache Calls
 
-You can provide mock implementations for cache methods to simulate caching behavior:
+The mock context created by `createMockIntegrationContext(vi.fn)` includes stubbed cache methods. You can assert that your integration reads from or writes to the cache:
 
 ```typescript
 describe('cache operations', () => {
   it('should cache lookup results', async () => {
     mockRunSuccess({ ip: '8.8.8.8', org: 'Google LLC' });
-    const context = createMockContext();
-    const cacheStore = new Map<string, unknown>();
-
-    (context.cache.integration.get as ReturnType<typeof vi.fn>)
-      .mockImplementation((key: string) => cacheStore.get(key));
-    (context.cache.integration.set as ReturnType<typeof vi.fn>)
-      .mockImplementation((key: string, value: unknown) => cacheStore.set(key, value));
+    const context = createMockIntegrationContext(vi.fn);
 
     const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
     await doLookup(entities, options, context);
 
-    expect(context.cache.integration.set).toHaveBeenCalled();
+    expect(context.cache.integration.set).toHaveBeenCalledWith(
+      '8.8.8.8',
+      expect.objectContaining({ org: 'Google LLC' })
+    );
+  });
+
+  it('should return cached data when available', async () => {
+    const context = createMockIntegrationContext(vi.fn);
+    const cached = { ip: '8.8.8.8', org: 'Google LLC' };
+
+    (context.cache.integration.get as ReturnType<typeof vi.fn>)
+      .mockResolvedValue(cached);
+
+    const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
+    const options: DoLookupUserOptions = { apiKey: 'test-key' };
+
+    await doLookup(entities, options, context);
+
+    // Verify cache was checked and no HTTP request was made
+    expect(context.cache.integration.get).toHaveBeenCalledWith('8.8.8.8');
+    expect(mockRun).not.toHaveBeenCalled();
   });
 });
 ```
