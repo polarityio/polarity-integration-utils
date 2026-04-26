@@ -61,7 +61,7 @@ import type {
   DoLookupUserOptions,
   IntegrationContext
 } from '@polarityio/integration-types';
-import type { HttpRequestResponse } from 'polarity-integration-utils/requests';
+import type { HttpRequestResponse } from 'polarity-integration-utils';
 import { createMockIntegrationContext } from 'polarity-integration-utils/testing';
 
 // Hoist mock functions so they're available before vi.mock() runs
@@ -69,6 +69,8 @@ const { mockRun } = vi.hoisted(() => ({
   mockRun: vi.fn()
 }));
 
+// Mocking the sub-path works even if your integration imports from the root,
+// because the root module re-exports from this sub-path internally.
 vi.mock('polarity-integration-utils/requests', () => {
   return {
     PolarityRequest: vi.fn().mockImplementation(() => ({
@@ -143,7 +145,7 @@ describe('doLookup', () => {
   });
 
   it('should throw when the API returns an error', async () => {
-    const { ApiRequestError } = await import('polarity-integration-utils/errors');
+    const { ApiRequestError } = await import('polarity-integration-utils');
     mockRunError(new ApiRequestError('Forbidden'));
 
     const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
@@ -155,7 +157,7 @@ describe('doLookup', () => {
   });
 
   it('should throw on network errors', async () => {
-    const { NetworkError } = await import('polarity-integration-utils/errors');
+    const { NetworkError } = await import('polarity-integration-utils');
     mockRunError(new NetworkError('ECONNREFUSED'));
 
     const entities: Entity[] = [createEntity('domain', 'unreachable.example.com')];

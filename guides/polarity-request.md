@@ -11,14 +11,14 @@ The Polarity Integration Utils library provides a set of utilities to help you b
 To start, import the `PolarityRequest` class at the top of your integration file.
 
 ```typescript
-import { PolarityRequest } from 'polarity-integration-utils/requests';
+import { PolarityRequest } from 'polarity-integration-utils';
 ```
 
 Typically, you will want to create a single instance of the `PolarityRequest` class and use that instance for all of your requests.  You can do this by creating a new instance in the `startup` method of your integration.
 
 ```typescript
 import type { Logger } from '@polarityio/integration-types';
-import { setLogger } from 'polarity-integration-utils/logging';
+import { setLogger } from 'polarity-integration-utils';
 
 let request: PolarityRequest;
 
@@ -67,7 +67,7 @@ The HTTP request is considered successful if any 2xx status code is returned.  I
 In the event of a network error (e.g., DNS lookup failure, connection timeout, etc.), the `run` method will throw a {@link NetworkError}.
 
 ```typescript
-import { ApiRequestError, NetworkError } from 'polarity-integration-utils/errors';
+import { ApiRequestError, NetworkError } from 'polarity-integration-utils';
 
 try {
   const response = await request.run({
@@ -95,7 +95,7 @@ The `runInParallel` method will return an array of {@link HttpRequestResponse} o
 A typical pattern for running multiple requests in parallel is to create an array of requests and then passing those into the `runInParallel` method.
 
 ```typescript
-import type { HttpRequestOptions } from 'polarity-integration-utils/requests';
+import type { HttpRequestOptions } from 'polarity-integration-utils';
 
 const users: string[] = ['octocat', 'polarityio', 'threatconnect-inc'];
 
@@ -244,7 +244,7 @@ If you need full control over error detection you can implement the `isApiError`
 When `isApiError` is provided, the `roundedSuccessStatusCodes` and `httpResponseErrorProperties` options are not used for error detection.  If `isApiError` returns `{ isApiError: true }` without a `message`, the `httpResponseErrorMessageProperties` and `httpResponseErrorProperties` options may still be used to derive a default error message.
 
 ```typescript
-import type { HttpRequestResponse, HttpRequestOptions, IsApiErrorResult } from 'polarity-integration-utils/requests';
+import type { HttpRequestResponse, HttpRequestOptions, IsApiErrorResult } from 'polarity-integration-utils';
 import type { DoLookupUserOptions } from '@polarityio/integration-types';
 
 function checkForApiError(
@@ -277,7 +277,7 @@ There are four hook types:
 ## Adding Authentication with `beforeRequest`
 
 ```typescript
-import type { BeforeRequestHook } from 'polarity-integration-utils/requests';
+import type { BeforeRequestHook } from 'polarity-integration-utils';
 
 const addAuthentication: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
@@ -299,7 +299,7 @@ const request = new PolarityRequest({
 ## Extracting Response Data with `afterResponse`
 
 ```typescript
-import type { AfterResponseHook } from 'polarity-integration-utils/requests';
+import type { AfterResponseHook } from 'polarity-integration-utils';
 
 const extractData: AfterResponseHook = async (response, requestOptions, userOptions) => {
   return {
@@ -320,7 +320,7 @@ const request = new PolarityRequest({
 The `onApiError` hook gives you access to both the error and the original HTTP response, making it easy to inspect status codes, headers, and the response body.
 
 ```typescript
-import type { OnApiErrorHook } from 'polarity-integration-utils/requests';
+import type { OnApiErrorHook } from 'polarity-integration-utils';
 
 const suppressNotFound: OnApiErrorHook = async (error, response, requestOptions, userOptions) => {
   if (response.statusCode === 404) {
@@ -341,7 +341,7 @@ const request = new PolarityRequest({
 ## Handling Network Errors with `onNetworkError`
 
 ```typescript
-import type { OnNetworkErrorHook } from 'polarity-integration-utils/requests';
+import type { OnNetworkErrorHook } from 'polarity-integration-utils';
 
 const logNetworkError: OnNetworkErrorHook = async (error, requestOptions, userOptions) => {
   logger.error({ err: error }, 'Network error occurred');
@@ -361,7 +361,7 @@ const request = new PolarityRequest({
 Hooks execute in array order. For `beforeRequest` and `afterResponse`, each hook receives the output of the previous hook:
 
 ```typescript
-import type { BeforeRequestHook } from 'polarity-integration-utils/requests';
+import type { BeforeRequestHook } from 'polarity-integration-utils';
 
 const addAuth: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
@@ -389,8 +389,7 @@ const request = new PolarityRequest({
 The Polarity server provides a rate limiter instance to your integration via the context object. You can pass this limiter to `PolarityRequest` to throttle outgoing HTTP requests. The limiter must satisfy the `Limiter` interface exported by this library:
 
 ```typescript
-import { PolarityRequest } from 'polarity-integration-utils/requests';
-import type { Limiter } from 'polarity-integration-utils/requests';
+import { PolarityRequest, type Limiter } from 'polarity-integration-utils';
 
 // The limiter is provided by the Polarity server via the integration context
 const limiter: Limiter = context.limiter;
@@ -414,9 +413,7 @@ When a limiter is set, all HTTP requests made via `run()` are scheduled through 
 By default, a `RetryRequestError` propagates up to the caller as an unhandled error. You can catch it in your integration to handle the rate limit gracefully — for example, returning results with a flag instead of failing:
 
 ```typescript
-import { PolarityRequest } from 'polarity-integration-utils/requests';
-import { RetryRequestError } from 'polarity-integration-utils/errors';
-import type { Limiter } from 'polarity-integration-utils/requests';
+import { PolarityRequest, RetryRequestError, type Limiter } from 'polarity-integration-utils';
 import type { LookupResult } from '@polarityio/integration-types';
 
 const limiter: Limiter = context.limiter;
@@ -453,9 +450,7 @@ async function doLookup(entity: Entity): Promise<LookupResult> {
 Alternatively, you can use the `onNetworkError` hook to suppress rate limit errors so that `run()` returns `undefined` instead of throwing. **Note:** Suppressing rate limit errors is not generally recommended as it silently drops requests that could otherwise be retried. Use this pattern only when your integration needs to return partial results rather than fail entirely:
 
 ```typescript
-import { PolarityRequest } from 'polarity-integration-utils/requests';
-import { RetryRequestError } from 'polarity-integration-utils/errors';
-import type { OnNetworkErrorHook } from 'polarity-integration-utils/requests';
+import { PolarityRequest, RetryRequestError, type OnNetworkErrorHook } from 'polarity-integration-utils';
 
 const suppressRateLimitError: OnNetworkErrorHook = async (error) => {
   if (error instanceof RetryRequestError) {
