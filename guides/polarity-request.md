@@ -279,7 +279,7 @@ There are four hook types:
 ```typescript
 import type { BeforeRequestHook } from 'polarity-integration-utils';
 
-const addAuthentication: BeforeRequestHook= async (requestOptions, userOptions) => {
+const addAuthentication: BeforeRequestHook = async (requestOptions, userOptions) => {
   return {
     ...requestOptions,
     headers: {
@@ -391,7 +391,7 @@ The Polarity server provides a rate limiter instance to your integration via the
 ```typescript
 import { PolarityRequest, type Limiter } from 'polarity-integration-utils';
 
-// The limiter is providedby the Polarity server via the integration context
+// The limiter is provided by the Polarity server via the integration context
 const limiter: Limiter = context.limiter;
 
 const request = new PolarityRequest({ limiter });

@@ -69,6 +69,8 @@ const { mockRun } = vi.hoisted(() => ({
   mockRun: vi.fn()
 }));
 
+// Mocking the sub-path works even if your integration imports from the root,
+// because the root module re-exports from this sub-path internally.
 vi.mock('polarity-integration-utils/requests', () => {
   return {
     PolarityRequest: vi.fn().mockImplementation(() => ({
