@@ -1,5 +1,4 @@
 // Re-export utils-specific types
-export { IntegrationError } from './errors';
 
 /**
  * Integration config.json type

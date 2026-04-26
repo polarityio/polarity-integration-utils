@@ -62,19 +62,6 @@ export interface CustomType {
 }
 
 // @public (undocumented)
-interface Error_2 {
-    // (undocumented)
-    code?: number | string;
-    // (undocumented)
-    message: string;
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    stack?: string;
-}
-export { Error_2 as Error }
-
-// @public (undocumented)
 export type ErrorMeta = {
     [otherMetadata: string]: unknown;
 };
@@ -189,13 +176,13 @@ export interface IntegrationConfig {
 // @public (undocumented)
 export class IntegrationError extends Error {
     constructor(message: string, properties?: IntegrationErrorProperties);
-    readonly cause: unknown;
-    readonly code: string;
+    readonly cause?: unknown;
+    readonly code?: string;
     readonly detail: string;
-    readonly help: string;
-    readonly meta: ErrorMeta;
+    readonly help?: string;
+    readonly meta?: ErrorMeta;
     readonly requestOptions?: HttpRequestOptions;
-    readonly status: string;
+    readonly status?: string;
     readonly title: string;
     toJSON(): SerializedIntegrationError;
 }
@@ -289,7 +276,7 @@ export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestRespo
 export type OnNetworkErrorHook = (error: NetworkError | RetryRequestError, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
 
 // @public (undocumented)
-export const parseErrorToReadableJson: (error: Error_2) => any;
+export const parseErrorToReadableJson: (error: ResponseError) => any;
 
 // @public
 export class PolarityRequest {
@@ -334,6 +321,18 @@ export interface PolarityRequestOptions {
     requestOptionsToSanitize?: string[];
     // (undocumented)
     roundedSuccessStatusCodes?: number[];
+}
+
+// @public (undocumented)
+export interface ResponseError {
+    // (undocumented)
+    code?: number | string;
+    // (undocumented)
+    message: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    stack?: string;
 }
 
 // @public

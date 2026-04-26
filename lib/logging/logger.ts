@@ -32,7 +32,7 @@ let _logger: Logger = createDefaultLogger();
  * @example
  * Example of setting the logger within the integration's startup method:
  * ```js
- * const { setLogger } = require('polarity-integration-utils/logger');
+ * const { setLogger } = require('polarity-integration-utils');
  * 
  * function startup(logger){
  *   setLogger(logger);
@@ -54,7 +54,7 @@ const setLogger = (logger: Logger) => {
  * @example
  * Example of using the integration's logging object:
  * ```js
- * const { getLogger } = require('polarity-integration-utils/logger');
+ * const { getLogger } = require('polarity-integration-utils');
  * 
  * const logger = getLogger();
  * logger.trace('this is a trace message');
