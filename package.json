@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -81,7 +81,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@microsoft/api-extractor": "^7.57.7",
-    "@polarityio/integration-types": "^1.1.0",
+    "@polarityio/integration-types": "^1.1.1",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.24",
     "@types/node": "^20.14.8",
