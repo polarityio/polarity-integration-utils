@@ -169,6 +169,74 @@ async function getLookupData(entity: Entity, context: IntegrationContext): Promi
 }
 ```
 
+## Cache Key Requirements
+
+All cache keys (`get`, `set`, and `delete`) must satisfy the following constraints:
+
+- **Length**: 1–250 characters
+- **Allowed characters**: Letters, digits, dots, underscores, and hyphens — must match the pattern `/^[a-zA-Z0-9._-]+$/`
+
+An `Error` is thrown if the key is empty, exceeds 250 characters, or contains invalid characters (e.g., spaces, colons, or slashes).
+
+```typescript
+// Valid keys
+'lookup_192.168.1.1'
+'config.api-endpoint'
+'rate-limit_counter_2024-01-15'
+
+// Invalid keys — will throw an Error
+'lookup result'       // contains a space
+'config:api_endpoint' // contains a colon
+'cache/key/path'      // contains slashes
+''                    // empty string
+```
+
+### Generating Keys from Sensitive Values
+
+Avoid using sensitive data such as usernames or passwords directly as cache keys. Instead, create a SHA-1 hash of the values to produce a unique, safe key. This is especially useful when caching API tokens keyed by a user's credentials.
+
+```typescript
+import crypto from 'crypto';
+import type { IntegrationContext } from '@polarityio/integration-types';
+
+interface AuthToken {
+  token: string;
+  expiresAt: number;
+}
+
+function createCacheKey(prefix: string, ...values: string[]): string {
+  const hash = crypto.createHash('sha1').update(values.join(':')).digest('hex');
+  return `${prefix}_${hash}`;
+}
+
+async function getApiToken(
+  username: string,
+  password: string,
+  context: IntegrationContext
+): Promise<AuthToken> {
+  const cache = context?.cache;
+
+  // Generate a key from credentials without exposing them
+  // e.g., "auth-token_a1b2c3d4e5f6..."
+  const cacheKey = createCacheKey('auth-token', username, password);
+
+  if (cache) {
+    const cached = await cache.integration.get<AuthToken>(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached;
+  }
+
+  const token = await authenticateWithApi(username, password);
+
+  if (cache) {
+    await cache.integration.set(cacheKey, token, { ttl: 3600 });
+  }
+
+  return token;
+}
+```
+
+The `createCacheKey` helper concatenates the input values, hashes them with SHA-1, and prepends a descriptive prefix. The resulting key is always 40 hex characters plus the prefix — well within the 250-character limit and guaranteed to match the allowed character pattern.
+
 ## Cache Options
 
 All cache operations support optional configuration:
@@ -200,8 +268,10 @@ try {
 
 ### 2. Use Descriptive Cache Keys
 
+Keys must be 1–250 characters using only letters, digits, dots, underscores, and hyphens (`/^[a-zA-Z0-9._-]+$/`).
+
 ```typescript
-// Good — descriptive and unlikely to conflict
+// Good — descriptive, valid characters, and unlikely to conflict
 'config_api_endpoints';
 'lookup_192.168.1.1';
 'user_preferences_dashboard';
@@ -233,11 +303,11 @@ try {
 ### 4. Namespace Your Keys
 
 ```typescript
-// Use consistent prefixes to organize keys
-await cache.integration.set('config:api_endpoint', endpoint);
-await cache.integration.set('config:timeout', timeout);
-await cache.integration.set('stats:daily_lookups', count);
-await cache.integration.set('temp:processing_batch_001', batch);
+// Use consistent prefixes to organize keys (use dots, underscores, or hyphens — not colons)
+await cache.integration.set('config.api_endpoint', endpoint);
+await cache.integration.set('config.timeout', timeout);
+await cache.integration.set('stats.daily_lookups', count);
+await cache.integration.set('temp.processing_batch_001', batch);
 ```
 
 ### 5. Handle Null Returns Gracefully
