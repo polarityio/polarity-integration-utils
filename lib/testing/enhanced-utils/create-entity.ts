@@ -23,6 +23,7 @@ function toEntityTypeIdentifier(type: EntityType): EntityTypeIdentifier {
  * ```
  *
  * @group Testing
+ * @public
  */
 export const createEntity = (type: EntityType, value: string): Entity => {
   const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(

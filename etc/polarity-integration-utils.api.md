@@ -38,7 +38,7 @@ export type ConfigRequestProxyOptions = {
 };
 
 // @public
-export function createCacheKey(prefix: string, ...values: string[]): string;
+export function createCacheKey(prefix: string, value: string, ...values: string[]): string;
 
 // @public
 export const createEntity: (type: EntityType, value: string) => Entity;
@@ -278,7 +278,7 @@ export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestRespo
 // @public
 export type OnNetworkErrorHook = (error: NetworkError | RetryRequestError, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 export const parseErrorToReadableJson: (error: ResponseError) => any;
 
 // @public
@@ -326,7 +326,7 @@ export interface PolarityRequestOptions {
     roundedSuccessStatusCodes?: number[];
 }
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 export interface ResponseError {
     // (undocumented)
     code?: number | string;
