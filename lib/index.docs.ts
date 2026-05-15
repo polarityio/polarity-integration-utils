@@ -11,3 +11,4 @@ export * from './requests';
 export * from './logging';
 export * from './types';
 export * from './testing';
+export * from './cache';

@@ -5,7 +5,7 @@ import { LibraryUsageError } from '../../lib/errors';
 describe('createCacheKey', () => {
   it('should create a key with prefix and SHA-256 hash', () => {
     const key = createCacheKey('lookup', '192.168.1.1');
-    const expectedHash = crypto.createHash('sha256').update('192.168.1.1').digest('hex');
+    const expectedHash = crypto.createHash('sha256').update(JSON.stringify(['192.168.1.1'])).digest('hex');
     expect(key).toBe(`lookup_${expectedHash}`);
   });
 
@@ -15,10 +15,16 @@ describe('createCacheKey', () => {
     expect(key).toHaveLength(69);
   });
 
-  it('should join multiple values with colons before hashing', () => {
+  it('should JSON-serialize values before hashing', () => {
     const key = createCacheKey('auth', 'user', 'pass');
-    const expectedHash = crypto.createHash('sha256').update('user:pass').digest('hex');
+    const expectedHash = crypto.createHash('sha256').update(JSON.stringify(['user', 'pass'])).digest('hex');
     expect(key).toBe(`auth_${expectedHash}`);
+  });
+
+  it('should produce different keys when values containing delimiters are split differently', () => {
+    const key1 = createCacheKey('test', 'a:b', 'c');
+    const key2 = createCacheKey('test', 'a', 'b:c');
+    expect(key1).not.toBe(key2);
   });
 
   it('should produce different keys for different values', () => {

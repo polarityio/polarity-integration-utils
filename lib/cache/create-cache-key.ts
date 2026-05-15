@@ -31,7 +31,7 @@ export function createCacheKey(prefix: string, ...values: string[]): string {
     );
   }
 
-  const hash = crypto.createHash('sha256').update(values.join(':')).digest('hex');
+  const hash = crypto.createHash('sha256').update(JSON.stringify(values)).digest('hex');
   const key = `${prefix}_${hash}`;
 
   if (key.length > MAX_KEY_LENGTH) {

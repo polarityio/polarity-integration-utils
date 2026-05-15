@@ -234,7 +234,7 @@ async function getApiToken(
 }
 ```
 
-`createCacheKey` concatenates the input values, hashes them with SHA-256, and prepends the given prefix. The resulting key is always 64 hex characters plus the prefix — well within the 250-character limit and guaranteed to match the allowed character pattern. A `LibraryUsageError` is thrown if the prefix contains invalid characters or is too long.
+`createCacheKey` JSON-serializes the input values, hashes them with SHA-256, and prepends the given prefix. The resulting key is always 64 hex characters plus the prefix — well within the 250-character limit and guaranteed to match the allowed character pattern. A `LibraryUsageError` is thrown if the prefix contains invalid characters or is too long.
 
 ## Cache Options
 
