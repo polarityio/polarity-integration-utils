@@ -44,8 +44,7 @@ interface PolarityCache {
 
 ```typescript
 import type { Entity, IntegrationContext } from '@polarityio/integration-types';
-
-interface LookupResult {
+// See "Generating Keys from Sensitive Values" below for the createCacheKey helper
   title: string;
   description: string;
 }
@@ -55,7 +54,7 @@ async function doLookup(entity: Entity, context: IntegrationContext): Promise<Lo
   if (!cache) return fetchFreshData(entity);
 
   try {
-    const cacheKey = `lookup_${entity.value}`;
+    const cacheKey = createCacheKey('lookup', entity.value);
     const cached = await cache.integration.get<LookupResult>(cacheKey);
     if (cached) return cached;
 
@@ -132,6 +131,7 @@ Use this pattern to check caches from most specific to most general:
 
 ```typescript
 import type { Entity, IntegrationContext } from '@polarityio/integration-types';
+// See "Generating Keys from Sensitive Values" below for the createCacheKey helper
 
 interface CachedLookup {
   source: 'user_cache' | 'integration_cache' | 'global_cache' | 'fresh' | 'fallback';
@@ -143,7 +143,7 @@ async function getLookupData(entity: Entity, context: IntegrationContext): Promi
   if (!cache) return { source: 'fallback', data: await fetchFreshData(entity) };
 
   try {
-    const key = `lookup_${entity.value}`;
+    const key = createCacheKey('lookup', entity.value);
 
     // 1. Check user-specific cache first
     let result = await cache.user.get(key);
@@ -154,7 +154,7 @@ async function getLookupData(entity: Entity, context: IntegrationContext): Promi
     if (result) return { source: 'integration_cache', data: result };
 
     // 3. Check global cache for known entities
-    result = await cache.global.get(`known_entity_${entity.value}`);
+    result = await cache.global.get(createCacheKey('known_entity', entity.value));
     if (result) return { source: 'global_cache', data: result };
 
     // 4. Fetch fresh data and cache in integration scope for all users
@@ -193,7 +193,9 @@ An `Error` is thrown if the key is empty, exceeds 250 characters, or contains in
 
 ### Generating Keys from Sensitive Values
 
-Avoid using sensitive data such as usernames or passwords directly as cache keys. Instead, create a SHA-1 hash of the values to produce a unique, safe key. This is especially useful when caching API tokens keyed by a user's credentials.
+Avoid using sensitive data such as usernames or passwords directly as cache keys. Instead, hash the values to produce a unique, safe key. This is especially useful when caching API tokens keyed by a user's credentials.
+
+You should also hash entity values and other dynamic data that may contain characters outside the allowed set (e.g., IPv6 addresses contain colons, URLs contain slashes).
 
 ```typescript
 import crypto from 'crypto';
@@ -204,8 +206,16 @@ interface AuthToken {
   expiresAt: number;
 }
 
+/**
+ * Creates a cache-safe key by hashing the input values with SHA-256.
+ *
+ * @param prefix - A short descriptive label using only allowed characters
+ *                 (letters, digits, dots, underscores, hyphens).
+ * @param values - One or more values to hash (e.g., entity value, credentials).
+ * @returns A key in the form `prefix_<64-char hex hash>`.
+ */
 function createCacheKey(prefix: string, ...values: string[]): string {
-  const hash = crypto.createHash('sha1').update(values.join(':')).digest('hex');
+  const hash = crypto.createHash('sha256').update(values.join(':')).digest('hex');
   return `${prefix}_${hash}`;
 }
 
@@ -217,7 +227,7 @@ async function getApiToken(
   const cache = context?.cache;
 
   // Generate a key from credentials without exposing them
-  // e.g., "auth-token_a1b2c3d4e5f6..."
+  // e.g., "auth-token_a1b2c3d4e5..."
   const cacheKey = createCacheKey('auth-token', username, password);
 
   if (cache) {
@@ -235,7 +245,7 @@ async function getApiToken(
 }
 ```
 
-The `createCacheKey` helper concatenates the input values, hashes them with SHA-1, and prepends a descriptive prefix. The resulting key is always 40 hex characters plus the prefix — well within the 250-character limit and guaranteed to match the allowed character pattern.
+The `createCacheKey` helper concatenates the input values, hashes them with SHA-256, and prepends a descriptive prefix. The resulting key is always 64 hex characters plus the prefix — well within the 250-character limit and guaranteed to match the allowed character pattern. Keep the `prefix` argument short and restricted to valid key characters.
 
 ## Cache Options
 
