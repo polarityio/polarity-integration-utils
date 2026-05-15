@@ -3,6 +3,7 @@ import type { HttpRequestOptions } from '../requests/polarity-request';
 import { sanitizeRequestOptions } from '../requests/sanitize-request-options';
 
 /**
+ * @deprecated Do not use in v2 integrations.
  * @public
  */
 export interface ResponseError {

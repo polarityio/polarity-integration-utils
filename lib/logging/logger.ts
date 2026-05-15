@@ -41,6 +41,7 @@ let _logger: Logger = createDefaultLogger();
  * 
  * You can now use {@link getLogger} to get the logger object anywhere within your integration codebase.
  * 
+ * @group Logging
  * @public
  * @param logger - the integration logger object passed into the `startup` method
  */
@@ -60,6 +61,7 @@ const setLogger = (logger: Logger) => {
  * logger.trace('this is a trace message');
  * ```
  * 
+ * @group Logging
  * @public
  * @returns the integration's logger object
  */

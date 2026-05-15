@@ -321,6 +321,7 @@ export interface PolarityRequestOptions {
 
 /**
  * A utility class for making HTTP requests
+ * @group Requests
  * @public
  */
 export class PolarityRequest {

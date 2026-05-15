@@ -30,4 +30,5 @@ When manually adding dependencies, run `npm install` to install them.
 ## Guides
 
 - [Polarity Request](./polarity-request.md) - HTTP request utilities for integrations
+- [Cache](./cache.md) - Hierarchical caching with global, integration, and user scopes
 - [Testing](./testing.md) - Testing utilities for integrations

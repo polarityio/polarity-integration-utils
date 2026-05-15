@@ -16,6 +16,7 @@ import type { IntegrationContext } from '@polarityio/integration-types';
  * // No framework — plain no-ops
  * const ctx = createMockIntegrationContext();
  * ```
+ * @public
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must use `any` to match vi.fn/jest.fn signatures
 export type MockFnFactory = () => (...args: any[]) => any;
@@ -31,6 +32,9 @@ const noOp: MockFnFactory = () => () => undefined;
  *
  * @param createMockFn - A factory that creates mock functions (e.g., `vi.fn` or `jest.fn`)
  * @returns A fully populated `IntegrationContext` with stubbed methods
+ *
+ * @group Testing
+ * @public
  *
  * @example
  * ```typescript

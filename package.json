@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "4.1.1",
+  "version": "4.2.0",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -43,6 +43,11 @@
       "import": "./dist/es/testing/index.js",
       "require": "./dist/lib/testing/index.js",
       "types": "./dist/dts/testing/index.d.ts"
+    },
+    "./cache": {
+      "import": "./dist/es/cache/index.js",
+      "require": "./dist/lib/cache/index.js",
+      "types": "./dist/dts/cache/index.d.ts"
     }
   },
   "scripts": {
