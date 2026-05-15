@@ -38,6 +38,9 @@ export type ConfigRequestProxyOptions = {
 };
 
 // @public
+export function createCacheKey(prefix: string, ...values: string[]): string;
+
+// @public
 export const createEntity: (type: EntityType, value: string) => Entity;
 
 // @public

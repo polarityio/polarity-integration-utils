@@ -21,6 +21,8 @@ function toEntityTypeIdentifier(type: EntityType): EntityTypeIdentifier {
  * const ip = createEntity('IPv4', '8.8.8.8');
  * const domain = createEntity('domain', 'example.com');
  * ```
+ *
+ * @group Testing
  */
 export const createEntity = (type: EntityType, value: string): Entity => {
   const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(

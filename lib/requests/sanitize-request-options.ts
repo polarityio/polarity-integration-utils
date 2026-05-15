@@ -24,6 +24,7 @@ const DEFAULT_PATHS_TO_SANITIZE = [
  * @param requestOptions - request options to sanitize
  * @param additionalPathsToSanitize - array of additional paths to sanitize in addition to the 
  * default paths.
+ * @group Requests
  */
 export function sanitizeRequestOptions(
   requestOptions: HttpRequestOptions,

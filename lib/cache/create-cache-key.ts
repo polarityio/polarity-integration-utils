@@ -20,6 +20,7 @@ const MAX_KEY_LENGTH = 250;
  * If `prefix` is empty, contains invalid characters, or would cause the
  * resulting key to exceed 250 characters.
  *
+ * @group Utilities
  * @public
  */
 export function createCacheKey(prefix: string, ...values: string[]): string {

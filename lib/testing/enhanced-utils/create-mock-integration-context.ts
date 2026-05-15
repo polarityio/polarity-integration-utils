@@ -32,6 +32,8 @@ const noOp: MockFnFactory = () => () => undefined;
  * @param createMockFn - A factory that creates mock functions (e.g., `vi.fn` or `jest.fn`)
  * @returns A fully populated `IntegrationContext` with stubbed methods
  *
+ * @group Testing
+ *
  * @example
  * ```typescript
  * // Vitest
