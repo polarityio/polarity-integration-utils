@@ -13,7 +13,8 @@ const MAX_KEY_LENGTH = 250;
  *
  * @param prefix - A short descriptive label using only letters, digits, dots,
  *   underscores, and hyphens (must match `/^[a-zA-Z0-9._-]+$/`).
- * @param values - One or more values to hash (e.g., entity value, username).
+ * @param value - First value to hash (required).
+ * @param values - Additional values to hash (e.g., further credentials or identifiers).
  * @returns A key in the form `prefix_<64-char hex hash>`.
  *
  * @throws {@link LibraryUsageError}
@@ -23,7 +24,7 @@ const MAX_KEY_LENGTH = 250;
  * @group Utilities
  * @public
  */
-export function createCacheKey(prefix: string, ...values: string[]): string {
+export function createCacheKey(prefix: string, value: string, ...values: string[]): string {
   if (!prefix || !VALID_PREFIX.test(prefix)) {
     throw new LibraryUsageError(
       `Invalid cache key prefix: "${prefix}". ` +
@@ -32,7 +33,7 @@ export function createCacheKey(prefix: string, ...values: string[]): string {
     );
   }
 
-  const hash = crypto.createHash('sha256').update(JSON.stringify(values)).digest('hex');
+  const hash = crypto.createHash('sha256').update(JSON.stringify([value, ...values])).digest('hex');
   const key = `${prefix}_${hash}`;
 
   if (key.length > MAX_KEY_LENGTH) {
