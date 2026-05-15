@@ -27,8 +27,9 @@ const MAX_KEY_LENGTH = 250;
  */
 export function createCacheKey(prefix: string, value: string, ...values: string[]): string {
   if (typeof prefix !== 'string' || !prefix || !VALID_PREFIX.test(prefix)) {
+    const received = typeof prefix !== 'string' ? `type ${typeof prefix}` : `"${prefix}"`;
     throw new LibraryUsageError(
-      `Invalid cache key prefix: "${prefix}". ` +
+      `Invalid cache key prefix: ${received}. ` +
         'Prefix must be a non-empty string containing only letters, digits, dots, underscores, and hyphens ' +
         '(must match /^[a-zA-Z0-9._-]+$/).'
     );

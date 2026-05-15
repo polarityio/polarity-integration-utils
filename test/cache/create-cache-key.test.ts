@@ -87,6 +87,11 @@ describe('createCacheKey', () => {
     expect(() => createCacheKey(null as any, 'val')).toThrow(LibraryUsageError);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(() => createCacheKey(true as any, 'val')).toThrow(LibraryUsageError);
+    // Symbol coercion must not throw a native TypeError before LibraryUsageError is constructed
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey(Symbol('x') as any, 'val')).toThrow(LibraryUsageError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey(123 as any, 'val')).toThrow(/type number/);
   });
 
   it('should throw LibraryUsageError for non-string value (JS runtime check)', () => {
