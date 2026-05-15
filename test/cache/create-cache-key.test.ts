@@ -79,4 +79,27 @@ describe('createCacheKey', () => {
     expect(() => createCacheKey(maxPrefix, 'val')).not.toThrow();
     expect(createCacheKey(maxPrefix, 'val')).toHaveLength(250);
   });
+
+  it('should throw LibraryUsageError for non-string prefix (JS runtime check)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey(123 as any, 'val')).toThrow(LibraryUsageError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey(null as any, 'val')).toThrow(LibraryUsageError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey(true as any, 'val')).toThrow(LibraryUsageError);
+  });
+
+  it('should throw LibraryUsageError for non-string value (JS runtime check)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey('prefix', 123 as any)).toThrow(LibraryUsageError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey('prefix', 123 as any)).toThrow(/expected a string/);
+  });
+
+  it('should throw LibraryUsageError for non-string additional value (JS runtime check)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey('prefix', 'val', 42 as any)).toThrow(LibraryUsageError);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => createCacheKey('prefix', 'val', 42 as any)).toThrow(/index 1/);
+  });
 });

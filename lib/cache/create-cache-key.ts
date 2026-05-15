@@ -18,19 +18,34 @@ const MAX_KEY_LENGTH = 250;
  * @returns A key in the form `prefix_<64-char hex hash>`.
  *
  * @throws {@link LibraryUsageError}
- * If `prefix` is empty, contains invalid characters, or would cause the
- * resulting key to exceed 250 characters.
+ * If `prefix` or `value` is not a string, if `prefix` is empty or contains
+ * invalid characters, if any additional value is not a string, or if the
+ * resulting key would exceed 250 characters.
  *
  * @group Utilities
  * @public
  */
 export function createCacheKey(prefix: string, value: string, ...values: string[]): string {
-  if (!prefix || !VALID_PREFIX.test(prefix)) {
+  if (typeof prefix !== 'string' || !prefix || !VALID_PREFIX.test(prefix)) {
     throw new LibraryUsageError(
       `Invalid cache key prefix: "${prefix}". ` +
         'Prefix must be a non-empty string containing only letters, digits, dots, underscores, and hyphens ' +
         '(must match /^[a-zA-Z0-9._-]+$/).'
     );
+  }
+
+  if (typeof value !== 'string') {
+    throw new LibraryUsageError(
+      `Invalid cache key value: expected a string but received ${typeof value}.`
+    );
+  }
+
+  for (let i = 0; i < values.length; i++) {
+    if (typeof values[i] !== 'string') {
+      throw new LibraryUsageError(
+        `Invalid cache key value at index ${i + 1}: expected a string but received ${typeof values[i]}.`
+      );
+    }
   }
 
   const hash = crypto.createHash('sha256').update(JSON.stringify([value, ...values])).digest('hex');
