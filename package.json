@@ -1,6 +1,6 @@
 {
   "name": "polarity-integration-utils",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "A utility library for building Polarity Integrations",
   "files": [
     "dist"
@@ -110,5 +110,8 @@
   "peerDependencies": {
     "@polarityio/integration-types": ">=1.1.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "overrides": {
+    "qs": "^6.15.2"
+  }
 }
