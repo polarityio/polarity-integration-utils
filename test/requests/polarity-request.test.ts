@@ -44,15 +44,29 @@ jest.mock('fs', () => ({
 }));
 
 function createMockLimiter(): Limiter {
+  const schedule = jest.fn(async (fnOrOptions: unknown, ...rest: unknown[]) => {
+    const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
+      ...args: unknown[]
+    ) => PromiseLike<unknown>;
+    const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
+    return fn(...args);
+  });
+
   return {
-    schedule: jest.fn(async (fnOrOptions: unknown, ...rest: unknown[]) => {
-      const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
-        ...args: unknown[]
-      ) => PromiseLike<unknown>;
-      const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
-      return fn(...args);
-    })
-  } as unknown as Limiter;
+    schedule: schedule as unknown as Limiter['schedule'],
+    updateSettings: jest.fn(async () => undefined),
+    counts: jest.fn(() => ({
+      EXECUTING: 0,
+      QUEUED: 0,
+      RUNNING: 0,
+      DONE: 0,
+      RECEIVED: 0
+    })),
+    settings: jest.fn(() => ({})),
+    scope: jest.fn(() => ({
+      schedule: schedule as unknown as Limiter['schedule']
+    }))
+  } as Limiter;
 }
 
 class BottleneckError extends Error {
