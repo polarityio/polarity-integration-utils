@@ -112,6 +112,8 @@
   },
   "sideEffects": false,
   "overrides": {
-    "qs": "^6.15.2"
+    "postman-request": {
+      "qs": "^6.15.2"
+    }
   }
 }
