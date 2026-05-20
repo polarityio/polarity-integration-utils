@@ -8,6 +8,7 @@ import type { DoLookupUserOptions } from '@polarityio/integration-types';
 import type { Entity } from '@polarityio/integration-types';
 import type { EntityType } from '@polarityio/integration-types';
 import type { IntegrationContext } from '@polarityio/integration-types';
+import { Limiter } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
 
 // @public
@@ -253,11 +254,7 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-// @public
-export interface Limiter {
-    // (undocumented)
-    schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
-}
+export { Limiter }
 
 // @public (undocumented)
 export type MetaObject = {

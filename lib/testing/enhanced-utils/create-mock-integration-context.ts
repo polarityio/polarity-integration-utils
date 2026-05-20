@@ -84,6 +84,13 @@ export const createMockIntegrationContext = (
     integrationId: 'test-integration',
     userId: 1,
     logger,
+    limiter: {
+      schedule: createMockFn() as IntegrationContext['limiter']['schedule'],
+      updateSettings: createMockFn() as IntegrationContext['limiter']['updateSettings'],
+      counts: createMockFn() as IntegrationContext['limiter']['counts'],
+      settings: createMockFn() as IntegrationContext['limiter']['settings'],
+      scope: createMockFn() as IntegrationContext['limiter']['scope']
+    },
     startPolling: createMockFn(),
     stopPolling: createMockFn()
   };

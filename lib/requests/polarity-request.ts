@@ -12,7 +12,11 @@ import {
 } from '../errors';
 import { getLogger } from '../logging';
 
-import type { Entity, DoLookupUserOptions } from '@polarityio/integration-types';
+import type {
+  Entity,
+  DoLookupUserOptions,
+  Limiter
+} from '@polarityio/integration-types';
 import { sanitizeRequestOptions } from './sanitize-request-options';
 
 /**
@@ -203,14 +207,10 @@ export type IsApiErrorFunction = (
 ) => IsApiErrorResult;
 
 /**
- * Minimal interface for a rate limiter compatible with PolarityRequest.
- * The Polarity server provides a Bottleneck instance that satisfies this interface.
- *
+ * Re-exported from `@polarityio/integration-types` for convenience.
  * @public
  */
-export interface Limiter {
-  schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
-}
+export type { Limiter } from '@polarityio/integration-types';
 
 /**
  * Hook that runs before an HTTP request is made. Each hook receives the output
