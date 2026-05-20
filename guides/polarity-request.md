@@ -58,7 +58,7 @@ Now that we have the PolarityRequest object created and configured, we'll show a
 
 # Run a single HTTP request
 
-The {@link PolarityRequest.run} method runs a single HTTP request based on the provided {@link HttpRequestOptions} object. The `run` method will return a promise that will resolve to the response from the HTTP request.
+The {@link PolarityRequest.run} method runs a single HTTP request based on the provided {@link HttpRequestOptions} object. The `run` method will return a promise that resolves to the response from the HTTP request, or `undefined` if an `onNetworkError` hook handles the error without re-throwing.
 
 As an example, to make a request to the GitHub API you could do the following:
 
@@ -160,7 +160,7 @@ Default values for proxy and TLS certificates are provided by the Polarity serve
 
 ## Modify Success HTTP Status Codes
 
-By default, the PolarityRequest class will consider any 2xx status code as a successful response. You can modify this behavior by setting the `successStatusCodes` property when creating the `PolarityRequest` instance.
+By default, the PolarityRequest class will consider any 2xx status code as a successful response. You can modify this behavior by setting the `roundedSuccessStatusCodes` property when creating the `PolarityRequest` instance.
 
 For example, if you also wanted to treat 400 responses as successful (i.e., not throw an {@link ApiRequestError}), you could do the following:
 
