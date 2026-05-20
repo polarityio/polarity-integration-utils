@@ -1261,11 +1261,13 @@ describe('PolarityRequest', () => {
         }
       );
 
+      const limiter = createMockLimiter();
       const request = new PolarityRequest();
       request.userOptions = { customOption: true };
 
       const result = await request.run({ url: 'http://example.com' });
       expect(result.statusCode).toBe(200);
+      expect(limiter.schedule).not.toHaveBeenCalled();
     });
 
     it('should return the successful response when limiter is set', async () => {
