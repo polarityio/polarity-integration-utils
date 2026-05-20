@@ -45,11 +45,14 @@ jest.mock('fs', () => ({
 
 function createMockLimiter(): Limiter {
   return {
-    schedule: jest.fn(
-      async <T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]) =>
-        fn(...args)
-    )
-  };
+    schedule: jest.fn(async (fnOrOptions: unknown, ...rest: unknown[]) => {
+      const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
+        ...args: unknown[]
+      ) => PromiseLike<unknown>;
+      const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
+      return fn(...args);
+    })
+  } as unknown as Limiter;
 }
 
 class BottleneckError extends Error {
@@ -281,10 +284,7 @@ describe('PolarityRequest', () => {
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const beforeRequest: BeforeRequestHook = async (
-        requestOptions,
-        userOptions
-      ) => {
+      const beforeRequest: BeforeRequestHook = async (requestOptions, userOptions) => {
         expect(userOptions).toEqual(userOptionsExternal);
         expect(requestOptions).toEqual(requestOptionsExternal);
         return requestOptions;
@@ -1027,11 +1027,17 @@ describe('PolarityRequest', () => {
       );
 
       const addAuth: BeforeRequestHook = async (opts) => {
-        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Auth': 'token123' } };
+        return {
+          ...opts,
+          headers: { ...((opts.headers as object) || {}), 'X-Auth': 'token123' }
+        };
       };
 
       const addCustomHeader: BeforeRequestHook = async (opts) => {
-        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Custom': 'value' } };
+        return {
+          ...opts,
+          headers: { ...((opts.headers as object) || {}), 'X-Custom': 'value' }
+        };
       };
 
       const request = new PolarityRequest({
@@ -1221,6 +1227,201 @@ describe('PolarityRequest', () => {
       await request.run({ url: 'http://example.com' });
       expect(limiter.schedule).toHaveBeenCalledTimes(1);
     });
+
+    it('should forward the correct function and arguments to limiter.schedule()', async () => {
+      const body = { message: 'Request Ran' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const limiter = createMockLimiter();
+      const request = new PolarityRequest({ limiter });
+      request.userOptions = { customOption: true };
+
+      await request.run({ url: 'http://example.com' });
+
+      const scheduleCall = (limiter.schedule as jest.Mock).mock.calls[0];
+      expect(scheduleCall[0]).toBeInstanceOf(Function);
+      expect(scheduleCall[1]).toEqual(
+        expect.objectContaining({ url: 'http://example.com' })
+      );
+    });
+
+    it('should not call limiter.schedule() when limiter is null', async () => {
+      const body = { message: 'Request Ran' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+
+      const result = await request.run({ url: 'http://example.com' });
+      expect(result.statusCode).toBe(200);
+    });
+
+    it('should return the successful response when limiter is set', async () => {
+      const body = { data: 'success' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const limiter = createMockLimiter();
+      const request = new PolarityRequest({ limiter });
+      request.userOptions = {};
+
+      const result = await request.run({ url: 'http://example.com' });
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toEqual({ data: 'success' });
+    });
+
+    it('should throw a NetworkError for non-BottleneckError exceptions from schedule()', async () => {
+      expect.assertions(3);
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const limiter = createMockLimiter();
+      limiter.schedule = jest.fn(() => {
+        throw new Error('Connection reset');
+      });
+      const request = new PolarityRequest({ limiter });
+      request.userOptions = {};
+
+      try {
+        await request.run({ url: 'http://example.com' });
+      } catch (error) {
+        expect(error instanceof NetworkError).toBeTruthy();
+        expect(error.message).toBe('Network error encountered during request');
+        expect(error.cause.message).toBe('Connection reset');
+      }
+    });
+
+    it('should invoke onNetworkError hooks when limiter throws a BottleneckError', async () => {
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const onNetworkErrorHook = jest.fn();
+      const limiter = createMockLimiter();
+      limiter.schedule = jest.fn(() => {
+        throw new BottleneckError('Rate limit exceeded');
+      });
+
+      const request = new PolarityRequest({
+        limiter,
+        hooks: { onNetworkError: [onNetworkErrorHook] }
+      });
+      request.userOptions = {};
+
+      const result = await request.run({ url: 'http://example.com' });
+      expect(result).toBeUndefined();
+      expect(onNetworkErrorHook).toHaveBeenCalledTimes(1);
+      expect(onNetworkErrorHook).toHaveBeenCalledWith(
+        expect.any(RetryRequestError),
+        expect.objectContaining({ url: 'http://example.com' }),
+        {}
+      );
+    });
+
+    it('should invoke onNetworkError hooks when limiter throws a non-BottleneckError', async () => {
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const onNetworkErrorHook = jest.fn();
+      const limiter = createMockLimiter();
+      limiter.schedule = jest.fn(() => {
+        throw new Error('ECONNREFUSED');
+      });
+
+      const request = new PolarityRequest({
+        limiter,
+        hooks: { onNetworkError: [onNetworkErrorHook] }
+      });
+      request.userOptions = {};
+
+      const result = await request.run({ url: 'http://example.com' });
+      expect(result).toBeUndefined();
+      expect(onNetworkErrorHook).toHaveBeenCalledTimes(1);
+      expect(onNetworkErrorHook).toHaveBeenCalledWith(
+        expect.any(NetworkError),
+        expect.objectContaining({ url: 'http://example.com' }),
+        {}
+      );
+    });
+
+    it('should pass beforeRequest hook processed options through limiter', async () => {
+      const body = { message: 'success' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const beforeRequestHook: BeforeRequestHook = async (opts) => ({
+        ...opts,
+        headers: { Authorization: 'Bearer token123' }
+      });
+
+      const limiter = createMockLimiter();
+      const request = new PolarityRequest({
+        limiter,
+        hooks: { beforeRequest: [beforeRequestHook] }
+      });
+      request.userOptions = {};
+
+      await request.run({ url: 'http://example.com' });
+
+      const scheduleCall = (limiter.schedule as jest.Mock).mock.calls[0];
+      const passedOptions = scheduleCall[1];
+      expect(passedOptions.headers).toEqual({ Authorization: 'Bearer token123' });
+    });
+
+    it('should schedule each request through limiter when using runInParallel()', async () => {
+      const body = { message: 'success' };
+      const response = { statusCode: 200, body };
+
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          cb(null, response, body);
+        }
+      );
+
+      const limiter = createMockLimiter();
+      const request = new PolarityRequest({ limiter });
+      request.userOptions = {};
+
+      const requestOptions = [
+        { url: 'http://example.com/1' },
+        { url: 'http://example.com/2' },
+        { url: 'http://example.com/3' }
+      ];
+
+      await request.runInParallel({ allRequestOptions: requestOptions });
+      expect(limiter.schedule).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('Constructor logger fallback', () => {
@@ -1236,9 +1437,7 @@ describe('PolarityRequest', () => {
       setLogger(loggerWithoutChild as never);
       const request = new PolarityRequest();
       // The logger should be the same reference since child() doesn't exist
-      expect(
-        (request as unknown as { logger: unknown }).logger
-      ).toBe(loggerWithoutChild);
+      expect((request as unknown as { logger: unknown }).logger).toBe(loggerWithoutChild);
       // Restore normal logger for other tests
       setLogger(identityLogger);
     });
@@ -1249,11 +1448,9 @@ describe('PolarityRequest', () => {
       expect.assertions(2);
       const libError = new LibraryUsageError('Bad usage in request');
 
-      postmanRequest.defaults.mockImplementation(
-        () => () => {
-          throw libError;
-        }
-      );
+      postmanRequest.defaults.mockImplementation(() => () => {
+        throw libError;
+      });
 
       const request = new PolarityRequest();
       request.userOptions = { customOption: true };
@@ -1274,16 +1471,15 @@ describe('PolarityRequest', () => {
         headers: { Authorization: 'MyToken' }
       };
       const sanitized = sanitizeRequestOptions(options);
-      expect(
-        (sanitized.headers as Record<string, unknown>)?.Authorization
-      ).toBe('**********');
+      expect((sanitized.headers as Record<string, unknown>)?.Authorization).toBe(
+        '**********'
+      );
     });
 
     it('masks additional user-supplied paths', () => {
-      const sanitized = sanitizeRequestOptions(
-        { body: { password: 'p', token: 't' } },
-        ['body.token']
-      );
+      const sanitized = sanitizeRequestOptions({ body: { password: 'p', token: 't' } }, [
+        'body.token'
+      ]);
       const body = sanitized.body as Record<string, unknown>;
       expect(body.password).toBe('**********');
       expect(body.token).toBe('**********');
@@ -1582,9 +1778,7 @@ describe('PolarityRequest', () => {
 
       const entitiesList = [entity, entityDomain];
       const results = await request.runInParallel({
-        allRequestOptions: [
-          { url: 'http://example.com/bulk', entities: entitiesList }
-        ]
+        allRequestOptions: [{ url: 'http://example.com/bulk', entities: entitiesList }]
       });
 
       expect(results.length).toEqual(1);
