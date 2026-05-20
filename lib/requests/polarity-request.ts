@@ -12,11 +12,7 @@ import {
 } from '../errors';
 import { getLogger } from '../logging';
 
-import type {
-  Entity,
-  DoLookupUserOptions,
-  Limiter
-} from '@polarityio/integration-types';
+import type { Entity, DoLookupUserOptions, Limiter } from '@polarityio/integration-types';
 import { sanitizeRequestOptions } from './sanitize-request-options';
 
 /**
@@ -504,10 +500,7 @@ export class PolarityRequest {
 
     try {
       httpResponse = await (this.limiter
-        ? this.limiter.schedule(
-            this.requestWithDefaults,
-            processedOptions
-          )
+        ? this.limiter.schedule(this.requestWithDefaults, processedOptions)
         : this.requestWithDefaults(processedOptions));
     } catch (requestError) {
       if (requestError instanceof LibraryUsageError) {

@@ -284,10 +284,7 @@ describe('PolarityRequest', () => {
       const userOptionsExternal = { customOption: true };
       const requestOptionsExternal = { url: 'http://example.com' };
 
-      const beforeRequest: BeforeRequestHook = async (
-        requestOptions,
-        userOptions
-      ) => {
+      const beforeRequest: BeforeRequestHook = async (requestOptions, userOptions) => {
         expect(userOptions).toEqual(userOptionsExternal);
         expect(requestOptions).toEqual(requestOptionsExternal);
         return requestOptions;
@@ -1030,11 +1027,17 @@ describe('PolarityRequest', () => {
       );
 
       const addAuth: BeforeRequestHook = async (opts) => {
-        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Auth': 'token123' } };
+        return {
+          ...opts,
+          headers: { ...((opts.headers as object) || {}), 'X-Auth': 'token123' }
+        };
       };
 
       const addCustomHeader: BeforeRequestHook = async (opts) => {
-        return { ...opts, headers: { ...((opts.headers as object) || {}), 'X-Custom': 'value' } };
+        return {
+          ...opts,
+          headers: { ...((opts.headers as object) || {}), 'X-Custom': 'value' }
+        };
       };
 
       const request = new PolarityRequest({
@@ -1243,7 +1246,9 @@ describe('PolarityRequest', () => {
 
       const scheduleCall = (limiter.schedule as jest.Mock).mock.calls[0];
       expect(scheduleCall[0]).toBeInstanceOf(Function);
-      expect(scheduleCall[1]).toEqual(expect.objectContaining({ url: 'http://example.com' }));
+      expect(scheduleCall[1]).toEqual(
+        expect.objectContaining({ url: 'http://example.com' })
+      );
     });
 
     it('should not call limiter.schedule() when limiter is null', async () => {
@@ -1432,9 +1437,7 @@ describe('PolarityRequest', () => {
       setLogger(loggerWithoutChild as never);
       const request = new PolarityRequest();
       // The logger should be the same reference since child() doesn't exist
-      expect(
-        (request as unknown as { logger: unknown }).logger
-      ).toBe(loggerWithoutChild);
+      expect((request as unknown as { logger: unknown }).logger).toBe(loggerWithoutChild);
       // Restore normal logger for other tests
       setLogger(identityLogger);
     });
@@ -1445,11 +1448,9 @@ describe('PolarityRequest', () => {
       expect.assertions(2);
       const libError = new LibraryUsageError('Bad usage in request');
 
-      postmanRequest.defaults.mockImplementation(
-        () => () => {
-          throw libError;
-        }
-      );
+      postmanRequest.defaults.mockImplementation(() => () => {
+        throw libError;
+      });
 
       const request = new PolarityRequest();
       request.userOptions = { customOption: true };
@@ -1470,16 +1471,15 @@ describe('PolarityRequest', () => {
         headers: { Authorization: 'MyToken' }
       };
       const sanitized = sanitizeRequestOptions(options);
-      expect(
-        (sanitized.headers as Record<string, unknown>)?.Authorization
-      ).toBe('**********');
+      expect((sanitized.headers as Record<string, unknown>)?.Authorization).toBe(
+        '**********'
+      );
     });
 
     it('masks additional user-supplied paths', () => {
-      const sanitized = sanitizeRequestOptions(
-        { body: { password: 'p', token: 't' } },
-        ['body.token']
-      );
+      const sanitized = sanitizeRequestOptions({ body: { password: 'p', token: 't' } }, [
+        'body.token'
+      ]);
       const body = sanitized.body as Record<string, unknown>;
       expect(body.password).toBe('**********');
       expect(body.token).toBe('**********');
@@ -1778,9 +1778,7 @@ describe('PolarityRequest', () => {
 
       const entitiesList = [entity, entityDomain];
       const results = await request.runInParallel({
-        allRequestOptions: [
-          { url: 'http://example.com/bulk', entities: entitiesList }
-        ]
+        allRequestOptions: [{ url: 'http://example.com/bulk', entities: entitiesList }]
       });
 
       expect(results.length).toEqual(1);

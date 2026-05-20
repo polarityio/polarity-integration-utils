@@ -69,8 +69,13 @@ export const createMockIntegrationContext = (
   } as unknown as IntegrationContext['logger'];
 
   // Make child() return the logger for method chaining
-  if (typeof (childFn as unknown as { mockReturnValue?: unknown }).mockReturnValue === 'function') {
-    (childFn as unknown as { mockReturnValue: (val: unknown) => void }).mockReturnValue(logger);
+  if (
+    typeof (childFn as unknown as { mockReturnValue?: unknown }).mockReturnValue ===
+    'function'
+  ) {
+    (childFn as unknown as { mockReturnValue: (val: unknown) => void }).mockReturnValue(
+      logger
+    );
   } else {
     (logger as unknown as Record<string, unknown>).child = () => logger;
   }
