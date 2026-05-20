@@ -8,7 +8,6 @@ import type { DoLookupUserOptions } from '@polarityio/integration-types';
 import type { Entity } from '@polarityio/integration-types';
 import type { EntityType } from '@polarityio/integration-types';
 import type { IntegrationContext } from '@polarityio/integration-types';
-import { Limiter } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
 
 // @public
@@ -254,8 +253,6 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
-export { Limiter }
-
 // @public (undocumented)
 export type MetaObject = {
     [key: string]: unknown;
@@ -285,7 +282,7 @@ export class PolarityRequest {
     readonly httpResponseErrorMessageProperties: string[];
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
-    limiter: Limiter | null;
+    limiter: PolarityRequestLimiter | null;
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
@@ -303,6 +300,12 @@ export interface PolarityRequestHooks {
     onNetworkError?: OnNetworkErrorHook[];
 }
 
+// @public
+export interface PolarityRequestLimiter {
+    // (undocumented)
+    schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
+}
+
 // @public (undocumented)
 export interface PolarityRequestOptions {
     // (undocumented)
@@ -316,7 +319,7 @@ export interface PolarityRequestOptions {
     // (undocumented)
     isApiError?: IsApiErrorFunction;
     // (undocumented)
-    limiter?: Limiter;
+    limiter?: PolarityRequestLimiter;
     // (undocumented)
     requestOptionsToSanitize?: string[];
     // (undocumented)

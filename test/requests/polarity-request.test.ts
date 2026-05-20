@@ -5,7 +5,7 @@ import {
   PolarityRequest,
   BeforeRequestHook,
   AfterResponseHook,
-  Limiter
+  PolarityRequestLimiter
 } from '../../lib/requests/polarity-request';
 import postmanRequest from 'postman-request';
 import { sanitizeRequestOptions } from '../../lib/requests/sanitize-request-options';
@@ -43,30 +43,16 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn().mockImplementation((x) => x)
 }));
 
-function createMockLimiter(): Limiter {
-  const schedule = jest.fn(async (fnOrOptions: unknown, ...rest: unknown[]) => {
-    const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
-      ...args: unknown[]
-    ) => PromiseLike<unknown>;
-    const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
-    return fn(...args);
-  });
-
+function createMockLimiter(): PolarityRequestLimiter {
   return {
-    schedule: schedule as unknown as Limiter['schedule'],
-    updateSettings: jest.fn(async () => undefined),
-    counts: jest.fn(() => ({
-      EXECUTING: 0,
-      QUEUED: 0,
-      RUNNING: 0,
-      DONE: 0,
-      RECEIVED: 0
-    })),
-    settings: jest.fn(() => ({})),
-    scope: jest.fn(() => ({
-      schedule: schedule as unknown as Limiter['schedule']
-    }))
-  } as Limiter;
+    schedule: jest.fn(async (fnOrOptions: unknown, ...rest: unknown[]) => {
+      const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
+        ...args: unknown[]
+      ) => PromiseLike<unknown>;
+      const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
+      return fn(...args);
+    }) as unknown as PolarityRequestLimiter['schedule']
+  };
 }
 
 class BottleneckError extends Error {
