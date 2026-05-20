@@ -83,9 +83,10 @@ export const createMockIntegrationContext = (
   // Create a limiter schedule passthrough that executes the provided callback
   // (matching Bottleneck behavior) while remaining spyable.
   // Supports both schedule(fn, ...args) and schedule(options, fn, ...args) overloads.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must handle both overloads dynamically
-  const scheduleImpl = async (fnOrOptions: any, ...rest: any[]) => {
-    const fn = typeof fnOrOptions === 'function' ? fnOrOptions : rest[0];
+  const scheduleImpl = async (fnOrOptions: unknown, ...rest: unknown[]) => {
+    const fn = (typeof fnOrOptions === 'function' ? fnOrOptions : rest[0]) as (
+      ...args: unknown[]
+    ) => PromiseLike<unknown>;
     const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
     return fn(...args);
   };

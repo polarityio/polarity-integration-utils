@@ -1262,7 +1262,8 @@ describe('PolarityRequest', () => {
       );
 
       const limiter = createMockLimiter();
-      const request = new PolarityRequest();
+      const request = new PolarityRequest({ limiter });
+      request.limiter = null;
       request.userOptions = { customOption: true };
 
       const result = await request.run({ url: 'http://example.com' });
