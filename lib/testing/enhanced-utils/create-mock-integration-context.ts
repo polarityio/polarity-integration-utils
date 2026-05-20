@@ -80,6 +80,27 @@ export const createMockIntegrationContext = (
     (logger as unknown as Record<string, unknown>).child = () => logger;
   }
 
+  // Create a limiter schedule passthrough that executes the provided callback
+  // (matching Bottleneck behavior) while remaining spyable.
+  // Supports both schedule(fn, ...args) and schedule(options, fn, ...args) overloads.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must handle both overloads dynamically
+  const scheduleImpl = async (fnOrOptions: any, ...rest: any[]) => {
+    const fn = typeof fnOrOptions === 'function' ? fnOrOptions : rest[0];
+    const args = typeof fnOrOptions === 'function' ? rest : rest.slice(1);
+    return fn(...args);
+  };
+
+  const scheduleMock = createMockFn();
+  const hasMockImplementation =
+    typeof (scheduleMock as unknown as { mockImplementation?: unknown })
+      .mockImplementation === 'function';
+
+  if (hasMockImplementation) {
+    (
+      scheduleMock as unknown as { mockImplementation: (impl: unknown) => void }
+    ).mockImplementation(scheduleImpl);
+  }
+
   return {
     cache: {
       global: createCacheScope(),
@@ -90,7 +111,9 @@ export const createMockIntegrationContext = (
     userId: 1,
     logger,
     limiter: {
-      schedule: createMockFn() as IntegrationContext['limiter']['schedule'],
+      schedule: (hasMockImplementation
+        ? scheduleMock
+        : scheduleImpl) as IntegrationContext['limiter']['schedule'],
       updateSettings: createMockFn() as IntegrationContext['limiter']['updateSettings'],
       counts: createMockFn() as IntegrationContext['limiter']['counts'],
       settings: createMockFn() as IntegrationContext['limiter']['settings'],
