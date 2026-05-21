@@ -9,6 +9,8 @@ import type { Entity } from '@polarityio/integration-types';
 import type { EntityType } from '@polarityio/integration-types';
 import type { IntegrationContext } from '@polarityio/integration-types';
 import type { Logger } from '@polarityio/integration-types';
+import type { NetworkContext } from '@polarityio/integration-types';
+import type { NetworkProxy } from '@polarityio/integration-types';
 
 // @public
 export type AfterResponseHook = (response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestResponse>;
@@ -253,6 +255,9 @@ export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
+// @public @deprecated (undocumented)
+export type Limiter = PolarityRequestLimiter;
+
 // @public (undocumented)
 export type MetaObject = {
     [key: string]: unknown;
@@ -261,10 +266,14 @@ export type MetaObject = {
 // @public
 export type MockFnFactory = () => (...args: any[]) => any;
 
+export { NetworkContext }
+
 // @public
 export class NetworkError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
+
+export { NetworkProxy }
 
 // @public
 export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
@@ -283,6 +292,7 @@ export class PolarityRequest {
     readonly httpResponseErrorProperties: string[];
     readonly isApiError: IsApiErrorFunction;
     limiter: PolarityRequestLimiter | null;
+    network: NetworkContext | null;
     readonly requestOptionsToSanitize: string[];
     // (undocumented)
     readonly roundedSuccessStatusCodes: number[];
@@ -320,6 +330,7 @@ export interface PolarityRequestOptions {
     isApiError?: IsApiErrorFunction;
     // (undocumented)
     limiter?: PolarityRequestLimiter;
+    network?: NetworkContext;
     // (undocumented)
     requestOptionsToSanitize?: string[];
     // (undocumented)
