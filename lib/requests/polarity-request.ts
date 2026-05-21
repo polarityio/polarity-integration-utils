@@ -216,6 +216,12 @@ export interface PolarityRequestLimiter {
 }
 
 /**
+ * @deprecated Use {@link PolarityRequestLimiter} instead. This alias will be removed in a future major version.
+ * @public
+ */
+export type Limiter = PolarityRequestLimiter;
+
+/**
  * Hook that runs before an HTTP request is made. Each hook receives the output
  * of the previous hook, allowing request options to be modified in a chain.
  *
