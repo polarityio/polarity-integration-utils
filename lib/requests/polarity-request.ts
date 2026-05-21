@@ -541,7 +541,11 @@ export class PolarityRequest {
 
     // Apply runtime network settings (overrides defaults and hook mutations)
     if (this.network) {
-      const proxy = this.network.proxy?.https ?? this.network.proxy?.http;
+      const url = processedOptions.url || '';
+      const isHttps = url.startsWith('https://') || !url.startsWith('http://');
+      const proxy = isHttps
+        ? (this.network.proxy?.https ?? this.network.proxy?.http)
+        : (this.network.proxy?.http ?? this.network.proxy?.https);
       if (proxy) {
         processedOptions.proxy = proxy;
       }

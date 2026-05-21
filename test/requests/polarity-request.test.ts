@@ -1847,7 +1847,28 @@ describe('PolarityRequest', () => {
       expect(capturedOptions.proxy).toBe('http://proxy.corp:8080');
     });
 
-    it('should fall back to http proxy when https proxy is not set', async () => {
+    it('should use http proxy for http:// URLs when both proxies are set', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy.corp:8080', http: 'http://proxy.corp:8081' }
+      };
+
+      await request.run({ url: 'http://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8081');
+    });
+
+    it('should fall back to http proxy for https:// URLs when https proxy is not set', async () => {
       let capturedOptions: HttpRequestOptions;
       postmanRequest.defaults.mockImplementation(
         () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
@@ -1866,6 +1887,27 @@ describe('PolarityRequest', () => {
       await request.run({ url: 'https://example.com', entity });
 
       expect(capturedOptions.proxy).toBe('http://proxy.corp:8081');
+    });
+
+    it('should fall back to https proxy for http:// URLs when http proxy is not set', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy.corp:8080' }
+      };
+
+      await request.run({ url: 'http://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8080');
     });
 
     it('should apply network rejectUnauthorized=false to request options', async () => {
