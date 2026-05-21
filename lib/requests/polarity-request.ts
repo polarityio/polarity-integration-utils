@@ -204,13 +204,22 @@ export type IsApiErrorFunction = (
 
 /**
  * Minimal interface for a rate limiter compatible with PolarityRequest.
- * The Polarity server provides a Bottleneck instance that satisfies this interface.
+ * Only requires the `schedule` method, which is the sole method used internally.
+ * The Polarity server provides a full `Limiter` instance (from
+ * `@polarityio/integration-types`) that satisfies this interface, but consumers
+ * may also pass simpler objects or mocks that only implement `schedule`.
  *
  * @public
  */
-export interface Limiter {
+export interface PolarityRequestLimiter {
   schedule<T>(fn: (...args: unknown[]) => PromiseLike<T>, ...args: unknown[]): Promise<T>;
 }
+
+/**
+ * @deprecated Use {@link PolarityRequestLimiter} instead. This alias will be removed in a future major version.
+ * @public
+ */
+export type Limiter = PolarityRequestLimiter;
 
 /**
  * Hook that runs before an HTTP request is made. Each hook receives the output
@@ -316,7 +325,7 @@ export interface PolarityRequestOptions {
   httpResponseErrorMessageProperties?: string[];
   requestOptionsToSanitize?: string[];
   hooks?: PolarityRequestHooks;
-  limiter?: Limiter;
+  limiter?: PolarityRequestLimiter;
 }
 
 /**
@@ -387,7 +396,7 @@ export class PolarityRequest {
    * through this limiter. Typically provided by the Polarity server via the
    * integration context.
    */
-  public limiter: Limiter | null = null;
+  public limiter: PolarityRequestLimiter | null = null;
 
   /**
    * Lifecycle hooks for customizing request behavior. Hooks are configured via the
@@ -504,10 +513,7 @@ export class PolarityRequest {
 
     try {
       httpResponse = await (this.limiter
-        ? this.limiter.schedule(
-            this.requestWithDefaults,
-            processedOptions
-          )
+        ? this.limiter.schedule(this.requestWithDefaults, processedOptions)
         : this.requestWithDefaults(processedOptions));
     } catch (requestError) {
       if (requestError instanceof LibraryUsageError) {

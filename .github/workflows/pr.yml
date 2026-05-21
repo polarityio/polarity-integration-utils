@@ -11,3 +11,24 @@ jobs:
   build:
     uses: ./.github/workflows/build-reusable.yml
     secrets: inherit
+
+  version-check:
+    if: github.base_ref == 'main' || startsWith(github.base_ref, 'support/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify version has been bumped
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
+
+          echo "Local version:     $LOCAL_VERSION"
+          echo "Published version: $PUBLISHED_VERSION"
+
+          if [ "$LOCAL_VERSION" = "$PUBLISHED_VERSION" ]; then
+            echo "::error::Version $LOCAL_VERSION is already published on npm. Please bump the version in package.json before merging."
+            exit 1
+          fi
