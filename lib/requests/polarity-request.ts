@@ -12,8 +12,10 @@ import {
 } from '../errors';
 import { getLogger } from '../logging';
 
-import type { Entity, DoLookupUserOptions } from '@polarityio/integration-types';
+import type { Entity, DoLookupUserOptions, NetworkContext, NetworkProxy } from '@polarityio/integration-types';
 import { sanitizeRequestOptions } from './sanitize-request-options';
+
+export type { NetworkContext, NetworkProxy };
 
 /**
  * @public
@@ -319,6 +321,14 @@ export interface PolarityRequestHooks {
  */
 export interface PolarityRequestOptions {
   defaults?: ConfigRequestProxyOptions;
+  /**
+   * Per-integration network configuration from `context.network`. When provided,
+   * proxy and TLS settings from this object override values from `defaults`.
+   *
+   * Can also be set (or updated) after construction via the {@link PolarityRequest.network}
+   * property to reflect per-request runtime config.
+   */
+  network?: NetworkContext;
   isApiError?: IsApiErrorFunction;
   roundedSuccessStatusCodes?: number[];
   httpResponseErrorProperties?: string[];
@@ -399,6 +409,22 @@ export class PolarityRequest {
   public limiter: PolarityRequestLimiter | null = null;
 
   /**
+   * Per-integration network configuration from `context.network`.
+   *
+   * When set, proxy and TLS settings are applied dynamically on each
+   * {@link PolarityRequest.run} call, overriding any static values from
+   * the constructor `defaults`. Set this before each `run()` call to
+   * reflect the latest runtime config.
+   *
+   * @example
+   * ```typescript
+   * polarityRequest.network = context.network;
+   * const response = await polarityRequest.run(requestOptions);
+   * ```
+   */
+  public network: NetworkContext | null = null;
+
+  /**
    * Lifecycle hooks for customizing request behavior. Hooks are configured via the
    * {@link PolarityRequestOptions.hooks} property when creating a new instance of the
    * {@link PolarityRequest} class.
@@ -466,6 +492,10 @@ export class PolarityRequest {
       this.limiter = options.limiter;
     }
 
+    if (options.network) {
+      this.network = options.network;
+    }
+
     const defaultRequestOptions = {
       ...(this.configFieldIsValid(ca) && { ca: fs.readFileSync(ca) }),
       ...(this.configFieldIsValid(cert) && { cert: fs.readFileSync(cert) }),
@@ -507,6 +537,18 @@ export class PolarityRequest {
         );
       }
       processedOptions = hookResult;
+    }
+
+    // Apply runtime network settings (overrides defaults and hook mutations)
+    if (this.network) {
+      const proxy = this.network.proxy?.https ?? this.network.proxy?.http;
+      if (proxy) {
+        processedOptions.proxy = proxy;
+      }
+      if (this.network.proxy?.noProxy) {
+        processedOptions.noProxyHost = this.network.proxy.noProxy;
+      }
+      processedOptions.rejectUnauthorized = this.network.rejectUnauthorized;
     }
 
     let httpResponse: HttpRequestResponse;
