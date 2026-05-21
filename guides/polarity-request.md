@@ -158,6 +158,89 @@ const request = new PolarityRequest({
 
 Default values for proxy and TLS certificates are provided by the Polarity server and do not typically need to be manually set. The server passes these through based on the platform's configuration.
 
+## Network Configuration
+
+The Polarity server provides per-integration network configuration (proxy and TLS settings) via `context.network` on every `doLookup` call. You can pass this directly to `PolarityRequest` via the `network` property:
+
+```typescript
+async function doLookup(
+  entities: Entity[],
+  options: DoLookupUserOptions,
+  context: IntegrationContext,
+  cb: DoLookupCallback
+): Promise<void> {
+  request.userOptions = options;
+  request.network = context.network;
+
+  const response = await request.run({
+    url: 'https://api.example.com/lookup'
+  });
+}
+```
+
+When `network` is set, `PolarityRequest` applies proxy and TLS settings on every `run()` call, reflecting whatever the admin has configured for the integration at that point in time.
+
+### Proxy Resolution Order
+
+Proxy settings are resolved using the following precedence (highest to lowest):
+
+| Priority | Source | When it applies |
+|----------|--------|-----------------|
+| 1 (highest) | `network.proxy` (per-integration) | Set by admin in Polarity per-integration config. Applied dynamically on each `run()` call. |
+| 2 | `HTTPS_PROXY` / `HTTP_PROXY` env vars (global/host) | Set on the worker process by the Polarity server's global proxy config, or inherited from the host environment. Used automatically when no explicit `proxy` option is present on the request. |
+| 3 (lowest) | `defaults.proxy` (constructor) | Static proxy baked into the HTTP client at construction time. Overridden by `network.proxy` when set. |
+
+**Key behavior:** When a `proxy` property is explicitly set on a request (either via `network.proxy` or `defaults.proxy`), the underlying HTTP client (postman-request) uses that value and **does not** consult `HTTPS_PROXY`/`HTTP_PROXY` environment variables. Environment variables only take effect as a fallback when no explicit proxy is set on the request object.
+
+This means:
+- If `network.proxy` is configured → that proxy is used, env vars are ignored.
+- If `network.proxy` is absent and `defaults.proxy` is set → `defaults.proxy` is used, env vars are ignored.
+- If neither `network.proxy` nor `defaults.proxy` is set → the HTTP client reads `HTTPS_PROXY`/`HTTP_PROXY` from the environment (set by the Polarity server's global proxy config or inherited from the host).
+
+### TLS Certificate Verification (`rejectUnauthorized`)
+
+TLS settings are resolved using the following precedence (highest to lowest):
+
+| Priority | Source | When it applies |
+|----------|--------|-----------------|
+| 1 (highest) | `network.rejectUnauthorized` | Per-integration admin setting ("Allow Unauthorized TLS Certificates"). Applied dynamically on each `run()` call. |
+| 2 | `defaults.rejectUnauthorized` | Static value baked into the HTTP client at construction time. |
+| 3 (lowest) | `NODE_TLS_REJECT_UNAUTHORIZED` env var | Node.js process-level env var. Only consulted by the TLS layer when no explicit `rejectUnauthorized` is set on the socket options. |
+
+**Key behavior:** When `rejectUnauthorized` is explicitly set on a request (which PolarityRequest always does when `network` is set), Node.js **does not** consult the `NODE_TLS_REJECT_UNAUTHORIZED` environment variable. The env var is a process-wide fallback that only applies when no per-connection TLS option is provided.
+
+This means:
+- If `network` is set → `network.rejectUnauthorized` is used on every request, `NODE_TLS_REJECT_UNAUTHORIZED` is ignored.
+- If `network` is not set but `defaults.rejectUnauthorized` was provided → that value is used, env var is ignored.
+- If neither is set → Node.js falls back to `NODE_TLS_REJECT_UNAUTHORIZED` (where `'0'` disables verification).
+
+> ⚠️ **Do not set `process.env.NODE_TLS_REJECT_UNAUTHORIZED` at runtime.** V2 workers are shared across integrations — mutating this env var is racy and will leak TLS settings between integrations. Always use `network.rejectUnauthorized` (via `context.network`) or `defaults.rejectUnauthorized` instead.
+
+### `noProxy` Bypass List
+
+When `network.proxy.noProxy` is set, it provides a comma-separated list of hosts that should bypass the proxy (e.g., `"localhost,.internal,*.corp"`). This is passed to the HTTP client as `noProxyHost` and works the same as the `NO_PROXY` environment variable.
+
+Note that tier-1 `noProxy` (from `context.network.proxy.noProxy`) is separate from the worker's `NO_PROXY` env var. The env var covers global/host proxy bypass; `network.proxy.noProxy` covers only the per-integration proxy.
+
+### Interaction with Hooks
+
+Network settings are applied **after** `beforeRequest` hooks run. This means network configuration (which is authoritative admin config) cannot be accidentally overridden by a hook. The full order of operations for each `run()` call is:
+
+1. Start with the provided `requestOptions`
+2. Run `beforeRequest` hooks (each receives the previous hook's output)
+3. Apply `network` settings (proxy, noProxy, rejectUnauthorized) — overrides any values set by hooks
+4. Make the HTTP request (through the rate limiter if configured)
+5. Check for errors
+6. Run `afterResponse` hooks
+
+### Important Guidelines
+
+These guidelines are documented in `@polarityio/integration-types` and the Polarity platform:
+
+- **Do not mutate `process.env`** — Setting `process.env.HTTP_PROXY` or `process.env.NODE_TLS_REJECT_UNAUTHORIZED` at runtime affects the entire Node.js worker process. Workers are shared across integrations, so mutations leak between integrations.
+- **Do not cache HTTP clients across dispatches** — Settings may change between dispatches when an admin updates configuration. PolarityRequest handles this correctly because `network` is applied fresh on every `run()` call.
+- **When `network.proxy` is absent, do nothing** — The worker environment already carries global/host proxy settings and the HTTP client picks them up automatically. You do not need to read `HTTPS_PROXY` from `process.env`.
+
 ## Modify Success HTTP Status Codes
 
 By default, the PolarityRequest class will consider any 2xx status code as a successful response. You can modify this behavior by setting the `roundedSuccessStatusCodes` property when creating the `PolarityRequest` instance.
