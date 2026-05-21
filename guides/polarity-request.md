@@ -187,13 +187,13 @@ Proxy settings are resolved using the following precedence (highest to lowest):
 | Priority | Source | When it applies |
 |----------|--------|-----------------|
 | 1 (highest) | `network.proxy` (per-integration) | Set by admin in Polarity per-integration config. Applied dynamically on each `run()` call. |
-| 2 | `HTTPS_PROXY` / `HTTP_PROXY` env vars (global/host) | Set on the worker process by the Polarity server's global proxy config, or inherited from the host environment. Used automatically when no explicit `proxy` option is present on the request. |
-| 3 (lowest) | `defaults.proxy` (constructor) | Static proxy baked into the HTTP client at construction time. Overridden by `network.proxy` when set. |
+| 2 | `defaults.proxy` (constructor) | Static proxy baked into the HTTP client at construction time. Prevents env var fallback when set. |
+| 3 (lowest) | `HTTPS_PROXY` / `HTTP_PROXY` env vars (global/host) | Set on the worker process by the Polarity server's global proxy config, or inherited from the host environment. Only used when no explicit `proxy` is set on the request. |
 
 **Key behavior:** When a `proxy` property is explicitly set on a request (either via `network.proxy` or `defaults.proxy`), the underlying HTTP client (postman-request) uses that value and **does not** consult `HTTPS_PROXY`/`HTTP_PROXY` environment variables. Environment variables only take effect as a fallback when no explicit proxy is set on the request object.
 
 This means:
-- If `network.proxy` is configured → that proxy is used, env vars are ignored.
+- If `network.proxy` is configured → that proxy is used, env vars and `defaults.proxy` are ignored.
 - If `network.proxy` is absent and `defaults.proxy` is set → `defaults.proxy` is used, env vars are ignored.
 - If neither `network.proxy` nor `defaults.proxy` is set → the HTTP client reads `HTTPS_PROXY`/`HTTP_PROXY` from the environment (set by the Polarity server's global proxy config or inherited from the host).
 
