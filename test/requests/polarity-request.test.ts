@@ -133,7 +133,7 @@ describe('PolarityRequest', () => {
 
   describe('Constructor', () => {
     it('should create a PolarityRequest object with default values', () => {
-      expect.assertions(9);
+      expect.assertions(10);
 
       const defaultRequestOptions = {
         rejectUnauthorized: true,
@@ -152,6 +152,7 @@ describe('PolarityRequest', () => {
       expect(request.isApiError).toEqual(null);
       expect(request.userOptions).toEqual(null);
       expect(request.limiter).toEqual(null);
+      expect(request.network).toEqual(null);
       expect(request.hooks).toEqual({
         beforeRequest: [],
         afterResponse: [],
@@ -1810,6 +1811,224 @@ describe('PolarityRequest', () => {
 
       expect(results.length).toEqual(1);
       expect(results[0].requestId).toBe('request-abc-123');
+    });
+  });
+
+  describe('network property', () => {
+    it('should default network to null', () => {
+      const request = new PolarityRequest();
+      expect(request.network).toBeNull();
+    });
+
+    it('should accept network via constructor options', () => {
+      const network = { rejectUnauthorized: false, proxy: { https: 'http://proxy:8080' } };
+      const request = new PolarityRequest({ network });
+      expect(request.network).toBe(network);
+    });
+
+    it('should apply network proxy to request options', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy.corp:8080', http: 'http://proxy.corp:8081' }
+      };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8080');
+    });
+
+    it('should use http proxy for http:// URLs when both proxies are set', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy.corp:8080', http: 'http://proxy.corp:8081' }
+      };
+
+      await request.run({ url: 'http://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8081');
+    });
+
+    it('should fall back to http proxy for https:// URLs when https proxy is not set', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { http: 'http://proxy.corp:8081' }
+      };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8081');
+    });
+
+    it('should fall back to https proxy for http:// URLs when http proxy is not set', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy.corp:8080' }
+      };
+
+      await request.run({ url: 'http://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8080');
+    });
+
+    it('should apply network rejectUnauthorized=false to request options', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = { rejectUnauthorized: false };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions.rejectUnauthorized).toBe(false);
+    });
+
+    it('should apply noProxy to request options as noProxyHost', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: {
+          https: 'http://proxy.corp:8080',
+          noProxy: 'localhost,.internal'
+        }
+      };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions.proxy).toBe('http://proxy.corp:8080');
+      expect(capturedOptions.noProxyHost).toBe('localhost,.internal');
+    });
+
+    it('should not set proxy when network.proxy is undefined', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+      request.network = { rejectUnauthorized: true };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions.proxy).toBeUndefined();
+      expect(capturedOptions.noProxyHost).toBeUndefined();
+    });
+
+    it('should allow network to be changed between run() calls', async () => {
+      const capturedOptions: HttpRequestOptions[] = [];
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions.push({ ...requestOptions });
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const request = new PolarityRequest();
+      request.userOptions = { customOption: true };
+
+      request.network = {
+        rejectUnauthorized: false,
+        proxy: { https: 'http://proxy-a:8080' }
+      };
+      await request.run({ url: 'https://example.com', entity });
+
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://proxy-b:9090' }
+      };
+      await request.run({ url: 'https://example.com', entity });
+
+      expect(capturedOptions[0].proxy).toBe('http://proxy-a:8080');
+      expect(capturedOptions[0].rejectUnauthorized).toBe(false);
+      expect(capturedOptions[1].proxy).toBe('http://proxy-b:9090');
+      expect(capturedOptions[1].rejectUnauthorized).toBe(true);
+    });
+
+    it('should override beforeRequest hook proxy settings with network values', async () => {
+      let capturedOptions: HttpRequestOptions;
+      postmanRequest.defaults.mockImplementation(
+        () => (requestOptions: HttpRequestOptions, cb: PostmanRequestCallback) => {
+          capturedOptions = requestOptions;
+          cb(null, { statusCode: 200, body: {} }, {});
+        }
+      );
+
+      const hookThatSetsProxy: BeforeRequestHook = async (opts) => ({
+        ...opts,
+        proxy: 'http://hook-proxy:1111'
+      });
+
+      const request = new PolarityRequest({
+        hooks: { beforeRequest: [hookThatSetsProxy] }
+      });
+      request.userOptions = { customOption: true };
+      request.network = {
+        rejectUnauthorized: true,
+        proxy: { https: 'http://network-proxy:8080' }
+      };
+
+      await request.run({ url: 'https://example.com', entity });
+
+      // Network takes precedence over hook
+      expect(capturedOptions.proxy).toBe('http://network-proxy:8080');
     });
   });
 });

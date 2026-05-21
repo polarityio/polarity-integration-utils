@@ -151,6 +151,9 @@ export const createMockIntegrationContext = (
         : () => ({ schedule: scheduleImpl })) as IntegrationContext['limiter']['scope']
     },
     startPolling: createMockFn(),
-    stopPolling: createMockFn()
+    stopPolling: createMockFn(),
+    network: {
+      rejectUnauthorized: true
+    }
   };
 };
