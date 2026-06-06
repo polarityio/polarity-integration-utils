@@ -1,6 +1,6 @@
 import type { Logger } from '@polarityio/integration-types';
 
-const noop = (): boolean => true;
+const noop = (..._args: unknown[]): boolean => true;
 
 function createDefaultLogger(): Logger {
   const logger = {
