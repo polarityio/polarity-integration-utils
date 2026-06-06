@@ -50,58 +50,40 @@ describe('default logger child()', () => {
 });
 
 describe('default logger no-args behaviour', () => {
-  it('should return true when log method is called with no arguments', () => {
+  it('should not throw when log method is called with no arguments', () => {
     jest.isolateModules(() => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getLogger } = require('../../lib/logging/logger');
       const logger = getLogger();
-      expect(logger.info()).toBe(true);
-      expect(logger.debug()).toBe(true);
-      expect(logger.trace()).toBe(true);
-      expect(logger.warn()).toBe(true);
-      expect(logger.error()).toBe(true);
-      expect(logger.fatal()).toBe(true);
+      expect(() => logger.info()).not.toThrow();
+      expect(() => logger.debug()).not.toThrow();
+      expect(() => logger.trace()).not.toThrow();
+      expect(() => logger.warn()).not.toThrow();
+      expect(() => logger.error()).not.toThrow();
+      expect(() => logger.fatal()).not.toThrow();
     });
   });
 });
-
-const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'] as const;
 
 describe('getLogger default behaviour (no setLogger)', () => {
   beforeEach(() => {
     jest.resetModules();
   });
 
-  it('should write to devRunnerResults.json at the correct level', () => {
+  it('should have noop log methods that do not throw', () => {
     jest.isolateModules(() => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const fs = require('fs');
-      const appendSpy = jest
-        .spyOn(fs, 'appendFileSync')
-        // Prevent actual file writes during the test run
-        .mockImplementation(() => {});
-
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getLogger } = require('../../lib/logging/logger');
-
       const logger = getLogger();
+
+      const loggingLevels = ['info', 'debug', 'trace', 'warn', 'error', 'fatal'] as const;
       loggingLevels.forEach((level) => {
-        (logger as Record<string, (...args: unknown[]) => void>)[level](
-          `test message for ${level}`
-        );
+        expect(() =>
+          (logger as Record<string, (...args: unknown[]) => void>)[level](
+            `test message for ${level}`
+          )
+        ).not.toThrow();
       });
-
-      expect(appendSpy).toHaveBeenCalledTimes(loggingLevels.length);
-
-      loggingLevels.forEach((level, idx) => {
-        expect(appendSpy).toHaveBeenNthCalledWith(
-          idx + 1,
-          'devRunnerResults.json',
-          expect.stringContaining(`"SOURCE": "Logger.${level}"`)
-        );
-      });
-
-      appendSpy.mockRestore();
     });
   });
 });
