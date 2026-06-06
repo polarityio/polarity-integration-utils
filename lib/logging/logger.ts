@@ -1,25 +1,16 @@
-import fs from 'fs';
 import type { Logger } from '@polarityio/integration-types';
 
-const createLogMethod =
-  (loggingLevel: string) =>
-  (...content: unknown[]) => {
-    if (content.length === 0) return true;
-    fs.appendFileSync(
-      'devRunnerResults.json',
-      '\n' + JSON.stringify({ SOURCE: `Logger.${loggingLevel}`, content }, null, 2)
-    );
-  };
+const noop = (..._args: unknown[]): boolean => true;
 
 function createDefaultLogger(): Logger {
   const logger = {
     child: () => logger as Logger,
-    trace: createLogMethod('trace'),
-    debug: createLogMethod('debug'),
-    info: createLogMethod('info'),
-    warn: createLogMethod('warn'),
-    error: createLogMethod('error'),
-    fatal: createLogMethod('fatal')
+    trace: noop,
+    debug: noop,
+    info: noop,
+    warn: noop,
+    error: noop,
+    fatal: noop
   };
   return logger as Logger;
 }
