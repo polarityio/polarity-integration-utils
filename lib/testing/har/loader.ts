@@ -17,6 +17,7 @@
 import fs from 'fs';
 import type { Har, HarEntry } from './types';
 import { sanitizeEntries } from './sanitizer';
+import { recordedBody } from './body';
 
 /**
  * Returns true when an HTTP status should be treated as an error fixture.
@@ -28,9 +29,87 @@ export function isErrorStatus(status: number): boolean {
   return status >= 400;
 }
 
-/** Dedupe key for an entry: METHOD + URL (query included). */
+/**
+ * Dedupe/signature key for an entry: `METHOD URL` plus the normalized request
+ * body (query included in the URL). Including the body is what keeps distinct
+ * POST payloads to the same URL from collapsing to one under
+ * {@link dedupeByRecency}. An empty body contributes an empty segment, so GET
+ * entries key exactly as before.
+ */
 function entryKey(entry: HarEntry): string {
+  const method = (entry.request.method || 'GET').toUpperCase();
+  const body = recordedBody(entry).canonical;
+  return `${method} ${entry.request.url} ${body}`;
+}
+
+/**
+ * A set of entries that share a full signature (`METHOD + URL + body`) but do
+ * not agree on their response — so {@link dedupeByRecency} silently keeps only
+ * the most recent. Surfaced so the ambiguity can be reported rather than hidden.
+ *
+ * @internal
+ */
+export interface HarCollision {
+  /** The shared `METHOD URL` signature (body segment omitted for readability). */
+  signature: string;
+  /** How many entries share the signature. */
+  count: number;
+  /** How many materially-distinct responses those entries carry. */
+  distinctResponses: number;
+}
+
+/** A response fingerprint (status + body text) used to detect real conflicts. */
+function responseSignature(entry: HarEntry): string {
+  return `${entry.response?.status ?? 0} ${entry.response?.content?.text ?? ''}`;
+}
+
+/** Human-readable signature (drops the body segment for messages). */
+function readableSignature(entry: HarEntry): string {
   return `${(entry.request.method || 'GET').toUpperCase()} ${entry.request.url}`;
+}
+
+/**
+ * Finds entries that collapse under {@link entryKey} but carry conflicting
+ * responses. These are the cases where recency-dedupe makes a silent choice.
+ *
+ * @param entries - Entries about to be deduped.
+ * @returns One {@link HarCollision} per conflicting signature (empty when none).
+ *
+ * @internal
+ */
+export function detectCollisions(entries: HarEntry[]): HarCollision[] {
+  const groups = new Map<string, HarEntry[]>();
+  for (const entry of entries) {
+    const key = entryKey(entry);
+    const group = groups.get(key) ?? [];
+    group.push(entry);
+    groups.set(key, group);
+  }
+
+  const collisions: HarCollision[] = [];
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const distinct = new Set(group.map(responseSignature));
+    if (distinct.size > 1) {
+      collisions.push({
+        signature: readableSignature(group[0]),
+        count: group.length,
+        distinctResponses: distinct.size
+      });
+    }
+  }
+  return collisions;
+}
+
+/** Default collision reporter: a non-blocking console warning. */
+function warnCollision(collision: HarCollision): void {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `HarFixture: ${collision.count} recorded entries share the signature ` +
+      `"${collision.signature}" but carry ${collision.distinctResponses} distinct ` +
+      `responses. Recency wins (the most-recently-recorded entry is used). ` +
+      `Re-record to refresh, or scope fixtures so the signature is unique.`
+  );
 }
 
 /** Epoch millis for an entry, preferring `_polarity.recordedAt`. */
@@ -117,21 +196,32 @@ export function readHarFile(filePath: string): Har {
  * set from `from()` / `merge()`.
  *
  * @param hars - One or more parsed HAR documents.
- * @param options - Loading behavior.
+ * @param options - Loading behavior. `onCollision` is invoked once per
+ *   conflicting signature before deduping (default: a `console.warn`); pass
+ *   `null` to silence it.
  * @returns The flattened, sanitized, recency-deduped entries.
  *
  * @internal
  */
 export function loadEntries(
   hars: Har[],
-  options: { sanitize?: boolean; dedupe?: boolean } = {}
+  options: {
+    sanitize?: boolean;
+    dedupe?: boolean;
+    onCollision?: ((collision: HarCollision) => void) | null;
+  } = {}
 ): HarEntry[] {
-  const { sanitize = true, dedupe = true } = options;
+  const { sanitize = true, dedupe = true, onCollision = warnCollision } = options;
   let entries: HarEntry[] = [];
   for (const har of hars) {
     entries = entries.concat(har.log.entries);
   }
   if (sanitize) entries = sanitizeEntries(entries);
-  if (dedupe) entries = dedupeByRecency(entries);
+  if (dedupe) {
+    if (onCollision) {
+      for (const collision of detectCollisions(entries)) onCollision(collision);
+    }
+    entries = dedupeByRecency(entries);
+  }
   return entries;
 }

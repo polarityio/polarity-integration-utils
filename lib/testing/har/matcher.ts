@@ -23,11 +23,16 @@ import type {
 } from '../../requests/polarity-request';
 import { isErrorStatus } from './loader';
 import { REDACTED } from './sanitizer';
+import { recordedBody, requestBody, bodiesMatch, type NormalizedBody } from './body';
 
 /**
  * How HAR entries are matched against outgoing requests.
  *
- * - `'url+method'` — match on both the URL and HTTP method (default, strictest).
+ * - `'url+method'` — match on both the URL and HTTP method (default).
+ * - `'url+method+body'` — additionally require the normalized request body to
+ *   match. Necessary for POST-based vendor APIs where the body (not the URL)
+ *   carries the query, so two POSTs to the same URL resolve to their respective
+ *   fixtures. The external mock proxy (INT-2191) uses this mode.
  * - `'url'` — match on URL only, ignoring the method.
  * - `'url-pattern'` — treat the recorded URL's path as a prefix and match any
  *   request whose URL path starts with it (method still respected). Useful when
@@ -35,7 +40,7 @@ import { REDACTED } from './sanitizer';
  *
  * @public
  */
-export type HarMatchBy = 'url+method' | 'url' | 'url-pattern';
+export type HarMatchBy = 'url+method' | 'url+method+body' | 'url' | 'url-pattern';
 
 /**
  * What to do when no recorded entry matches an outgoing request.
@@ -216,6 +221,7 @@ function entryMatches(
   entry: HarEntry,
   reqUrl: string,
   reqMethod: string,
+  reqBody: NormalizedBody,
   options: ResolvedHarFixtureOptions
 ): boolean {
   const entryMethod = (entry.request.method || 'GET').toUpperCase();
@@ -226,21 +232,34 @@ function entryMatches(
   const recorded = parseUrl(entry.request.url);
   const requested = parseUrl(reqUrl);
 
-  // url-pattern: recorded base is treated as a path prefix; query is ignored.
+  let urlOk: boolean;
   if (options.matchBy === 'url-pattern') {
-    if (!recorded.valid || !requested.valid) {
-      return requested.base === recorded.base;
-    }
-    return requested.base.startsWith(recorded.base);
+    // recorded base is treated as a path prefix; query is ignored.
+    urlOk =
+      !recorded.valid || !requested.valid
+        ? requested.base === recorded.base
+        : requested.base.startsWith(recorded.base);
+  } else if (recorded.base !== requested.base) {
+    urlOk = false;
+  } else if (options.ignoreQueryString) {
+    // ignoreQueryString drops query comparison entirely (token-in-URL / volatile
+    // params).
+    urlOk = true;
+  } else {
+    // Compare query params, treating redacted recorded values as wildcards so
+    // stripped secrets don't break matching.
+    urlOk = queryMatches(recorded.query, requested.query);
   }
 
-  if (recorded.base !== requested.base) return false;
+  if (!urlOk) return false;
 
-  // ignoreQueryString drops query comparison entirely (token-in-URL / volatile
-  // params). Otherwise compare query params, treating redacted recorded values
-  // as wildcards so stripped secrets don't break matching.
-  if (options.ignoreQueryString) return true;
-  return queryMatches(recorded.query, requested.query);
+  // url+method+body additionally requires the normalized bodies to match, so
+  // POST-based APIs disambiguate on the payload the URL doesn't carry. A
+  // redacted recorded body field acts as a wildcard.
+  if (options.matchBy === 'url+method+body') {
+    return bodiesMatch(recordedBody(entry), reqBody);
+  }
+  return true;
 }
 
 /**
@@ -268,9 +287,10 @@ export function matchEntry(
 ): HarEntry | typeof REPLAY_MISS {
   const reqUrl = requestUrlOf(requestOptions);
   const reqMethod = requestMethodOf(requestOptions);
+  const reqBody = requestBody(requestOptions);
 
   const matches = entries.filter((entry) =>
-    entryMatches(entry, reqUrl, reqMethod, options)
+    entryMatches(entry, reqUrl, reqMethod, reqBody, options)
   );
   if (matches.length === 0) return REPLAY_MISS;
   if (matches.length === 1) return matches[0];

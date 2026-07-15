@@ -151,7 +151,7 @@ export interface HarLog {
 }
 
 // @public
-export type HarMatchBy = 'url+method' | 'url' | 'url-pattern';
+export type HarMatchBy = 'url+method' | 'url+method+body' | 'url' | 'url-pattern';
 
 // @public
 export interface HarNameValue {
