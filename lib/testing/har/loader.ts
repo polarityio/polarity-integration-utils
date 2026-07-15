@@ -8,7 +8,8 @@
  * which entry is effective.
  *
  * This module is pure JSON + filesystem reads — no `nock`, no HTTP layer. The
- * matcher consumes the deduped entries to short-circuit `PolarityRequest.run()`.
+ * matcher consumes the deduped entries to serve `HarFixture` (unit tests) and
+ * the external HAR mock proxy (INT-2191).
  *
  * @packageDocumentation
  */

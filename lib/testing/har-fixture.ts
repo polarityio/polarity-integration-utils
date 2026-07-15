@@ -19,9 +19,10 @@
  * );
  * ```
  *
- * `HarFixture` is the Tier-1 (in-repo unit test) convenience. The same replay
- * core also powers the inert `PolarityRequest.run()` seam used by the deployed,
- * multi-container test path (see `registerHarReplayer`).
+ * `HarFixture` is the Tier-1 (in-repo unit test) convenience. The same HAR
+ * replay core (loader + matcher) is also consumed by the external HAR mock
+ * proxy that serves the deployed, multi-container test path (see INT-2191);
+ * that path does not use this class.
  *
  * @packageDocumentation
  */
@@ -37,8 +38,7 @@ import {
   replay,
   isReplayMiss,
   type HarFixtureOptions,
-  type ResolvedHarFixtureOptions,
-  type ReplayResult
+  type ResolvedHarFixtureOptions
 } from './har/matcher';
 import type { MockFnFactory } from './enhanced-utils/create-mock-integration-context';
 
@@ -53,16 +53,6 @@ export type HarReplayFn = (
   requestOptions: HttpRequestOptions
 ) => Promise<HttpRequestResponse | undefined>;
 
-/**
- * A function that attempts to replay a request synchronously against loaded
- * fixtures. Returns a synthesized response on a hit, or a miss outcome the
- * caller resolves according to `onMiss`. Consumed by the `run()` seam via
- * {@link registerHarReplayer}.
- *
- * @internal
- */
-export type HarReplayer = (requestOptions: HttpRequestOptions) => ReplayResult;
-
 const noOpFactory: MockFnFactory = () => () => undefined;
 
 /**
@@ -76,8 +66,8 @@ const noOpFactory: MockFnFactory = () => () => undefined;
  * - {@link HarFixture.asPolarityRequest} — a full `vi.mock()` / `jest.mock()`
  *   factory replacing the `PolarityRequest` class.
  *
- * For the deployed/multi-container replay path, pass a fixture to
- * `registerHarReplayer` instead of using it as a mock directly.
+ * The deployed/multi-container test path is served by the external HAR mock
+ * proxy (INT-2191), which reuses the same match engine — not this class.
  *
  * @group Testing
  * @public
@@ -169,21 +159,6 @@ export class HarFixture {
    */
   public getEntries(): HarEntry[] {
     return [...this.entries];
-  }
-
-  /**
-   * Returns the raw, synchronous replay function used by the `run()` seam.
-   * On a hit it returns a synthesized {@link HttpRequestResponse}; on a miss it
-   * returns a miss outcome (the seam applies `onMiss`). Consumed by
-   * {@link registerHarReplayer}; integration authors should not need this.
-   *
-   * @returns A {@link HarReplayer}.
-   *
-   * @internal
-   */
-  public asReplayer(): HarReplayer {
-    return (requestOptions: HttpRequestOptions) =>
-      replay(this.entries, requestOptions, this.options);
   }
 
   /**

@@ -4,13 +4,14 @@
  * `body` / `statusCode` / `headers` / `request` shape that
  * `PolarityRequest.run()` returns.
  *
- * This is the pure, in-process replay engine used by both:
+ * This is the pure replay engine reused by both:
  *   - {@link HarFixture} (the Tier-1 in-repo unit-test convenience), and
- *   - the `run()` short-circuit seam (the deployed/multi-container test path).
+ *   - the external HAR mock proxy (INT-2191), via a thin adapter that maps an
+ *     inbound proxied request onto a {@link HttpRequestOptions} shape.
  *
  * No `nock`, no sockets, no TLS — matching happens on the structured request
- * options object after `beforeRequest` hooks have finalized auth/query, so a
- * replayed request reflects exactly what the integration would have sent.
+ * options object (method + URL + body), so a matched request reflects exactly
+ * what the integration would have sent.
  *
  * @packageDocumentation
  */
@@ -43,8 +44,8 @@ export type HarMatchBy = 'url+method' | 'url' | 'url-pattern';
  *   (default; mirrors the SDK replayer's hard-fail-on-miss semantics).
  * - `'return-null'` — resolve the request to `undefined` (no response).
  * - `'passthrough'` — signal the caller to fall through to the real network.
- *   In `HarFixture` mock mode this behaves like `'return-null'`; in the `run()`
- *   seam it allows the live request to proceed.
+ *   In `HarFixture` mock mode this behaves like `'return-null'`; the mock proxy
+ *   instead hard-fails on a miss (it must never reach a live vendor).
  *
  * @public
  */

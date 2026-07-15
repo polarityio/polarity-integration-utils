@@ -28,12 +28,6 @@ export class AuthRequestError extends IntegrationError {
 // @public
 export type BeforeRequestHook = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions>;
 
-// @public
-export function clearHarReplayer(): void;
-
-// @public
-export function clearReplaySeam(): void;
-
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
     ca?: undefined | string;
@@ -404,18 +398,12 @@ export type IsApiErrorResult = {
 };
 
 // @public
-export function isReplaySeamActive(): boolean;
-
-// @public
 export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
 // @public @deprecated (undocumented)
 export type Limiter = PolarityRequestLimiter;
-
-// @public
-export function maybeReplay(requestOptions: HttpRequestOptions): SeamReplayResult;
 
 // @public (undocumented)
 export type MetaObject = {
@@ -433,9 +421,6 @@ export class NetworkError extends IntegrationError {
 }
 
 export { NetworkProxy }
-
-// @public
-export const NO_REPLAY: unique symbol;
 
 // @public
 export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
@@ -521,23 +506,6 @@ export interface PolarityRequestOptions {
 // @public
 export const REDACTED = "[REDACTED]";
 
-// @public
-export type RegisteredOnMiss = 'throw' | 'passthrough';
-
-// @public
-export type RegisteredReplayer = (requestOptions: HttpRequestOptions) => SeamReplayResult;
-
-// @public
-export function registerHarReplayer(input: HarFixture | HarFixture[] | string | string[], options?: RegisterHarReplayerOptions): () => void;
-
-// @public
-export interface RegisterHarReplayerOptions extends HarFixtureOptions {
-    onMiss?: RegisteredOnMiss;
-}
-
-// @public
-export function registerReplaySeam(replayer: RegisteredReplayer | null): () => void;
-
 // @public @deprecated (undocumented)
 export interface ResponseError {
     // (undocumented)
@@ -570,12 +538,6 @@ export function sanitizeEntry(entry: HarEntry): HarEntry;
 
 // @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
-
-// @public
-export type SeamReplayResult = HttpRequestResponse | typeof NO_REPLAY | {
-    replayMiss: true;
-    description: string;
-};
 
 // @public
 export interface SelectOptionItem {

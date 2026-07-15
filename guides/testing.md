@@ -294,34 +294,19 @@ const fixture = HarFixture.merge([
 vi.mock('polarity-integration-utils/requests', () => fixture.asPolarityRequest(vi.fn));
 ```
 
-### Deployed / multi-container replay (the `run()` seam)
+### Deployed / multi-container replay (external mock proxy)
 
 For tests that drive a **deployed** integration instance (where the test client
-is not in the vendor call path), `HarFixture` plugs into an in-process seam
-inside `PolarityRequest.run()`. A test/dev harness running inside the
-integration runtime registers fixtures at startup; every `run()` — including
-parallel requests — is then served from fixtures before any socket/TLS work:
+is not in the vendor call path), replay is **not** performed through this
+library. An external HAR mock proxy is co-located with the test environment,
+and the platform points integration egress at it via its existing proxy
+settings; the proxy reuses the same HAR match engine as `HarFixture` to serve
+recorded fixtures (loaded from S3). Integration code and this library are
+unchanged — there is **no** in-process seam in `PolarityRequest.run()`.
 
-```typescript
-import { HarFixture, registerHarReplayer } from 'polarity-integration-utils/testing';
-
-const unregister = registerHarReplayer(
-  HarFixture.merge([
-    HarFixture.from('./mocks/lookups/IP.har'),
-    HarFixture.from('./mocks/lookups/domain.har')
-  ]),
-  { onMiss: 'throw' } // 'throw' (hard-fail on miss) | 'passthrough' (allow live)
-);
-
-// ...run the test target...
-
-unregister(); // restore live network behavior
-```
-
-This seam is **inert in production**: when no replayer is registered (the
-default), `run()` behavior is unchanged. The replay logic lives only under
-`polarity-integration-utils/testing`, which production integration code never
-imports.
+See the "HAR Replay Delivery & Test-Only Exclusion Architecture" decision doc
+(INT-2018) for the proxy, S3, and platform-wiring details. `HarFixture` above
+remains the Tier-1 tool for an integration's own in-repo unit tests.
 
 ## Test Helpers
 
