@@ -15,6 +15,7 @@
  */
 
 import fs from 'fs';
+import { createHash } from 'crypto';
 import type { Har, HarEntry } from './types';
 import { sanitizeEntries } from './sanitizer';
 import { recordedBody } from './body';
@@ -30,16 +31,17 @@ export function isErrorStatus(status: number): boolean {
 }
 
 /**
- * Dedupe/signature key for an entry: `METHOD URL` plus the normalized request
- * body (query included in the URL). Including the body is what keeps distinct
- * POST payloads to the same URL from collapsing to one under
- * {@link dedupeByRecency}. An empty body contributes an empty segment, so GET
- * entries key exactly as before.
+ * Dedupe/signature key for an entry: `METHOD URL` plus a hash of the normalized
+ * request body (the query is already in the URL). Hashing keeps the key compact
+ * regardless of body size; an empty body contributes an empty segment, so GET
+ * entries key exactly as before. Including the body is what keeps distinct POST
+ * payloads to the same URL from collapsing to one under {@link dedupeByRecency}.
  */
 function entryKey(entry: HarEntry): string {
   const method = (entry.request.method || 'GET').toUpperCase();
-  const body = recordedBody(entry).canonical;
-  return `${method} ${entry.request.url} ${body}`;
+  const canonicalBody = recordedBody(entry).canonical;
+  const bodyKey = canonicalBody === '' ? '' : createHash('sha1').update(canonicalBody).digest('hex');
+  return `${method} ${entry.request.url} ${bodyKey}`;
 }
 
 /**
