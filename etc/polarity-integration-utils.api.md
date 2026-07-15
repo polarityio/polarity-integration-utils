@@ -28,6 +28,12 @@ export class AuthRequestError extends IntegrationError {
 // @public
 export type BeforeRequestHook = (requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<HttpRequestOptions>;
 
+// @public
+export function clearHarReplayer(): void;
+
+// @public
+export function clearReplaySeam(): void;
+
 // @public (undocumented)
 export type ConfigRequestProxyOptions = {
     ca?: undefined | string;
@@ -73,6 +79,153 @@ export type ErrorMeta = {
 
 // @public
 export const getLogger: () => Logger;
+
+// @public
+export interface Har {
+    // (undocumented)
+    log: HarLog;
+}
+
+// @public
+export interface HarContent {
+    // (undocumented)
+    mimeType: string;
+    // (undocumented)
+    size: number;
+    // (undocumented)
+    text?: string;
+}
+
+// @public
+export interface HarCreator {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    version: string;
+}
+
+// @public
+export interface HarEntry {
+    // (undocumented)
+    cache: Record<string, never>;
+    // (undocumented)
+    _polarity?: PolarityEntryMeta;
+    // (undocumented)
+    request: HarRequest;
+    // (undocumented)
+    response: HarResponse;
+    // (undocumented)
+    startedDateTime: string;
+    // (undocumented)
+    time: number;
+    // (undocumented)
+    timings: {
+        send: number;
+        wait: number;
+        receive: number;
+    };
+}
+
+// @public
+export class HarFixture {
+    asMock(createMockFn?: MockFnFactory): HarReplayFn;
+    asPolarityRequest(createMockFn?: MockFnFactory): {
+        PolarityRequest: new (...args: unknown[]) => unknown;
+    };
+    static from(filePath: string, options?: HarFixtureOptions): HarFixture;
+    static fromHar(har: Har | Har[], options?: HarFixtureOptions): HarFixture;
+    static fromString(contents: string, options?: HarFixtureOptions): HarFixture;
+    getEntries(): HarEntry[];
+    static merge(fixtures: HarFixture[], options?: HarFixtureOptions): HarFixture;
+}
+
+// @public
+export interface HarFixtureOptions {
+    ignoreQueryString?: boolean;
+    matchBy?: HarMatchBy;
+    onMiss?: HarOnMiss;
+}
+
+// @public
+export interface HarLog {
+    // (undocumented)
+    creator: HarCreator;
+    // (undocumented)
+    entries: HarEntry[];
+    // (undocumented)
+    version: '1.2';
+}
+
+// @public
+export type HarMatchBy = 'url+method' | 'url' | 'url-pattern';
+
+// @public
+export interface HarNameValue {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    value: string;
+}
+
+// @public
+export type HarOnMiss = 'throw' | 'return-null' | 'passthrough';
+
+// @public
+export interface HarPostData {
+    // (undocumented)
+    mimeType: string;
+    // (undocumented)
+    params?: HarNameValue[];
+    // (undocumented)
+    text?: string;
+}
+
+// @public
+export type HarReplayFn = (requestOptions: HttpRequestOptions) => Promise<HttpRequestResponse | undefined>;
+
+// @public
+export interface HarRequest {
+    // (undocumented)
+    bodySize: number;
+    // (undocumented)
+    cookies: HarNameValue[];
+    // (undocumented)
+    headers: HarNameValue[];
+    // (undocumented)
+    headersSize: number;
+    // (undocumented)
+    httpVersion: string;
+    // (undocumented)
+    method: string;
+    // (undocumented)
+    postData?: HarPostData;
+    // (undocumented)
+    queryString: HarNameValue[];
+    // (undocumented)
+    url: string;
+}
+
+// @public
+export interface HarResponse {
+    // (undocumented)
+    bodySize: number;
+    // (undocumented)
+    content: HarContent;
+    // (undocumented)
+    cookies: HarNameValue[];
+    // (undocumented)
+    headers: HarNameValue[];
+    // (undocumented)
+    headersSize: number;
+    // (undocumented)
+    httpVersion: string;
+    // (undocumented)
+    redirectURL: string;
+    // (undocumented)
+    status: number;
+    // (undocumented)
+    statusText: string;
+}
 
 // @public (undocumented)
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
@@ -251,12 +404,18 @@ export type IsApiErrorResult = {
 };
 
 // @public
+export function isReplaySeamActive(): boolean;
+
+// @public
 export class LibraryUsageError extends IntegrationError {
     constructor(message: string, properties?: IntegrationErrorProperties);
 }
 
 // @public @deprecated (undocumented)
 export type Limiter = PolarityRequestLimiter;
+
+// @public
+export function maybeReplay(requestOptions: HttpRequestOptions): SeamReplayResult;
 
 // @public (undocumented)
 export type MetaObject = {
@@ -276,6 +435,9 @@ export class NetworkError extends IntegrationError {
 export { NetworkProxy }
 
 // @public
+export const NO_REPLAY: unique symbol;
+
+// @public
 export type OnApiErrorHook = (error: ApiRequestError, response: HttpRequestResponse, requestOptions: HttpRequestOptions, userOptions: DoLookupUserOptions) => Promise<void>;
 
 // @public
@@ -283,6 +445,25 @@ export type OnNetworkErrorHook = (error: NetworkError | RetryRequestError, reque
 
 // @public @deprecated (undocumented)
 export const parseErrorToReadableJson: (error: ResponseError) => any;
+
+// @public
+export type PolarityActionPhase = 'validate' | 'execute';
+
+// @public
+export type PolarityEntryKind = 'lookup' | 'action';
+
+// @public
+export interface PolarityEntryMeta {
+    actionKey?: string;
+    ambiguousAttribution?: boolean;
+    entityValue: string;
+    kind?: PolarityEntryKind;
+    phase?: PolarityActionPhase;
+    primaryType: string;
+    recordedAt: string;
+    type: string;
+    types: string[];
+}
 
 // @public
 export class PolarityRequest {
@@ -337,6 +518,26 @@ export interface PolarityRequestOptions {
     roundedSuccessStatusCodes?: number[];
 }
 
+// @public
+export const REDACTED = "[REDACTED]";
+
+// @public
+export type RegisteredOnMiss = 'throw' | 'passthrough';
+
+// @public
+export type RegisteredReplayer = (requestOptions: HttpRequestOptions) => SeamReplayResult;
+
+// @public
+export function registerHarReplayer(input: HarFixture | HarFixture[] | string | string[], options?: RegisterHarReplayerOptions): () => void;
+
+// @public
+export interface RegisterHarReplayerOptions extends HarFixtureOptions {
+    onMiss?: RegisteredOnMiss;
+}
+
+// @public
+export function registerReplaySeam(replayer: RegisteredReplayer | null): () => void;
+
 // @public @deprecated (undocumented)
 export interface ResponseError {
     // (undocumented)
@@ -362,7 +563,19 @@ export type RunInParallelOptions = {
 };
 
 // @public
+export function sanitizeEntries(entries: HarEntry[]): HarEntry[];
+
+// @public
+export function sanitizeEntry(entry: HarEntry): HarEntry;
+
+// @public
 export function sanitizeRequestOptions(requestOptions: HttpRequestOptions, additionalPathsToSanitize?: string[]): HttpRequestOptions;
+
+// @public
+export type SeamReplayResult = HttpRequestResponse | typeof NO_REPLAY | {
+    replayMiss: true;
+    description: string;
+};
 
 // @public
 export interface SelectOptionItem {

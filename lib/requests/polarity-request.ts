@@ -19,6 +19,7 @@ import type {
   NetworkProxy
 } from '@polarityio/integration-types';
 import { sanitizeRequestOptions } from './sanitize-request-options';
+import { maybeReplay, NO_REPLAY } from './replay-seam';
 
 export type { NetworkContext, NetworkProxy };
 
@@ -558,6 +559,57 @@ export class PolarityRequest {
         processedOptions.noProxyHost = this.network.proxy.noProxy;
       }
       processedOptions.rejectUnauthorized = this.network.rejectUnauthorized;
+    }
+
+    // Replay seam (inert in production). When a testing harness has registered
+    // a replayer, attempt to serve this request from recorded fixtures before
+    // any socket/TLS work. The seam runs here — after beforeRequest hooks
+    // finalized auth/query and after network settings were applied — so a
+    // replayed request matches exactly what would have been sent live. On a hit
+    // we still run detectApiError + afterResponse below, so replay behavior is
+    // identical to a live call.
+    const replayResult = maybeReplay(processedOptions);
+    if (replayResult !== NO_REPLAY) {
+      if (
+        typeof replayResult === 'object' &&
+        replayResult !== null &&
+        (replayResult as { replayMiss?: boolean }).replayMiss === true
+      ) {
+        const description = (replayResult as { description?: string }).description;
+        throw new LibraryUsageError(
+          `HAR replay is active but no recorded fixture matched ${
+            description ?? 'the request'
+          }. Record this request with the SDK (--record-har) or register additional fixtures.`
+        );
+      }
+      const replayedResponse = replayResult as HttpRequestResponse;
+      const replayApiError = this.detectApiError(replayedResponse, processedOptions);
+      if (replayApiError) {
+        if (this.hooks.onApiError.length > 0) {
+          for (const hook of this.hooks.onApiError) {
+            await hook(
+              replayApiError,
+              replayedResponse,
+              processedOptions,
+              this.userOptions
+            );
+          }
+          return replayedResponse;
+        }
+        throw replayApiError;
+      }
+
+      let replayed = replayedResponse;
+      for (const hook of this.hooks.afterResponse) {
+        const hookResult = await hook(replayed, processedOptions, this.userOptions);
+        if (!hookResult || typeof hookResult !== 'object' || Array.isArray(hookResult)) {
+          throw new LibraryUsageError(
+            'Each `afterResponse` hook must return an `HttpRequestResponse` object.'
+          );
+        }
+        replayed = hookResult;
+      }
+      return replayed;
     }
 
     let httpResponse: HttpRequestResponse;
