@@ -151,9 +151,9 @@ describe('doLookup', () => {
     const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
     const options: DoLookupUserOptions = { apiKey: 'invalid-key' };
 
-    await expect(
-      doLookup(entities, options, createMockContext())
-    ).rejects.toThrow('Forbidden');
+    await expect(doLookup(entities, options, createMockContext())).rejects.toThrow(
+      'Forbidden'
+    );
   });
 
   it('should throw on network errors', async () => {
@@ -163,9 +163,9 @@ describe('doLookup', () => {
     const entities: Entity[] = [createEntity('domain', 'unreachable.example.com')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
 
-    await expect(
-      doLookup(entities, options, createMockContext())
-    ).rejects.toThrow('ECONNREFUSED');
+    await expect(doLookup(entities, options, createMockContext())).rejects.toThrow(
+      'ECONNREFUSED'
+    );
   });
 });
 ```
@@ -193,6 +193,120 @@ it('should pass the correct URL and headers', async () => {
   );
 });
 ```
+
+## Replaying Recorded HAR Fixtures with `HarFixture`
+
+Hand-written `PolarityRequest.run()` mocks drift from reality: they encode a
+developer's _guess_ at the vendor's response shape. `HarFixture` replaces that
+guesswork with **real captured vendor data**. The
+[SDK HAR recorder](https://github.com/breachintelligence/polarity-integration-sdk)
+(`--record-har`) writes sanitized HAR 1.2 files to `mocks/lookups/<type>.har`
+and `mocks/actions/<key>.har`; `HarFixture` loads one (or several) and replays
+matching entries as `PolarityRequest`-compatible responses.
+
+Auth headers, cookies, and secret query params are stripped at record time and
+again defensively at load time, so fixtures are safe to commit. Response bodies
+(the useful part) are kept intact.
+
+### Migration: hand-written mock → `HarFixture`
+
+**Before** — a hand-written stub that has to be kept in sync with the vendor:
+
+```typescript
+// Vitest
+vi.mock('polarity-integration-utils/requests', () => ({
+  PolarityRequest: vi.fn().mockImplementation(() => ({
+    run: vi.fn().mockResolvedValue({
+      statusCode: 200,
+      body: { ip: '8.8.8.8', org: 'Google LLC', country: 'US' }
+    })
+  }))
+}));
+```
+
+**After** — backed by a recorded HAR file, no hand-maintained response shape:
+
+```typescript
+import path from 'path';
+import { HarFixture } from 'polarity-integration-utils/testing';
+
+// Vitest
+vi.mock('polarity-integration-utils/requests', () =>
+  HarFixture.from(path.join(__dirname, '../mocks/lookups/IP.har')).asPolarityRequest(
+    vi.fn
+  )
+);
+
+// Jest — identical, swap the factory
+jest.mock('polarity-integration-utils/requests', () =>
+  HarFixture.from(path.join(__dirname, '../mocks/lookups/IP.har')).asPolarityRequest(
+    jest.fn
+  )
+);
+```
+
+`asPolarityRequest()` returns a module-shaped object (`{ PolarityRequest }`)
+whose instances expose a HAR-backed `run()` and `runInParallel()`. Matched
+entries are returned in the same `{ body, statusCode, headers, request }` shape
+that `PolarityRequest.run()` produces, so existing assertions need no changes.
+
+### Just the `run` mock
+
+If you mock `PolarityRequest` yourself and only need a `run` implementation,
+use `asMock()`:
+
+```typescript
+const run = HarFixture.from('./mocks/lookups/IP.har').asMock(vi.fn);
+// run({ url, method }) → resolves to the recorded response
+```
+
+### Matching options
+
+```typescript
+HarFixture.from('./mocks/lookups/IP.har', {
+  matchBy: 'url+method', // 'url+method' (default) | 'url' | 'url-pattern'
+  onMiss: 'throw', // 'throw' (default) | 'return-null' | 'passthrough'
+  ignoreQueryString: false // strip query params before matching
+});
+```
+
+- **`matchBy`** — `'url+method'` matches URL and method; `'url'` ignores the
+  method; `'url-pattern'` treats the recorded URL path as a prefix.
+- **`onMiss`** — `'throw'` raises a descriptive error naming the unmatched URL;
+  `'return-null'` resolves to `undefined`; `'passthrough'` also resolves to
+  `undefined` in mock mode.
+- **`ignoreQueryString`** — drop query params before matching (token-in-URL APIs
+  or volatile timestamps/nonces). Note: secret query params that were redacted
+  during recording are already treated as wildcards, so you usually don't need
+  this just for API keys.
+
+### Combining multiple data types with `merge()`
+
+For a test that exercises several `dataType`s, merge their HAR files into one
+fixture. On a `method + URL` conflict the most-recently-recorded entry wins:
+
+```typescript
+const fixture = HarFixture.merge([
+  HarFixture.from('./mocks/lookups/IP.har'),
+  HarFixture.from('./mocks/lookups/domain.har')
+]);
+
+vi.mock('polarity-integration-utils/requests', () => fixture.asPolarityRequest(vi.fn));
+```
+
+### Deployed / multi-container replay (external mock proxy)
+
+For tests that drive a **deployed** integration instance (where the test client
+is not in the vendor call path), replay is **not** performed through this
+library. An external HAR mock proxy is co-located with the test environment,
+and the platform points integration egress at it via its existing proxy
+settings; the proxy reuses the same HAR match engine as `HarFixture` to serve
+recorded fixtures (loaded from S3). Integration code and this library are
+unchanged — there is **no** in-process seam in `PolarityRequest.run()`.
+
+See the "HAR Replay Delivery & Test-Only Exclusion Architecture" decision doc
+(INT-2018) for the proxy, S3, and platform-wiring details. `HarFixture` above
+remains the Tier-1 tool for an integration's own in-repo unit tests.
 
 ## Test Helpers
 
@@ -298,8 +412,7 @@ describe('cache operations', () => {
     const context = createMockIntegrationContext(vi.fn);
     const cached = { ip: '8.8.8.8', org: 'Google LLC' };
 
-    (context.cache.integration.get as ReturnType<typeof vi.fn>)
-      .mockResolvedValue(cached);
+    (context.cache.integration.get as ReturnType<typeof vi.fn>).mockResolvedValue(cached);
 
     const entities: Entity[] = [createEntity('IPv4', '8.8.8.8')];
     const options: DoLookupUserOptions = { apiKey: 'test-key' };
